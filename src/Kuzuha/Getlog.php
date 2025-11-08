@@ -464,11 +464,13 @@ class Getlog extends Webapp
         if (!(!$this->config['OLDLOGFMT'] and !$conditions)) {
             if (!@$conditions['showall']) {
                 if (@$conditions['savesw']) {
+                    // Monthly logs: show day range only if not default (1-31)
                     if ($conditions['sd'] > 1 or $conditions['sh'] > 0 or $conditions['ed'] < 31 or $conditions['eh'] < 24) {
-                        $timerangestr .= "Day {$conditions['sd']} Hour {$conditions['sd']} - Day {$conditions['ed']} Hour {$conditions['ed']}　";
+                        $timerangestr .= "Day {$conditions['sd']} Hour {$conditions['sh']} - Day {$conditions['ed']} Hour {$conditions['eh']}　";
                     }
                 } else {
-                    if ($conditions['sh'] > 0 or $conditions['si'] > 0 or $conditions['eh'] < 24 or $conditions['ei'] > 0) {
+                    // Daily logs: show time range only if not default (00:00-23:59 or 24:00)
+                    if ($conditions['sh'] > 0 or $conditions['si'] > 0 or $conditions['eh'] < 23 or ($conditions['eh'] == 23 and $conditions['ei'] < 59)) {
                         $timerangestr .= "Hour {$conditions['sh']} Minute {$conditions['si']} - Hour {$conditions['eh']} Minute {$conditions['ei']}　";
                     }
                 }
