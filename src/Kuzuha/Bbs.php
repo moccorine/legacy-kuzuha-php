@@ -637,6 +637,7 @@ class Bbs extends Webapp
             $this->template->addVar('form', 'CHK_A', ' checked="checked"');
         }
         $this->template->addVar('form', 'FOLLOWID', $message['POSTID']);
+        $this->template->addVar('form', 'FOLLOWID', $this->form['s']);
         $this->template->addVar('form', 'SEARCHID', $this->form['s']);
         $this->template->addVar('form', 'FF', $this->form['ff']);
 
