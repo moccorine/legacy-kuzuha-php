@@ -4,6 +4,34 @@ use App\Config;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
+// Middleware: Redirect legacy m= parameter to RESTful paths
+$app->add(function (Request $request, $handler) {
+    $queryParams = $request->getQueryParams();
+    
+    if (isset($queryParams['m'])) {
+        $m = $queryParams['m'];
+        $pathMap = [
+            'g' => '/search',
+            'tree' => '/tree',
+            't' => '/thread',
+            'f' => '/follow',
+            'ad' => '/admin',
+        ];
+        
+        if (isset($pathMap[$m])) {
+            unset($queryParams['m']);
+            $newQuery = http_build_query($queryParams);
+            $newPath = $pathMap[$m] . ($newQuery ? '?' . $newQuery : '');
+            
+            return $handler->handle($request)
+                ->withStatus(301)
+                ->withHeader('Location', $newPath);
+        }
+    }
+    
+    return $handler->handle($request);
+});
+
 // Main bulletin board
 $app->get('/', function (Request $request, Response $response) {
     ob_start();
@@ -102,6 +130,52 @@ $app->map(['GET', 'POST'], '/admin', function (Request $request, Response $respo
     } else {
         $bbs = new \Kuzuha\Bbs();
         $bbs->main();
+    }
+
+    $output = ob_get_clean();
+    if ($output !== false) {
+        $response->getBody()->write($output);
+    }
+    return $response;
+});
+
+// Thread view
+$app->map(['GET', 'POST'], '/thread', function (Request $request, Response $response) {
+    ob_start();
+
+    $_GET = $request->getQueryParams();
+    $_POST = $request->getParsedBody() ?? [];
+
+    $config = Config::getInstance();
+    if ($config->get('BBSMODE_IMAGE') == 1) {
+        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs->prtsearchlist();
+    } else {
+        $bbs = new \Kuzuha\Bbs();
+        $bbs->prtsearchlist();
+    }
+
+    $output = ob_get_clean();
+    if ($output !== false) {
+        $response->getBody()->write($output);
+    }
+    return $response;
+});
+
+// Follow-up post page
+$app->map(['GET', 'POST'], '/follow', function (Request $request, Response $response) {
+    ob_start();
+
+    $_GET = $request->getQueryParams();
+    $_POST = $request->getParsedBody() ?? [];
+
+    $config = Config::getInstance();
+    if ($config->get('BBSMODE_IMAGE') == 1) {
+        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs->prtfollow();
+    } else {
+        $bbs = new \Kuzuha\Bbs();
+        $bbs->prtfollow();
     }
 
     $output = ob_get_clean();

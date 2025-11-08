@@ -18,7 +18,7 @@
     <input type="hidden" name="d" value="{{ MSGDISP }}" />
     {% if SHOW_ZIP_LINK %}
       <p class="medium">
-        <a href="{{ DEFURL|raw }}&amp;m=g&amp;gm=z">{{ TRANS_ZIP_ARCHIVES }}</a>
+        <a href="{{ route('search', {gm: 'z'}) }}">{{ TRANS_ZIP_ARCHIVES }}</a>
       </p>
     {% endif %}
     <h2>
@@ -31,7 +31,7 @@
             {{ file.FCHECK|raw }}
           </td>
           <td>
-            <a href="{{ DEFURL|raw }}&amp;m=g&amp;f={{ file.FILENAME }}">
+            <a href="{{ route('search', {f: file.FILENAME}) }}">
               {{ file.FTITLE }}
             </a>
           </td>
@@ -44,7 +44,7 @@
           {% if SHOW_TOPIC_LINK %}
             <td align="right">
               <span class="medium">
-                <a href="{{ DEFURL|raw }}&amp;m=g&amp;l={{ file.FILENAME }}">
+                <a href="{{ route('search', {l: file.FILENAME}) }}">
                   {{ TRANS_TOPIC_LIST }}
                 </a>
               </span>
@@ -53,7 +53,7 @@
           {% if SHOW_DL_LINK %}
             <td align="right">
               <span class="medium">
-                <a href="{{ DEFURL|raw }}&amp;m=g&amp;dl={{ file.FILENAME }}">
+                <a href="{{ route('search', {dl: file.FILENAME}) }}">
                   {{ TRANS_DOWNLOAD }}
                 </a>
               </span>

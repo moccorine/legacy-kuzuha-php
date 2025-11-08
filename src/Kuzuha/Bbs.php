@@ -91,32 +91,6 @@ class Bbs extends Webapp
                 $this->prtmain();
             }
         }
-        # Display follow-up page
-        elseif ($this->form['m'] == 'f') {
-            $this->prtfollow();
-        }
-        # Message log search
-        elseif ($this->form['m'] == 'g') {
-            $getlog = new \Kuzuha\Getlog();
-            $getlog->main();
-            return;
-        }
-        # Tree view
-        elseif ($this->form['m'] == 'tree') {
-            $treeview = new \Kuzuha\Treeview();
-            $treeview->main();
-            return;
-        }
-        # Admin mode
-        elseif ($this->form['m'] == 'ad') {
-            $bbsadmin = new Bbsadmin($this);
-            $bbsadmin->main();
-            return;
-        }
-        # Post search
-        elseif ($this->form['m'] == 't' or $this->form['m'] == 's') {
-            $this->prtsearchlist();
-        }
         # Display user settings page
         elseif ($this->form['setup']) {
             $this->prtcustom();
@@ -345,7 +319,7 @@ class Bbs extends Webapp
         $mbrcount = '';
         $showMbrCount = false;
         if ($this->config['CNTFILENAME']) {
-            $mbrcount = number_format($this->mbrcount());
+            $mbrcount = number_format($this->getParticipantCount());
             $showMbrCount = true;
         }
         
@@ -416,7 +390,7 @@ class Bbs extends Webapp
         $showMbrCount = false;
         $mbrcount = '';
         if ($this->config['CNTFILENAME']) {
-            $mbrcount = number_format($this->mbrcount());
+            $mbrcount = number_format($this->getParticipantCount());
             $showMbrCount = true;
         }
         
@@ -590,7 +564,7 @@ class Bbs extends Webapp
         if (!$retry) {
             $formmsg = $message['MSG'];
             $formmsg = preg_replace("/&gt; &gt;[^\r]+\r/", '', (string) $formmsg);
-            $formmsg = preg_replace("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", '', $formmsg);
+            $formmsg = preg_replace("/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "[^\"]*\"[^>]*>[^<]+<\/a>/i", '', $formmsg);
             $formmsg = preg_replace("/<a href=\"[^>]+>([^<]+)<\/a>/i", '$1', $formmsg);
             $formmsg = preg_replace("/\r*<a href=[^>]+><img [^>]+><\/a>/i", '', $formmsg);
             $formmsg = preg_replace("/\r/", "\r> ", $formmsg);
@@ -599,7 +573,7 @@ class Bbs extends Webapp
             $formmsg = preg_replace("/\r>\s+\r$/", "\r", (string) $formmsg);
         } else {
             $formmsg = $this->form['v'];
-            $formmsg = preg_replace("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", '', (string) $formmsg);
+            $formmsg = preg_replace("/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "[^\"]*\"[^>]*>[^<]+<\/a>/i", '', (string) $formmsg);
         }
         $formmsg .= "\r";
 
@@ -1176,7 +1150,7 @@ class Bbs extends Webapp
             $refmessage = $this->getmessage($refdata[0]);
             $refmessage['WDATE'] = DateHelper::getDateString($refmessage['NDATE'], $this->config['DATEFORMAT']);
             $refLabel = Translator::trans('message.reference');
-            $message['MSG'] .= "\r\r<a href=\"m=f&s={$message['REFID']}&r=&\">{$refLabel}: {$refmessage['WDATE']}</a>";
+            $message['MSG'] .= "\r\r<a href=\"" . route('follow', ['s' => $message['REFID'], 'r' => '']) . "\">{$refLabel}: {$refmessage['WDATE']}</a>";
             # Simple self-reply prevention function
             if ($this->config['IPREC'] and $this->config['SHOW_SELFFOLLOW']
                 and $refmessage['PHOST'] != '' and $refmessage['PHOST'] == $message['PHOST']) {
@@ -1530,55 +1504,20 @@ class Bbs extends Webapp
      * @param   $cntfilename  Record file name
      * @return  String  Number of participants
      */
-    public function mbrcount($cntfilename = '')
+    public function getParticipantCount($cntfilename = '')
     {
         if (!$cntfilename) {
             $cntfilename = $this->config['CNTFILENAME'];
         }
-        if ($cntfilename) {
-            $mbrcount = 0;
-            $remoteaddr = '0.0.0.0';
-            if ($_SERVER['REMOTE_ADDR']) {
-                $remoteaddr = $_SERVER['REMOTE_ADDR'];
-            }
-            $ukey = hexdec(substr(md5((string) $remoteaddr), 0, 8));
-            $newcntdata = [];
-            if (is_writable($cntfilename)) {
-                $cntdata = file($cntfilename);
-                $cadd = 0;
-                foreach ($cntdata as $cntvalue) {
-                    if (strrpos($cntvalue, ',') !== false) {
-                        [$cuser, $ctime, ] = @explode(',', trim($cntvalue));
-                        if ($cuser == $ukey) {
-                            $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
-                            $cadd = 1;
-                            $mbrcount++;
-                        } elseif (($ctime + $this->config['CNTLIMIT']) >= CURRENT_TIME) {
-                            $newcntdata[] = "$cuser,$ctime\n";
-                            $mbrcount++;
-                        }
-                    }
-                }
-                if (!$cadd) {
-                    $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
-                    $mbrcount++;
-                }
-            } else {
-                $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
-                $mbrcount++;
-            }
-            if ($fh = @fopen($cntfilename, 'w')) {
-                $cntdatastr = implode('', $newcntdata);
-                flock($fh, 2);
-                fwrite($fh, $cntdatastr);
-                flock($fh, 3);
-                fclose($fh);
-            } else {
-                return ('Participant file output error');
-            }
-            return $mbrcount;
-        } else {
-            return;
+        
+        if (!$cntfilename) {
+            return 0;
         }
+        
+        return \App\Utils\ParticipantCounter::count(
+            $cntfilename,
+            $this->config['CNTLIMIT'],
+            CURRENT_TIME
+        );
     }
 }

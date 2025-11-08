@@ -3,7 +3,7 @@
 {% block content %}
   <header>
     <span class="pagetitle">
-      <a href="{{ CGIURL }}?{{ QUERY|raw }}&amp;m=tree"
+      <a href="{{ route('tree', {c: COUNTLEVEL, d: LOGSAVE}) }}"
         style="text-decoration: none;">
         {{ BBSTITLE }}
       </a>
@@ -15,7 +15,7 @@
     <a href="mailto:{{ ADMINMAIL }}" title="{{ TRANS_EMAIL_ADMIN }}">
       {{ TRANS_CONTACT }}
     </a>
-    <a href="{{ DEFURL|raw }}&amp;m=g"
+    <a href="{{ route('search') }}"
       target="_blank"
       title="{{ TRANS_MESSAGE_LOGS_TITLE }}">
       {{ TRANS_MESSAGE_LOGS }}

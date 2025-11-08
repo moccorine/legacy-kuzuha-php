@@ -65,7 +65,27 @@ ADMIN_PASSWORD=7PUPc9zzOI3DQ
 docker-compose restart
 ```
 
-The bulletin board is now ready at `http://localhost:8080/bbs.php`
+The bulletin board is now ready at `http://localhost:8080/`
+
+## URL Structure
+
+The bulletin board uses RESTful routing:
+
+- `/` - Main bulletin board
+- `/search` - Message log search and archives
+- `/tree` - Tree view of message threads
+- `/thread` - Thread view
+- `/follow` - Follow-up post page (reply to a specific post)
+- `/admin` - Admin mode (requires authentication)
+
+**Legacy URLs** are automatically redirected to the new paths with 301 status:
+- `/?m=g` → `/search`
+- `/?m=tree` → `/tree`
+- `/?m=t` → `/thread`
+- `/?m=f` → `/follow`
+- `/?m=ad` → `/admin`
+
+**Subdirectory Installation**: The application automatically handles subdirectory installations (e.g., `/path/to/bbs/`) using the `route()` helper function. All URLs are generated relative to the `CGIURL` configuration.
 
 ## Log Mode Configuration
 
@@ -91,20 +111,6 @@ Edit `conf.php` and set:
 
 **Important:** Once you start using the board, do not change this setting. The log mode cannot be switched after archives are created, as the file naming conventions are incompatible. Choose the appropriate mode before initial deployment.
 
-## Routes
-
-### Main Routes
-
-- `bbs.php` - Main bulletin board (default)
-- `bbs.php?m=g` - Message log search
-- `bbs.php?m=tree` - Tree view
-- `bbs.php?m=ad` (POST) - Admin mode (requires ADMINPOST password and ADMINKEY)
-
-### Admin Routes
-
-- Initial setup (when ADMINPOST is empty) - Password settings page
-- `bbs.php?m=ad&ad=ps` (POST) - Generate encrypted password
-
-### Image Mode
+## Image Mode
 
 When `BBSMODE_IMAGE` is enabled in `conf.php`, the bulletin board operates in image upload mode.

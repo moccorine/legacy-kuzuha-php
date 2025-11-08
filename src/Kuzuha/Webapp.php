@@ -180,20 +180,20 @@ class Webapp
         # "Reference"
         if (!$mode) {
             $message['MSG'] = preg_replace(
-                "/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"{$this->config['CGIURL']}?m=f&amp;s=$1&amp;{$this->session['QUERY']}\">$2</a>",
+                "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
+                "<a href=\"" . route('follow', ['s' => '$1']) . "&amp;{$this->session['QUERY']}\">$2</a>",
                 $message['MSG'],
                 1
             );
             $message['MSG'] = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"{$this->config['CGIURL']}?m=f&amp;s=$1&amp;{$this->session['QUERY']}\">$2</a>",
+                "<a href=\"" . route('follow', ['s' => '$1']) . "&amp;{$this->session['QUERY']}\">$2</a>",
                 $message['MSG'],
                 1
             );
         } else {
             $message['MSG'] = preg_replace(
-                "/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i",
+                "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
                 '<a href="#a$1">$2</a>',
                 $message['MSG'],
                 1
@@ -217,15 +217,16 @@ class Webapp
             # Follow-up post button
             $message['BTNFOLLOW'] = '';
             if ($this->config['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNFOLLOW'] = "$spacer<a href=\"{$this->config['CGIURL']}"
-                    ."?m=f&amp;s={$message['POSTID']}&amp;".$this->session['QUERY'];
+                $followParams = ['s' => $message['POSTID']];
+                parse_str($this->session['QUERY'], $queryParams);
+                $followParams = array_merge($followParams, $queryParams);
                 if ($this->form['w']) {
-                    $message['BTNFOLLOW'] .= '&amp;w='.$this->form['w'];
+                    $followParams['w'] = $this->form['w'];
                 }
                 if ($mode == 1) {
-                    $message['BTNFOLLOW'] .= "&amp;ff=$tlog";
+                    $followParams['ff'] = $tlog;
                 }
-                $message['BTNFOLLOW'] .= "\"$newwin $lnk_class title=\"Follow-up post (reply)\" >{$this->config['TXTFOLLOW']}</a>";
+                $message['BTNFOLLOW'] = "$spacer<a href=\"" . route('follow', $followParams) . "\"$newwin $lnk_class title=\"Follow-up post (reply)\" >{$this->config['TXTFOLLOW']}</a>";
             }
             # Search by user button
             $message['BTNAUTHOR'] = '';
@@ -246,11 +247,13 @@ class Webapp
             }
             $message['BTNTHREAD'] = '';
             if ($this->config['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNTHREAD'] = "$spacer<a href=\"{$this->config['CGIURL']}?m=t&amp;s={$message['THREAD']}&amp;".$this->session['QUERY'];
+                $threadParams = ['s' => $message['THREAD']];
+                parse_str($this->session['QUERY'], $queryParams);
+                $threadParams = array_merge($threadParams, $queryParams);
                 if ($mode == 1) {
-                    $message['BTNTHREAD'] .= "&amp;ff=$tlog";
+                    $threadParams['ff'] = $tlog;
                 }
-                $message['BTNTHREAD'] .= "\" target=\"link\" $lnk_class title=\"Thread view\" >{$this->config['TXTTHREAD']}</a>";
+                $message['BTNTHREAD'] = "$spacer<a href=\"" . route('thread', $threadParams) . "\" target=\"link\" $lnk_class title=\"Thread view\" >{$this->config['TXTTHREAD']}</a>";
             }
             # Tree view button
             $message['BTNTREE'] = '';

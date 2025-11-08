@@ -268,7 +268,8 @@ class Treeview extends Bbs
             # Extract reference IDs from "reference"
             foreach ($thread as $message) {
                 if (!@$message['REFID']) {
-                    if (preg_match("/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
+                    $followPattern = preg_quote(route('follow', ['s' => '']), '/');
+                    if (preg_match("/<a href=\"{$followPattern}(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
                         $message['REFID'] = $matches[1];
                     } elseif (preg_match("/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
                         $message['REFID'] = $matches[1];
@@ -356,7 +357,10 @@ class Treeview extends Bbs
     public function prttexttree(&$msgcurrent, &$thread)
     {
 
-        print "<pre class=\"msgtree\"><a href=\"{$this->session['DEFURL']}&amp;m=t&amp;s={$msgcurrent['THREAD']}\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
+        $threadParams = ['s' => $msgcurrent['THREAD']];
+        parse_str($this->session['QUERY'], $queryParams);
+        $threadParams = array_merge($threadParams, $queryParams);
+        print "<pre class=\"msgtree\"><a href=\"" . route('thread', $threadParams) . "\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
         $msgcurrent['WDATE'] = DateHelper::getDateString($msgcurrent['NDATE']);
         $dateUpdatedLabel = Translator::trans('tree.date_updated');
         print "<span class=\"update\"> [{$dateUpdatedLabel}: {$msgcurrent['WDATE']}]</span>\r";
@@ -421,7 +425,10 @@ class Treeview extends Bbs
                 $treemsg['MSG']  = preg_replace('/(.+)/', "<span class= \"ngline\">$1</span>\r", $treemsg['MSG']);
 
                 # Link to the follow-up post page
-                $treeprint .= "<a href=\"{$this->session['DEFURL']}&amp;m=f&amp;s={$parentid}\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
+                $followParams = ['s' => $parentid];
+                parse_str($this->session['QUERY'], $queryParams);
+                $followParams = array_merge($followParams, $queryParams);
+                $treeprint .= "<a href=\"" . route('follow', $followParams) . "\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
 
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->config['ANONY_NAME']) {
