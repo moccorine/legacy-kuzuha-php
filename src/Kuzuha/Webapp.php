@@ -120,6 +120,8 @@ class Webapp
                 'ERR_MESSAGE' => $err_message,
                 'CUSTOMSTYLE' => '',
                 'CUSTOMHEAD' => '',
+                'TRANS_RETURN' => Translator::trans('error.return'),
+                'TRANS_RETURN_TITLE' => Translator::trans('error.return_title'),
             ]);
             echo \App\View::getInstance()->render('error.twig', $data);
             exit();

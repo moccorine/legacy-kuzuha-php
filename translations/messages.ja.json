@@ -164,5 +164,9 @@
   "redirect": {
     "redirecting": "リダイレクト中…",
     "to": "移動先"
+  },
+  "error": {
+    "return": "戻る",
+    "return_title": "前のページに戻る"
   }
 }

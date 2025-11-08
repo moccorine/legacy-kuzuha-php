@@ -164,5 +164,9 @@
   "redirect": {
     "redirecting": "Redirecting…",
     "to": "To"
+  },
+  "error": {
+    "return": "Return",
+    "return_title": "Return to previous page"
   }
 }

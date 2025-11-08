@@ -2,11 +2,11 @@
 
 {% block content %}
   <p class="error">
-    {{ ERR_MESSAGE }}
+    {{ ERR_MESSAGE|raw }}
   </p>
   {% if DEFURL %}
     <span class="bbsmsg">
-      <a href="{{ DEFURL }}" title="Return to previous page">Return</a>
+      <a href="{{ DEFURL }}" title="{{ TRANS_RETURN_TITLE }}">{{ TRANS_RETURN }}</a>
     </span>
   {% endif %}
 {% endblock %}
