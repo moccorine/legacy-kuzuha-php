@@ -37,6 +37,30 @@ docker-compose restart
 
 The bulletin board is now ready at `http://localhost:8080/bbs.php`
 
+## Log Mode Configuration
+
+The bulletin board supports two log archive modes:
+
+### Daily Log Mode (OLDLOGSAVESW = 0)
+- Archives are saved daily with filename format: `YYYYMMDD.dat` (e.g., `20251108.dat`)
+- Time range search uses hours and minutes (HH:MM)
+- Suitable for high-traffic boards
+
+### Monthly Log Mode (OLDLOGSAVESW = 1) - Default
+- Archives are saved monthly with filename format: `YYYYMM.dat` (e.g., `202511.dat`)
+- Time range search uses days and hours (DD HH)
+- Suitable for low to medium-traffic boards
+
+**Configuration:**
+Edit `conf.php` and set:
+```php
+'OLDLOGSAVESW' => 0,  // Daily mode
+// or
+'OLDLOGSAVESW' => 1,  // Monthly mode (default)
+```
+
+**Important:** Once you start using the board, do not change this setting. The log mode cannot be switched after archives are created, as the file naming conventions are incompatible. Choose the appropriate mode before initial deployment.
+
 ## Routes
 
 ### Main Routes
