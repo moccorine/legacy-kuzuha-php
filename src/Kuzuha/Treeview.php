@@ -362,7 +362,8 @@ class Treeview extends Bbs
 
         print "<pre class=\"msgtree\"><a href=\"{$this->session['DEFURL']}&amp;m=t&amp;s={$msgcurrent['THREAD']}\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
         $msgcurrent['WDATE'] = DateHelper::getDateString($msgcurrent['NDATE']);
-        print "<span class=\"update\"> [Date updated: {$msgcurrent['WDATE']}]</span>\r";
+        $dateUpdatedLabel = Translator::trans('tree.date_updated');
+        print "<span class=\"update\"> [{$dateUpdatedLabel}: {$msgcurrent['WDATE']}]</span>\r";
         $tree = & $this->gentree(array_reverse($thread), $msgcurrent['THREAD']);
         $tree = str_replace('</span><span class="bc">', '', $tree);
         $tree = str_replace('</span>　<span class="bc">', '　', $tree);
@@ -598,8 +599,9 @@ __XHTML__;
         }
         $this->prttexttree($msgcurrent, $result);
 
+        $returnLabel = Translator::trans('tree.return');
         print <<<__XHTML__
-<span class="bbsmsg"><a href="{$this->session['DEFURL']}">Return</a></span>
+<span class="bbsmsg"><a href="{$this->session['DEFURL']}">{$returnLabel}</a></span>
 __XHTML__;
 
         print $this->prthtmlfoot();

@@ -263,6 +263,8 @@
     "message_logs_title": "過去の投稿を閲覧・検索します。",
     "standard_view": "標準表示",
     "standard_view_title": "標準表示に戻る",
-    "bottom": "下へ"
+    "bottom": "下へ",
+    "date_updated": "更新日時",
+    "return": "戻る"
   }
 }

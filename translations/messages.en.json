@@ -263,6 +263,8 @@
     "message_logs_title": "Browse and search through old posts.",
     "standard_view": "Standard view",
     "standard_view_title": "Return to standard view",
-    "bottom": "Bottom"
+    "bottom": "Bottom",
+    "date_updated": "Date updated",
+    "return": "Return"
   }
 }
