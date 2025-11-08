@@ -160,5 +160,9 @@
   "message": {
     "user": "投稿者",
     "post_date": "投稿日時"
+  },
+  "redirect": {
+    "redirecting": "リダイレクト中…",
+    "to": "移動先"
   }
 }

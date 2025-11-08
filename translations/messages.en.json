@@ -160,5 +160,9 @@
   "message": {
     "user": "User",
     "post_date": "Post date"
+  },
+  "redirect": {
+    "redirecting": "Redirecting…",
+    "to": "To"
   }
 }

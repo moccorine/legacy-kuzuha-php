@@ -223,10 +223,15 @@ class Webapp
         $this->sethttpheader();
         print $this->prthtmlhead(
             $this->config['BBSTITLE'] . ' - URL redirection',
-            "<meta http-equiv=\"refresh\" content=\"1;url={$redirecturl}\">\n"
+            "<meta http-equiv=\"refresh\" content=\"5;url={$redirecturl}\">\n"
         );
-        $this->template->addVar('redirect', 'REDIRECTURL', $redirecturl);
-        $this->template->displayParsedTemplate('redirect');
+        
+        echo $this->renderTwig('redirect.twig', [
+            'REDIRECTURL' => $redirecturl,
+            'TRANS_REDIRECTING' => Translator::trans('redirect.redirecting'),
+            'TRANS_TO' => Translator::trans('redirect.to'),
+        ]);
+        
         print $this->prthtmlfoot();
     }
 

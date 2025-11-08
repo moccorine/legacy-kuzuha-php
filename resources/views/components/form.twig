@@ -1,0 +1,299 @@
+<form method="post" enctype="multipart/form-data" action="{{ CGIURL }}">
+  {{ MODE|raw }}
+  <input type="hidden" name="c" value="{{ C }}" />
+  <input type="hidden" name="p" value="{{ TOPPOSTID }}" />
+  <input type="hidden" name="pc" value="{{ PCODE }}" />
+  <input type="hidden" name="g" value="{{ GZIPU }}" />
+
+  {% if HIDEFORM == 0 %}
+    {% if BBSMODE_IMAGE %}
+      {# Image mode form #}
+      <div class="postform">
+        <p>
+          <label for="name2">{{ TRANS_NAME }}</label>
+          <input size="20"
+            type="text"
+            name="u"
+            accesskey="1"
+            maxlength="{{ MAXNAMELENGTH }}"
+            value="{{ U }}"
+            placeholder=""
+            title="{{ TRANS_NAME_TITLE }}"
+            id="name2" /><br />
+          <label for="mail2">{{ TRANS_EMAIL }}</label><input size="30"
+            type="text"
+            name="i"
+            accesskey="2"
+            maxlength="{{ MAXMAILLENGTH }}"
+            value="{{ I }}"
+            placeholder="mail@example.com"
+            title="{{ TRANS_EMAIL_TITLE }}"
+            id="mail2" /><br />
+          <label for="title2">{{ TRANS_TITLE }}</label><input size="30"
+            type="text"
+            name="t"
+            accesskey="3"
+            maxlength="{{ MAXTITLELENGTH }}"
+            value="{{ DTITLE }}"
+            title="{{ TRANS_TITLE_TITLE }}"
+            id="title2" />
+          <input type="submit"
+            name="post"
+            accesskey="P"
+            value="{{ TRANS_POST_RELOAD }}"
+            class="btn"
+            title="{{ TRANS_POST_RELOAD_TITLE }}" />
+          <input type="reset"
+            accesskey="K"
+            value="{{ TRANS_CLEAR }}"
+            class="btn"
+            title="{{ TRANS_CLEAR_TITLE }}" />
+        </p>
+        <p>
+          <label for="contents2">{{ TRANS_CONTENTS }}</label>
+          <span class="pfhelp">({{ TRANS_CONTENTS_HELP_IMAGE }})</span>
+          <br />
+          <textarea rows="5"
+            cols="70"
+            name="v"
+            accesskey="4"
+            maxlength="10000"
+            placeholder=""
+            title="{{ TRANS_CONTENTS_TITLE }}"
+            id="contents2">
+            {{ DMSG }}
+          </textarea>
+        </p>
+        <p>
+          <label for="url2">{{ TRANS_URL }}</label>
+          <br />
+          <input size="70"
+            type="text"
+            name="l"
+            accesskey="5"
+            maxlength="255"
+            value="{{ DLINK }}"
+            placeholder="http://"
+            title="{{ TRANS_URL_TITLE }}"
+            id="url2" />
+        </p>
+        <p>
+          {{ TRANS_IMAGE_UPLOAD }}
+          <span class="pfhelp">（{{ TRANS_IMAGE_UPLOAD_HELP }}）</span>
+          <br />
+          <input type="hidden"
+            name="MAX_FILE_SIZE"
+            value="{{ MAX_FILE_SIZE }}" />
+          <input size="40"
+            type="file"
+            name="file"
+            accesskey="7"
+            maxlength="255"
+            value=""
+            title="{{ TRANS_IMAGE_UPLOAD_TITLE }}" />
+        </p>
+      </div>
+    {% else %}
+      {# Default mode form #}
+      <div class="postform">
+        <p>
+          <label for="name1">{{ TRANS_NAME }}</label>
+          <input size="20"
+            type="text"
+            name="u"
+            accesskey="1"
+            maxlength="{{ MAXNAMELENGTH }}"
+            value="{{ U }}"
+            placeholder=""
+            title="{{ TRANS_NAME_TITLE }}"
+            id="name1" /><br />
+          <label for="mail1">{{ TRANS_EMAIL }}</label><input size="30"
+            type="text"
+            name="i"
+            accesskey="2"
+            maxlength="{{ MAXMAILLENGTH }}"
+            value="{{ I }}"
+            placeholder="mail@example.com"
+            title="{{ TRANS_EMAIL_TITLE }}"
+            id="mail1" /><br />
+          <label for="title1">{{ TRANS_TITLE }}</label><input size="30"
+            type="text"
+            name="t"
+            accesskey="3"
+            maxlength="{{ MAXTITLELENGTH }}"
+            value="{{ DTITLE }}"
+            title="{{ TRANS_TITLE_TITLE }}"
+            id="title1" />
+          <input type="submit"
+            name="post"
+            accesskey="P"
+            value="{{ TRANS_POST_RELOAD }}"
+            class="btn"
+            title="{{ TRANS_POST_RELOAD_TITLE }}" />
+          <input type="reset"
+            accesskey="K"
+            value="{{ TRANS_CLEAR }}"
+            class="btn"
+            title="{{ TRANS_CLEAR_TITLE }}" />
+        </p>
+        <p>
+          <label for="contents1">{{ TRANS_CONTENTS }}</label>
+          <span class="pfhelp">({{ TRANS_CONTENTS_HELP }})</span>
+          <br />
+          <textarea rows="5"
+            cols="70"
+            name="v"
+            accesskey="4"
+            maxlength="10000"
+            placeholder=""
+            title="{{ TRANS_CONTENTS_TITLE }}"
+            id="contents1">
+            {{ DMSG }}
+          </textarea>
+        </p>
+        {{ KAOMOJI_BUTTONS|raw }}
+        <p>
+          <label for="url1">{{ TRANS_URL }}</label>
+          <br />
+          <input size="70"
+            type="text"
+            name="l"
+            accesskey="5"
+            maxlength="255"
+            value="{{ DLINK }}"
+            placeholder="http://"
+            title="{{ TRANS_URL_TITLE }}"
+            id="url1" />
+        </p>
+      </div>
+    {% endif %}
+  {% else %}
+    {# Hidden form #}
+    <input type="hidden" name="u" value="{{ U }}" />
+    <input type="hidden" name="i" value="{{ I }}" />
+  {% endif %}
+
+  {# Extra form controls #}
+  <div class="small">
+    <label for="num1">{{ TRANS_POSTS_DISPLAYED }}</label>&nbsp;<input type="number"
+      size="2"
+      name="d"
+      accesskey="6"
+      value="{{ MSGDISP }}"
+      min="0"
+      title="{{ TRANS_POSTS_DISPLAYED_TITLE }}"
+      id="num1" />&nbsp; {% if not HIDEFORM %}
+      <label for="a1">{{ TRANS_AUTO_LINK }}</label><input type="checkbox"
+        name="a"
+        accesskey="U"
+        value="checked"
+        {{ CHK_A }}
+        title="{{ TRANS_AUTO_LINK_TITLE }}"
+        id="a1" />&nbsp;
+      <label for="hide1">{{ TRANS_LOG_READING }}</label><input type="checkbox"
+        name="hide"
+        accesskey="I"
+        value="checked"
+        {{ CHK_HIDE }}
+        title="{{ TRANS_LOG_READING_TITLE }}"
+        id="hide1" />&nbsp;
+    {% endif %}
+    <label for="loff1">{{ TRANS_HIDE_LINK }}</label><input type="checkbox"
+      name="loff"
+      accesskey="L"
+      value="checked"
+      {{ CHK_LOFF }}
+      title="{{ TRANS_HIDE_LINK_TITLE }}"
+      id="loff1" />&nbsp; {% if SHOW_SICHECK %}
+      <label for="sim1">{{ TRANS_SHOW_IMAGES }}</label><input type="checkbox"
+        name="sim"
+        accesskey="S"
+        value="checked"
+        {{ CHK_SI }}
+        title="{{ TRANS_SHOW_IMAGES_TITLE }}"
+        id="sim1" />&nbsp;
+    {% endif %}
+    <input type="submit"
+      name="setup"
+      accesskey="C"
+      value="{{ TRANS_USER_SETTINGS }}"
+      class="btn"
+      title="{{ TRANS_USER_SETTINGS_TITLE }}" />
+  </div>
+
+  {% if SHOW_COUNTER or SHOW_MBRCOUNT %}
+    <br />
+    <div>
+      {% if SHOW_COUNTER %}
+        {{ TRANS_PAGE_VIEWS }}: {{ COUNTER }} ({{ TRANS_BULLETPROOF_LEVEL }}:
+        {{ COUNTLEVEL }})
+      {% endif %} {% if SHOW_MBRCOUNT %}
+        {{ TRANS_CURRENT_PARTICIPANTS }}: {{ MBRCOUNT }} {{ TRANS_USERS }} ({{
+          TRANS_WITHIN
+        }}
+        {{ CNTLIMIT }} {{ TRANS_SECONDS }})
+      {% endif %} {{ TRANS_MAX_POSTS }}:
+      {{ LOGSAVE }} {{ TRANS_POSTS }}
+    </div>
+  {% endif %}
+
+  {% if not LINKOFF %}
+    <hr />
+    <div class="link_row">
+      <a href="{{ INFOPAGE }}" title="{{ TRANS_TO_PR_OFFICE }}">
+        {{ TRANS_PR_OFFICE }}
+      </a>&nbsp;|&nbsp;<a href="{{ DEFURL }}&amp;m=g"
+        target="_blank"
+        title="{{ TRANS_MESSAGE_LOGS_TITLE }}">
+        {{ TRANS_MESSAGE_LOGS }}
+      </a>
+      {{ BBSLINK|raw }}
+    </div>
+  {% endif %}
+
+  <p style="margin: 5px"></p>
+
+  {% if SHOW_HELP %}
+    <hr />
+    <div class="small">
+      <span title="{{ TRANS_FOLLOW_HELP }}">
+        <a class="help">{{ TXTFOLLOW }}</a>:&nbsp;{{ TRANS_FOLLOW_POST }}
+      </span>
+      <span title="{{ TRANS_AUTHOR_HELP }}">
+        <a class="help">{{ TXTAUTHOR }}</a>:&nbsp;{{ TRANS_SEARCH_BY_USER }}
+      </span>
+      <span title="{{ TRANS_THREAD_HELP }}">
+        <a class="help">{{ TXTTHREAD }}</a>:&nbsp;{{ TRANS_THREAD }}
+      </span>
+      <span title="{{ TRANS_TREE_HELP }}">
+        <a class="help">{{ TXTTREE }}</a>:&nbsp;{{ TRANS_TREE }}
+      </span>
+      {% if SHOW_UNDO %}
+        <span title="{{ TRANS_UNDO_HELP }}">
+          <a class="help">{{ TXTUNDO }}</a>:&nbsp;{{ TRANS_DELETE_PREVIOUS }}
+        </span>
+      {% endif %}
+    </div>
+    <hr />
+  {% endif %}
+
+  <p style="margin: 5px"></p>
+
+  <div class="small">
+    {% if HIDEFORM == 0 %}
+      <input type="submit"
+        name="post"
+        accesskey="R"
+        value="{{ TRANS_POST_RELOAD }}"
+        class="btn"
+        title="{{ TRANS_POST_RELOAD_TITLE_R }}" />
+    {% else %}
+      <input type="submit"
+        name="post"
+        accesskey="R"
+        value="{{ TRANS_RELOAD }}"
+        class="btn"
+        title="{{ TRANS_RELOAD_TITLE }}" />
+    {% endif %}
+  </div>
+</form>

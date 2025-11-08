@@ -6,12 +6,15 @@
       <span class="mu">{{ TRANS_USER }}:</span>
       <span class="mun">{{ USER|raw }}</span>&nbsp;&nbsp;
       <span class="md">
-        {{ TRANS_POST_DATE }}: {{ WDATE }}<a id="a{{ POSTID }}">&nbsp;</a
-        ><span class="nb">{{ BTN|raw }}</span>
+        {{ TRANS_POST_DATE }}: {{ WDATE }}<a id="a{{ POSTID }}">
+          &nbsp;
+        </a><span class="nb">{{ BTN|raw }}</span>
       </span>
     </span>
     <div class="contents">
-      <pre class="msgnormal">{{- MSG|raw -}}</pre>
+      <pre class="msgnormal">
+        {{- MSG|raw -}}
+      </pre>
     </div>
     {% if SHOW_ENV %}
       <div class="env">
