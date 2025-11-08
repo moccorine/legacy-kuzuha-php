@@ -82,10 +82,12 @@ $app->map(['GET', 'POST'], '/tree', function (Request $request, Response $respon
 });
 
 // Admin mode
-$app->post('/admin', function (Request $request, Response $response) {
+$app->map(['GET', 'POST'], '/admin', function (Request $request, Response $response) {
     ob_start();
     
+    $queryParams = $request->getQueryParams();
     $parsedBody = $request->getParsedBody();
+    $_GET = $queryParams ?? [];
     $_POST = $parsedBody ?? [];
     
     $config = Config::getInstance();

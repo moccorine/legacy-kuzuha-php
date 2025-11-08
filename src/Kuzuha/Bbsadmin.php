@@ -47,11 +47,11 @@ class Bbsadmin extends Webapp
         parent::__construct();
         if (func_num_args() > 0) {
             $this->bbs = func_get_arg(0);
-            $this->c = &$this->bbs->c;
-            $this->f = &$this->bbs->f;
-            $this->t = &$this->bbs->t;
+            $this->config = &$this->bbs->config;
+            $this->form = &$this->bbs->form;
+            $this->template = &$this->bbs->template;
         }
-        $this->template->readTemplatesFromFile($this->config['TEMPLATE_ADMIN']);
+        // Template loading removed - using Twig now
     }
 
 
@@ -127,14 +127,12 @@ class Bbsadmin extends Webapp
      */
     public function prtadminmenu()
     {
-
-        $this->template->addVar('adminmenu', 'V', trim((string) $this->form['v']));
-
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Administration menu');
-        $this->template->displayParsedTemplate('adminmenu');
-        print $this->prthtmlfoot();
-
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' Administration menu',
+            'V' => trim((string) $this->form['v']),
+        ]);
+        echo $this->renderPage('admin/menu.twig', $data);
     }
 
 
@@ -147,13 +145,10 @@ class Bbsadmin extends Webapp
      */
     public function prtkilllist()
     {
-
         if (!file_exists($this->config['LOGFILENAME'])) {
             $this->prterror('Failed to load message');
         }
         $logdata = file($this->config['LOGFILENAME']);
-
-        $this->template->addVar('killlist', 'V', trim((string) $this->form['v']));
 
         $messages = [];
         foreach ($logdata as $logline) {
@@ -167,17 +162,18 @@ class Bbsadmin extends Webapp
                 $message['MSGDIGEST'] .= $msgsplit[$index];
                 $index++;
             }
-            $message['WDATE'] = Func::getdatestr($message['NDATE']);
+            $message['WDATE'] = DateHelper::getDateString($message['NDATE']);
             $message['USER_NOTAG'] = preg_replace("/<[^>]*>/", '', (string) $message['USER']);
             $messages[] = $message;
         }
 
-        $this->template->addRows('killmessage', $messages);
-
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message deletion mode');
-        $this->template->displayParsedTemplate('killlist');
-        print $this->prthtmlfoot();
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' Message deletion mode',
+            'V' => trim((string) $this->form['v']),
+            'messages' => $messages,
+        ]);
+        echo $this->renderPage('admin/killlist.twig', $data);
     }
 
 
@@ -319,18 +315,13 @@ class Bbsadmin extends Webapp
      */
     public function prtsetpass()
     {
-
-        $this->template->addVar('setpass', 'V', trim((string) $this->form['v']));
-
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Password settings page');
-        $this->template->displayParsedTemplate('setpass');
-        print $this->prthtmlfoot();
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' Password settings page',
+            'V' => trim((string) $this->form['v']),
+        ]);
+        echo $this->renderPage('admin/setpass.twig', $data);
     }
-
-
-
-
 
     /**
      * Encrypted password generation & display
@@ -338,7 +329,6 @@ class Bbsadmin extends Webapp
      */
     public function prtpass($inputpass)
     {
-
         if (!@$inputpass) {
             $this->prterror('No password has been set.');
         }
@@ -347,15 +337,13 @@ class Bbsadmin extends Webapp
         $cryptpass = crypt($inputpass, $salt);
         $inputsize = strlen($cryptpass) + 10;
 
-        $this->template->addVars('pass', [
+        $this->sethttpheader();
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' Password settings page',
             'CRYPTPASS' => $cryptpass,
             'INPUTSIZE' => $inputsize,
         ]);
-
-        $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Password settings page');
-        $this->template->displayParsedTemplate('pass');
-        print $this->prthtmlfoot();
+        echo $this->renderPage('admin/pass.twig', $data);
     }
 
 
