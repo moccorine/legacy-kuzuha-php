@@ -230,5 +230,28 @@
     "unread": "未読",
     "bottom_btn": "下へ Alt(+Shift)+B",
     "latest_30": "最新30件"
+  },
+  "stats": {
+    "pageview": "ページビュー数（2024/07/10以降）",
+    "bulletproof_level": "防弾レベル",
+    "current_participants": "現在の参加者",
+    "users": "ユーザー",
+    "seconds_within": "秒以内",
+    "max_posts_saved": "最大保存投稿数",
+    "posts": "投稿",
+    "to_pr_office": "広報室へ",
+    "pr_office": "広報室",
+    "message_logs": "過去ログ",
+    "message_logs_title": "過去の投稿を閲覧・検索します。",
+    "follow_title": "返信を投稿",
+    "follow_desc": "フォロー投稿（返信）",
+    "author_title": "同じユーザーの投稿を一覧表示",
+    "author_desc": "ユーザー検索",
+    "thread_title": "返信の連鎖をスレッドとして表示",
+    "thread_desc": "スレッド",
+    "tree_title": "スレッドをツリーとして表示",
+    "tree_desc": "ツリー",
+    "undo_title": "前の投稿を削除",
+    "undo_desc": "前の投稿を削除"
   }
 }

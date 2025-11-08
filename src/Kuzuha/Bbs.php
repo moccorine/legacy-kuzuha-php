@@ -167,6 +167,10 @@ class Bbs extends Webapp
         $formData = $this->getFormData($dtitle, $dmsg, $dlink);
         $formHtml = $this->renderTwig('components/form.twig', $formData);
 
+        # Get stats HTML using Twig
+        $statsData = $this->getStatsData();
+        $statsHtml = $this->renderTwig('components/stats.twig', $statsData);
+
         # HTML header partial output
         $this->sethttpheader();
 
@@ -176,6 +180,7 @@ class Bbs extends Webapp
             'CUSTOMSTYLE' => '',
             'CUSTOMHEAD' => '',
             'FORM' => $formHtml,
+            'STATS' => $statsHtml,
             'TRANS_PR_OFFICE' => Translator::trans('main.pr_office'),
             'TRANS_PR_OFFICE_TITLE' => Translator::trans('main.pr_office_title'),
             'TRANS_EMAIL_ADMIN' => Translator::trans('main.email_admin'),
@@ -330,6 +335,50 @@ class Bbs extends Webapp
      * @param   String  $dmsg       Initial value for the form contents
      * @param   String  $dlink      Initial value for the form link
      */
+    /**
+     * Prepare stats component data for Twig rendering
+     */
+    protected function getStatsData()
+    {
+        return [
+            'COUNTER' => $this->session['COUNTER'] ?? '',
+            'COUNTLEVEL' => $this->config['COUNTLEVEL'] ?? '',
+            'MBRCOUNT' => $this->session['MBRCOUNT'] ?? '',
+            'CNTLIMIT' => $this->config['CNTLIMIT'] ?? '',
+            'LOGSAVE' => $this->config['LOGSAVE'] ?? '',
+            'INFOPAGE' => $this->config['INFOPAGE'] ?? '',
+            'DEFURL' => $this->session['DEFURL'] ?? '',
+            'BBSLINK' => $this->session['BBSLINK'] ?? '',
+            'TXTFOLLOW' => $this->config['TXTFOLLOW'] ?? '',
+            'TXTAUTHOR' => $this->config['TXTAUTHOR'] ?? '',
+            'TXTTHREAD' => $this->config['TXTTHREAD'] ?? '',
+            'TXTTREE' => $this->config['TXTTREE'] ?? '',
+            'TXTUNDO' => $this->config['TXTUNDO'] ?? '',
+            'SHOW_UNDO' => $this->config['ALLOW_UNDO'] && $this->config['BBSMODE_ADMINONLY'] != 1,
+            'TRANS_PAGEVIEW' => Translator::trans('stats.pageview'),
+            'TRANS_BULLETPROOF_LEVEL' => Translator::trans('stats.bulletproof_level'),
+            'TRANS_CURRENT_PARTICIPANTS' => Translator::trans('stats.current_participants'),
+            'TRANS_USERS' => Translator::trans('stats.users'),
+            'TRANS_SECONDS_WITHIN' => Translator::trans('stats.seconds_within'),
+            'TRANS_MAX_POSTS_SAVED' => Translator::trans('stats.max_posts_saved'),
+            'TRANS_POSTS' => Translator::trans('stats.posts'),
+            'TRANS_TO_PR_OFFICE' => Translator::trans('stats.to_pr_office'),
+            'TRANS_PR_OFFICE' => Translator::trans('stats.pr_office'),
+            'TRANS_MESSAGE_LOGS' => Translator::trans('stats.message_logs'),
+            'TRANS_MESSAGE_LOGS_TITLE' => Translator::trans('stats.message_logs_title'),
+            'TRANS_FOLLOW_TITLE' => Translator::trans('stats.follow_title'),
+            'TRANS_FOLLOW_DESC' => Translator::trans('stats.follow_desc'),
+            'TRANS_AUTHOR_TITLE' => Translator::trans('stats.author_title'),
+            'TRANS_AUTHOR_DESC' => Translator::trans('stats.author_desc'),
+            'TRANS_THREAD_TITLE' => Translator::trans('stats.thread_title'),
+            'TRANS_THREAD_DESC' => Translator::trans('stats.thread_desc'),
+            'TRANS_TREE_TITLE' => Translator::trans('stats.tree_title'),
+            'TRANS_TREE_DESC' => Translator::trans('stats.tree_desc'),
+            'TRANS_UNDO_TITLE' => Translator::trans('stats.undo_title'),
+            'TRANS_UNDO_DESC' => Translator::trans('stats.undo_desc'),
+        ];
+    }
+
     /**
      * Prepare form data for Twig rendering
      */

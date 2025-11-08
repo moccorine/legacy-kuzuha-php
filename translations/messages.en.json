@@ -230,5 +230,28 @@
     "unread": "Unread",
     "bottom_btn": "Bottom Alt(+Shift)+B",
     "latest_30": "Latest 30 posts"
+  },
+  "stats": {
+    "pageview": "Page views since 2024/07/10",
+    "bulletproof_level": "bulletproof level",
+    "current_participants": "Current participants",
+    "users": "users",
+    "seconds_within": "seconds within",
+    "max_posts_saved": "Max posts saved",
+    "posts": "posts",
+    "to_pr_office": "To the PR office",
+    "pr_office": "PR office",
+    "message_logs": "Message logs",
+    "message_logs_title": "Browse and search through old posts.",
+    "follow_title": "Post a reply",
+    "follow_desc": "Follow-up post (reply)",
+    "author_title": "List all posts made by the same user",
+    "author_desc": "Search by user",
+    "thread_title": "Display the reply chain as a thread",
+    "thread_desc": "Thread",
+    "tree_title": "Display the thread as a tree",
+    "tree_desc": "Tree",
+    "undo_title": "Delete previous post",
+    "undo_desc": "Delete previous post"
   }
 }

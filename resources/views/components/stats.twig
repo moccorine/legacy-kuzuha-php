@@ -1,0 +1,49 @@
+<br />
+<div>
+  {% if COUNTER %}
+    {{ TRANS_PAGEVIEW }}: {{ COUNTER }} ({{ TRANS_BULLETPROOF_LEVEL }}: {{
+      COUNTLEVEL
+    }})
+  {% endif %}
+  {% if MBRCOUNT %}
+    {{ TRANS_CURRENT_PARTICIPANTS }}: {{ MBRCOUNT }} {{ TRANS_USERS }} ({{
+      CNTLIMIT
+    }}
+    {{ TRANS_SECONDS_WITHIN }})
+  {% endif %}
+  {{ TRANS_MAX_POSTS_SAVED }}: {{ LOGSAVE }}
+  {{ TRANS_POSTS }}
+</div>
+
+<hr />
+<div class="link_row">
+  <a href="{{ INFOPAGE }}" title="{{ TRANS_TO_PR_OFFICE }}">
+    {{ TRANS_PR_OFFICE }}
+  </a>&nbsp;|&nbsp;<a href="{{ DEFURL }}&amp;m=g"
+    target="_blank"
+    title="{{ TRANS_MESSAGE_LOGS_TITLE }}">
+    {{ TRANS_MESSAGE_LOGS }}
+  </a>
+  {{ BBSLINK|raw }}
+</div>
+<p style="margin:5px;"></p>
+<hr />
+<div class="small">
+  <span title="{{ TRANS_FOLLOW_TITLE }}">
+    <a class="help">{{ TXTFOLLOW }}</a>: {{ TRANS_FOLLOW_DESC }}
+  </span>
+  <span title="{{ TRANS_AUTHOR_TITLE }}">
+    <a class="help">{{ TXTAUTHOR }}</a>: {{ TRANS_AUTHOR_DESC }}
+  </span>
+  <span title="{{ TRANS_THREAD_TITLE }}">
+    <a class="help">{{ TXTTHREAD }}</a>: {{ TRANS_THREAD_DESC }}
+  </span>
+  <span title="{{ TRANS_TREE_TITLE }}">
+    <a class="help">{{ TXTTREE }}</a>: {{ TRANS_TREE_DESC }}
+  </span>
+  {% if SHOW_UNDO %}
+    <span title="{{ TRANS_UNDO_TITLE }}">
+      <a class="help">{{ TXTUNDO }}</a>: {{ TRANS_UNDO_DESC }}
+    </span>
+  {% endif %}
+</div>
