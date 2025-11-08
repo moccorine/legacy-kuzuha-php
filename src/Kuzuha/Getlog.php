@@ -842,7 +842,7 @@ class Getlog extends Webapp
                     'TID' => $tid[$i],
                     'TC' => $tc,
                     'TT' => $tt,
-                    'TTITLE' => $ttitle[$tid[$i]],
+                    'TTITLE' => html_entity_decode($ttitle[$tid[$i]], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 ];
             }
             $i++;
