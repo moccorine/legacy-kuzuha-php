@@ -3,7 +3,9 @@
 {% block content %}
   <header>
     <span class="pagetitle">
-      <a href="{{ DEFURL|raw }}" style="text-decoration: none;">{{ BBSTITLE }}</a>
+      <a href="{{ DEFURL|raw }}" style="text-decoration: none;">
+        {{ BBSTITLE }}
+      </a>
     </span>
   </header>
   <h1>
@@ -141,7 +143,9 @@
         value="{{ TRANS_RESTORE }}"
         class="btn"
         title="{{ TRANS_RESTORE_TITLE }}" />
-      <a href="{{ DEFURL|raw }}" title="{{ TRANS_RETURN }}">{{ TRANS_RETURN }}</a>
+      <a href="{{ DEFURL|raw }}" title="{{ TRANS_RETURN }}">
+        {{ TRANS_RETURN }}
+      </a>
     </div>
   </form>
 {% endblock %}

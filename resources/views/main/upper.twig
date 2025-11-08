@@ -24,17 +24,16 @@
     <script type="text/javascript" src="/js/vidembed.js" defer></script>
     <link rel="stylesheet" href="/css/style.css" />
     <style>
-      :root {
-        --color-background: #{{ C_BACKGROUND|default('004040') }};
-        --color-text: #{{ C_TEXT|default('efefef') }};
-        --color-link: #{{ C_A_COLOR|default('cfe') }};
-        --color-visited: #{{ C_A_VISITED|default('ddd') }};
-        --color-active: #{{ C_A_ACTIVE|default('f00') }};
-        --color-hover: #{{ C_A_HOVER|default('1ee') }};
-        --color-subject: #{{ C_SUBJ|default('fffffe') }};
-        --color-quote: #{{ C_QMSG|default('ccc') }};
-        --color-error: #{{ C_ERROR|default('f00') }};
-      }
+      :root { --color-background: #{{ C_BACKGROUND|default('004040') }};
+      --color-text: #{{ C_TEXT|default('efefef') }}; --color-link: #{{
+        C_A_COLOR|default('cfe')
+      }}; --color-visited: #{{ C_A_VISITED|default('ddd') }}; --color-active: #{{
+        C_A_ACTIVE|default('f00')
+      }}; --color-hover: #{{ C_A_HOVER|default('1ee') }}; --color-subject: #{{
+        C_SUBJ|default('fffffe')
+      }}; --color-quote: #{{ C_QMSG|default('ccc') }}; --color-error: #{{
+        C_ERROR|default('f00')
+      }}; }
       {{ CUSTOMSTYLE|default('')|raw }}
     </style>
     {{ CUSTOMHEAD|raw }}
@@ -65,3 +64,5 @@
       </span>
     </header>
     {{ FORM|raw }}
+  </body>
+</html>

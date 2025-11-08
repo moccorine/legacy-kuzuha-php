@@ -1194,7 +1194,8 @@ class Bbs extends Webapp
             }
             $refmessage = $this->getmessage($refdata[0]);
             $refmessage['WDATE'] = DateHelper::getDateString($refmessage['NDATE'], $this->config['DATEFORMAT']);
-            $message['MSG'] .= "\r\r<a href=\"m=f&s={$message['REFID']}&r=&\">Reference: {$refmessage['WDATE']}</a>";
+            $refLabel = Translator::trans('message.reference');
+            $message['MSG'] .= "\r\r<a href=\"m=f&s={$message['REFID']}&r=&\">{$refLabel}: {$refmessage['WDATE']}</a>";
             # Simple self-reply prevention function
             if ($this->config['IPREC'] and $this->config['SHOW_SELFFOLLOW']
                 and $refmessage['PHOST'] != '' and $refmessage['PHOST'] == $message['PHOST']) {

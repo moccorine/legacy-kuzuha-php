@@ -25,7 +25,9 @@
   <hr />
   <pre>
     {%- for topic in topics %}
-      <a href="{{ DEFURL|raw }}&amp;m=t&amp;ff={{ FILENAME }}&amp;s={{ topic.TID }}"
+      <a href="{{ DEFURL|raw }}&amp;m=t&amp;ff={{ FILENAME }}&amp;s={{
+        topic.TID
+        }}"
         target="link">
         {{ TXTTHREAD }}
       </a>

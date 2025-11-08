@@ -61,7 +61,7 @@
             placeholder=""
             title="{{ TRANS_CONTENTS_TITLE }}"
             id="contents2">
-            {{ DMSG }}
+            {{- DMSG|raw -}}
           </textarea>
         </p>
         <p>
@@ -148,7 +148,7 @@
             placeholder=""
             title="{{ TRANS_CONTENTS_TITLE }}"
             id="contents1">
-            {{ DMSG }}
+            {{- DMSG|raw -}}
           </textarea>
         </p>
         {{ KAOMOJI_BUTTONS|raw }}
@@ -227,11 +227,12 @@
       {% if SHOW_COUNTER %}
         {{ TRANS_PAGE_VIEWS }}（{{ COUNTDATE }}以降）: {{ COUNTER }} ({{
           TRANS_BULLETPROOF_LEVEL
-        }}: {{ COUNTLEVEL }})　 {% endif %} {% if SHOW_MBRCOUNT %}
+        }}: {{ COUNTLEVEL }})
+      {% endif %} {% if SHOW_MBRCOUNT %}
         {{ TRANS_CURRENT_PARTICIPANTS }}: {{ MBRCOUNT }} {{ TRANS_USERS }} ({{
           CNTLIMIT
-        }}{{ TRANS_SECONDS }})　 {% endif %} {{ TRANS_MAX_POSTS }}: {{ LOGSAVE
-      }}
+        }}{{ TRANS_SECONDS }})
+      {% endif %} {{ TRANS_MAX_POSTS }}: {{ LOGSAVE }}
       {{ TRANS_POSTS }}
     </div>
   {% endif %}
@@ -308,8 +309,9 @@
       title="{{ TRANS_BOTTOM_BTN }}" />
     <a class="mu"
       href="{{ CGIURL }}?c={{ C }}&amp;d=30&amp;p={{ TOPPOSTID }}&amp;d=30"
-      accesskey="J">{{ TRANS_LATEST_30 }}</a
-    >&nbsp;
+      accesskey="J">
+      {{ TRANS_LATEST_30 }}
+    </a>&nbsp;
     <span class="ngset"></span>
   </div>
 </form>

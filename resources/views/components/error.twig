@@ -1,6 +1,10 @@
-<p class="error">{{ ERR_MESSAGE|raw }}</p>
+<p class="error">
+  {{ ERR_MESSAGE|raw }}
+</p>
 {% if SHOW_BACK_NAVI %}
   <span class="bbsmsg">
-    <a href="{{ DEFURL|raw }}" title="{{ TRANS_RETURN_TITLE }}">{{ TRANS_RETURN }}</a>
+    <a href="{{ DEFURL|raw }}" title="{{ TRANS_RETURN_TITLE }}">
+      {{ TRANS_RETURN }}
+    </a>
   </span>
 {% endif %}
