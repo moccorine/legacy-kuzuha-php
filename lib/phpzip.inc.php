@@ -1,8 +1,9 @@
 <?php
-# 
+
+#
 # PHPZip v1.2 by Sext (sext@neud.net) 2002-11-18
 # 	(Changed: 2003-03-01)
-# 
+#
 # Makes zip archive
 #
 # Based on "Zip file creation class", uses zLib
@@ -12,80 +13,76 @@
 
 class PHPZip
 {
-	function Zip($dir, $zipfilename)
-	{
-    	if (@function_exists('gzcompress'))
-		{	
-			$curdir = getcwd();
-			if (is_array($dir)) 
-			{
-					$filelist = $dir;
-			}
-			else 
-			{
-				$filelist = $this -> GetFileList($dir);
-			}
-			
-			if ((!empty($dir))&&(!is_array($dir))&&(file_exists($dir))) chdir($dir);
-			else chdir($curdir);
+    public function Zip($dir, $zipfilename)
+    {
+        if (@function_exists('gzcompress')) {
+            $curdir = getcwd();
+            if (is_array($dir)) {
+                $filelist = $dir;
+            } else {
+                $filelist = $this -> GetFileList($dir);
+            }
 
-			if (count($filelist)>0)
-			{
-				foreach($filelist as $filename)
-				{
-					if (is_file($filename))
-					{
-						$fd = fopen ($filename, "r");
-						$content = fread ($fd, filesize ($filename));
-						fclose ($fd);
+            if ((!empty($dir)) && (!is_array($dir)) && (file_exists($dir))) {
+                chdir($dir);
+            } else {
+                chdir($curdir);
+            }
 
-						if (is_array($dir)) $filename = basename($filename);
-						$this -> addFile($content, $filename);
-					}
-				}
-				$out = $this -> file();
+            if (count($filelist) > 0) {
+                foreach ($filelist as $filename) {
+                    if (is_file($filename)) {
+                        $fd = fopen($filename, "r");
+                        $content = fread($fd, filesize($filename));
+                        fclose($fd);
 
-				chdir($curdir);
-				$fp = fopen($zipfilename, "w");
-				fwrite($fp, $out, strlen($out));
-				fclose($fp);
-			}
-			return 1;
-		} 
-		else return 0;
-	}
+                        if (is_array($dir)) {
+                            $filename = basename($filename);
+                        }
+                        $this -> addFile($content, $filename);
+                    }
+                }
+                $out = $this -> file();
 
-	function GetFileList($dir)
-	{
-		if (file_exists($dir))
-		{
-			$args = func_get_args();
-			$pref = $args[1];
-   	
-			$dh = opendir($dir);
-			while($files = readdir($dh))
-			{
-				if (($files!=".")&&($files!="..")) 
-				{
-					if (is_dir($dir.$files)) 
-					{
-						$curdir = getcwd();
-						chdir($dir.$files);
-						$file = array_merge($file, $this -> GetFileList("", "$pref$files/"));
-						chdir($curdir);
-					}
-					else $file[]=$pref.$files;
-				}
-			}
-			closedir($dh);
-		}
-		return $file;
-	}
+                chdir($curdir);
+                $fp = fopen($zipfilename, "w");
+                fwrite($fp, $out, strlen($out));
+                fclose($fp);
+            }
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 
-    var $datasec      = array();
-    var $ctrl_dir     = array();
-    var $eof_ctrl_dir = "\x50\x4b\x05\x06\x00\x00\x00\x00";
-    var $old_offset   = 0;
+    public function GetFileList($dir)
+    {
+        if (file_exists($dir)) {
+            $args = func_get_args();
+            $pref = $args[1];
+
+            $dh = opendir($dir);
+            while ($files = readdir($dh)) {
+                if (($files != ".") && ($files != "..")) {
+                    if (is_dir($dir.$files)) {
+                        $curdir = getcwd();
+                        chdir($dir.$files);
+                        $file = array_merge($file, $this -> GetFileList("", "$pref$files/"));
+                        chdir($curdir);
+                    } else {
+                        $file[] = $pref.$files;
+                    }
+                }
+            }
+            closedir($dh);
+        }
+        return $file;
+    }
+
+    public $datasec      = array();
+    public $ctrl_dir     = array();
+    public $eof_ctrl_dir = "\x50\x4b\x05\x06\x00\x00\x00\x00";
+    public $old_offset   = 0;
 
     /**
      * Converts an Unix timestamp to a four byte DOS date and time format (date
@@ -97,16 +94,17 @@ class PHPZip
      *
      * @access private
      */
-    function unix2DosTime($unixtime = 0) {
+    public function unix2DosTime($unixtime = 0)
+    {
         $timearray = ($unixtime == 0) ? getdate() : getdate($unixtime);
 
         if ($timearray['year'] < 1980) {
-        	$timearray['year']    = 1980;
-        	$timearray['mon']     = 1;
-        	$timearray['mday']    = 1;
-        	$timearray['hours']   = 0;
-        	$timearray['minutes'] = 0;
-        	$timearray['seconds'] = 0;
+            $timearray['year']    = 1980;
+            $timearray['mon']     = 1;
+            $timearray['mday']    = 1;
+            $timearray['hours']   = 0;
+            $timearray['minutes'] = 0;
+            $timearray['seconds'] = 0;
         } // end if
 
         return (($timearray['year'] - 1980) << 25) | ($timearray['mon'] << 21) | ($timearray['mday'] << 16) |
@@ -123,7 +121,7 @@ class PHPZip
      *
      * @access public
      */
-    function addFile($data, $name, $time = 0)
+    public function addFile($data, $name, $time = 0)
     {
         $name     = str_replace('\\', '/', $name);
 
@@ -176,14 +174,14 @@ class PHPZip
         $cdrec .= pack('V', $crc);           // crc32
         $cdrec .= pack('V', $c_len);         // compressed filesize
         $cdrec .= pack('V', $unc_len);       // uncompressed filesize
-        $cdrec .= pack('v', strlen($name) ); // length of filename
-        $cdrec .= pack('v', 0 );             // extra field length
-        $cdrec .= pack('v', 0 );             // file comment length
-        $cdrec .= pack('v', 0 );             // disk number start
-        $cdrec .= pack('v', 0 );             // internal file attributes
-        $cdrec .= pack('V', 32 );            // external file attributes - 'archive' bit set
+        $cdrec .= pack('v', strlen($name)); // length of filename
+        $cdrec .= pack('v', 0);             // extra field length
+        $cdrec .= pack('v', 0);             // file comment length
+        $cdrec .= pack('v', 0);             // disk number start
+        $cdrec .= pack('v', 0);             // internal file attributes
+        $cdrec .= pack('V', 32);            // external file attributes - 'archive' bit set
 
-        $cdrec .= pack('V', $this -> old_offset ); // relative offset of local header
+        $cdrec .= pack('V', $this -> old_offset); // relative offset of local header
         $this -> old_offset = $new_offset;
 
         $cdrec .= $name;
@@ -201,7 +199,7 @@ class PHPZip
      *
      * @access public
      */
-    function file()
+    public function file()
     {
         $data    = implode('', $this -> datasec);
         $ctrldir = implode('', $this -> ctrl_dir);
@@ -219,4 +217,3 @@ class PHPZip
 
 
 } // end of the 'PHPZip' class
-?>

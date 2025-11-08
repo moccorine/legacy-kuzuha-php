@@ -14,8 +14,8 @@ http://www.hlla.is.tsukuba.ac.jp/~yas/gen/it-2002-10-28/
 
 */
 
-if(!defined("INCLUDED_FROM_BBS")) {
-    header ("Location: ../bbs.php?m=tree");
+if (!defined("INCLUDED_FROM_BBS")) {
+    header("Location: ../bbs.php?m=tree");
     exit();
 }
 
@@ -53,14 +53,15 @@ $GLOBALS['CONF_TREEVIEW'] = [
  * @package strangeworld.cnscript
  * @access  public
  */
-class Treeview extends Bbs {
-
+class Treeview extends Bbs
+{
     /**
      * Constructor
      *
      */
-    function __construct() {
-        $GLOBALS['CONF'] = array_merge ($GLOBALS['CONF'], $GLOBALS['CONF_TREEVIEW']);
+    public function __construct()
+    {
+        $GLOBALS['CONF'] = array_merge($GLOBALS['CONF'], $GLOBALS['CONF_TREEVIEW']);
         parent::__construct();
         $this->t->readTemplatesFromFile($this->c['TEMPLATE_TREEVIEW']);
     }
@@ -70,7 +71,8 @@ class Treeview extends Bbs {
      * Main processing
      */
     #[\Override]
-    function main() {
+    public function main()
+    {
 
         # Start measuring execution time
         $this->setstarttime();
@@ -109,35 +111,33 @@ class Treeview extends Bbs {
                 $this->prttreeview();
             }
             # Protect code redisplaying due to time lapse
-            else if ($posterr == 2) {
+            elseif ($posterr == 2) {
                 if (@$this->f['f']) {
-                    $this->prtfollow(TRUE);
-                }
-                else {
-                    $this->prttreeview(TRUE);
+                    $this->prtfollow(true);
+                } else {
+                    $this->prttreeview(true);
                 }
             }
             # Admin mode transition
-            else if ($posterr == 3) {
-                define('BBS_ACTIVATED', TRUE);
+            elseif ($posterr == 3) {
+                define('BBS_ACTIVATED', true);
                 require_once(PHP_BBSADMIN);
                 $bbsadmin = new Bbsadmin($this);
                 $bbsadmin->main();
             }
             # Post completion page
-            else if (@$this->f['f']) {
+            elseif (@$this->f['f']) {
                 $this->prtputcomplete();
-            }
-            else {
+            } else {
                 $this->prttreeview();
             }
         }
         # User settings page display
-        else if (@$this->f['setup']) {
+        elseif (@$this->f['setup']) {
             $this->prtcustom('tree');
         }
         # Tree view of threads
-        else if (@$this->f['s']) {
+        elseif (@$this->f['s']) {
             $this->prtthreadtree();
         }
         # Tree view main page
@@ -159,23 +159,24 @@ class Treeview extends Bbs {
      *
      * @todo  Measures for when some logs are deleted/removed
      */
-    function prttreeview($retry = FALSE) {
+    public function prttreeview($retry = false)
+    {
 
         # Get display message
         [$logdata, $bindex, $eindex, $lastindex] = $this->getdispmessage();
 
-        $isreadnew = FALSE;
-#20200210 Gikoneko: unread pointer fix
-#        if ((@$this->f['readnew'] or ($this->s['MSGDISP'] == '0' and $bindex == 1)) and @$this->f['p'] > 0) {
-        if ((@$this->f['readnew'] or ($this->s['MSGDISP'] == '0' )) and @$this->f['p'] > 0) {
-            $isreadnew = TRUE;
+        $isreadnew = false;
+        #20200210 Gikoneko: unread pointer fix
+        #        if ((@$this->f['readnew'] or ($this->s['MSGDISP'] == '0' and $bindex == 1)) and @$this->f['p'] > 0) {
+        if ((@$this->f['readnew'] or ($this->s['MSGDISP'] == '0')) and @$this->f['p'] > 0) {
+            $isreadnew = true;
         }
 
         $customstyle = $this->t->getParsedTemplate('tree_customstyle');
 
         # HTML header partial output
         $this->sethttpheader();
-        print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Tree view', '', $customstyle);
+        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Tree view', '', $customstyle);
 
         # Form section
         $dtitle = "";
@@ -187,7 +188,7 @@ class Treeview extends Bbs {
             $dlink = @$this->f['l'];
         }
         $forminput = '<input type="hidden" name="m" value="tree" /><input type="hidden" name="treem" value="p" />';
-        $this->setform ($dtitle, $dmsg, $dlink, $forminput);
+        $this->setform($dtitle, $dmsg, $dlink, $forminput);
 
         # Upper main section
         $this->t->displayParsedTemplate('treeview_upper');
@@ -215,30 +216,28 @@ class Treeview extends Bbs {
                     if ($message['POSTID'] == $message['THREAD'] or !$message['THREAD']) {
                         break;
                     }
-                }
-                else {
+                } else {
                     $i++;
                 }
             }
 
             # Unread reload
             if ($isreadnew) {
-                $hit = FALSE;
+                $hit = false;
                 for ($i = 0; $i < count($thread); $i++) {
                     if ($thread[$i]['POSTID'] > $this->f['p']) {
-                        $hit = TRUE;
+                        $hit = true;
                         break;
                     }
                 }
                 if (!$hit) {
                     continue;
                 }
-            }
-            else if ($this->s['MSGDISP'] < 0) {
+            } elseif ($this->s['MSGDISP'] < 0) {
                 break;
             }
             # Beginning index
-            else if ($threadindex < $bindex - 1) {
+            elseif ($threadindex < $bindex - 1) {
                 $threadindex++;
                 continue;
             }
@@ -248,8 +247,7 @@ class Treeview extends Bbs {
                 if (!@$message['REFID']) {
                     if (preg_match("/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
                         $message['REFID'] = $matches[1];
-                    }
-                    else if (preg_match("/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
+                    } elseif (preg_match("/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
                         $message['REFID'] = $matches[1];
                     }
                 }
@@ -270,11 +268,9 @@ class Treeview extends Bbs {
         # Message information
         if ($this->s['MSGDISP'] < 0) {
             $msgmore = '';
-        }
-        else if ($eindex > 0) {
+        } elseif ($eindex > 0) {
             $msgmore = "Shown above are threads {$bindex} through {$eindex}, displayed in order of most recently updated to least recently updated.";
-        }
-        else {
+        } else {
             $msgmore = 'There are no unread messages. ';
         }
         if (count($logdata) == 0) {
@@ -287,8 +283,7 @@ class Treeview extends Bbs {
         if ($eindex > 0) {
             if ($eindex >= $lastindex) {
                 $this->t->setAttribute("nextpage", "visibility", "hidden");
-            }
-            else {
+            } else {
                 $this->t->addVar('nextpage', 'EINDEX', $eindex);
             }
             if (!$this->c['SHOW_READNEWBTN']) {
@@ -304,7 +299,7 @@ class Treeview extends Bbs {
         # Lower main section
         $this->t->displayParsedTemplate('treeview_lower');
 
-        print $this->prthtmlfoot ();
+        print $this->prthtmlfoot();
     }
 
 
@@ -317,28 +312,29 @@ class Treeview extends Bbs {
      * @param   Array   &$msgcurrent  Parent message
      * @param   Array   &$thread      Array of messages containing parents and children
      */
-    function prttexttree(&$msgcurrent, &$thread) {
+    public function prttexttree(&$msgcurrent, &$thread)
+    {
 
         print "<pre class=\"msgtree\"><a href=\"{$this->s['DEFURL']}&amp;m=t&amp;s={$msgcurrent['THREAD']}\" target=\"link\">{$this->c['TXTTHREAD']}</a>";
         $msgcurrent['WDATE'] = Func::getdatestr($msgcurrent['NDATE']);
         print "<span class=\"update\"> [Date updated: {$msgcurrent['WDATE']}]</span>\r";
-        $tree =& $this->gentree(array_reverse($thread), $msgcurrent['THREAD']);
+        $tree = & $this->gentree(array_reverse($thread), $msgcurrent['THREAD']);
         $tree = str_replace("</span><span class=\"bc\">", "", $tree);
         $tree = str_replace("</span>　<span class=\"bc\">", "　", $tree);
         $tree = '　' . str_replace("\r", "\r　", $tree);
 
         #20181110 Gikoneko: Escape special characters
-        $tree = str_replace("{","&#123;", $tree);
-        $tree = str_replace("}","&#125;", $tree);
+        $tree = str_replace("{", "&#123;", $tree);
+        $tree = str_replace("}", "&#125;", $tree);
 
-    #20200207 Gikoneko: span style=tag enabled
-#    $tree = preg_replace("/&lt;span style=&quot;(.+?)&quot;&gt;(.+?)&lt;\/span&gt;/","<span style=\"$1\">$2</span>", $tree);
+        #20200207 Gikoneko: span style=tag enabled
+        #    $tree = preg_replace("/&lt;span style=&quot;(.+?)&quot;&gt;(.+?)&lt;\/span&gt;/","<span style=\"$1\">$2</span>", $tree);
 
-    #20200207 Gikoneko: font color="tag enabled
-#    $tree = preg_replace("/&lt;font color=&quot;([a-zA-Z#0-9]+)&quot;&gt;(.+?)&lt;\/font&gt;/","<font color=\"$1\">$2</font>", $tree);
+        #20200207 Gikoneko: font color="tag enabled
+        #    $tree = preg_replace("/&lt;font color=&quot;([a-zA-Z#0-9]+)&quot;&gt;(.+?)&lt;\/font&gt;/","<font color=\"$1\">$2</font>", $tree);
 
-    #20200201 Gikoneko: font color=tag enabled
-#    $tree = preg_replace("/&lt;font color=([a-zA-Z#0-9]+)&gt;(.+?)&lt;\/font&gt;/","<font color=$1>$2</font>", $tree);
+        #20200201 Gikoneko: font color=tag enabled
+        #    $tree = preg_replace("/&lt;font color=([a-zA-Z#0-9]+)&gt;(.+?)&lt;\/font&gt;/","<font color=$1>$2</font>", $tree);
 
         #20181110 Gikoneko: Unicode conversion
         #$tree  = preg_replace("/&amp;#(\d+);/","&#$1;", $tree );
@@ -360,7 +356,8 @@ class Treeview extends Bbs {
      * @param   Integer $parentid   Parent ID
      * @return  String  &$treeprint Parent-child tree string
      */
-    function &gentree(&$treemsgs, $parentid) {
+    public function &gentree(&$treemsgs, $parentid)
+    {
 
         # Tree string
         $treeprint = '';
@@ -379,7 +376,7 @@ class Treeview extends Bbs {
                 $treemsg['MSG'] = rtrim($treemsg['MSG']);
 
                 #20181117 Gikoneko: Personal word filter
-                $treemsg['MSG']  = preg_replace("/(.+)/","<span class= \"ngline\">$1</span>\r", $treemsg['MSG']);
+                $treemsg['MSG']  = preg_replace("/(.+)/", "<span class= \"ngline\">$1</span>\r", $treemsg['MSG']);
 
                 # Link to the follow-up post page
                 $treeprint .= "<a href=\"{$this->s['DEFURL']}&amp;m=f&amp;s={$parentid}\" target=\"link\">{$this->c['TXTFOLLOW']}</a>";
@@ -426,7 +423,7 @@ class Treeview extends Bbs {
         # Get the tree strings of children and join them together
         $childidcount = count($childids) - 1;
         foreach ($childids as $idx => $childid) {
-            $childtree =& $this->gentree($treemsgs, $childid);
+            $childtree = & $this->gentree($treemsgs, $childid);
 
             # If there's another child, extend from "├" branch with a "│"
             if ($idx < $childidcount) {
@@ -459,23 +456,22 @@ class Treeview extends Bbs {
      * @return  Integer $msgdisp      Display results
      */
     #[\Override]
-    function getdispmessage() {
+    public function getdispmessage()
+    {
 
         $logdata = $this->loadmessage();
 
         # Unread pointer (latest POSTID)
-        $items = @explode (',', (string) $logdata[0], 3);
+        $items = @explode(',', (string) $logdata[0], 3);
         $toppostid = @$items[1];
 
         # Display results
         $msgdisp = Func::fixnumberstr(@$this->f['d']);
-        if ($msgdisp === FALSE) {
+        if ($msgdisp === false) {
             $msgdisp = $this->c['TREEDISP'];
-        }
-        else if ($msgdisp < 0) {
+        } elseif ($msgdisp < 0) {
             $msgdisp = -1;
-        }
-        else if ($msgdisp > $this->c['LOGSAVE']) {
+        } elseif ($msgdisp > $this->c['LOGSAVE']) {
             $msgdisp = $this->c['LOGSAVE'];
         }
         if (@$this->f['readzero']) {
@@ -492,12 +488,12 @@ class Treeview extends Bbs {
         $eindex = $bindex + $msgdisp;
 
         # Unread reload
-#20200210 Gikoneko: unread pointer fix
-#        if ((@$this->f['readnew'] or ($msgdisp == '0' and $bindex == 0)) and @$this->f['p'] > 0) {
-        if ((@$this->f['readnew'] or ($msgdisp == '0' )) and @$this->f['p'] > 0) {
+        #20200210 Gikoneko: unread pointer fix
+        #        if ((@$this->f['readnew'] or ($msgdisp == '0' and $bindex == 0)) and @$this->f['p'] > 0) {
+        if ((@$this->f['readnew'] or ($msgdisp == '0')) and @$this->f['p'] > 0) {
             $bindex = 0;
-#            $eindex = 0;
-      $eindex = $toppostid - $this->f['p'];
+            #            $eindex = 0;
+            $eindex = $toppostid - $this->f['p'];
         }
 
         # For the last page, truncate
@@ -515,11 +511,11 @@ class Treeview extends Bbs {
         $this->s['TOPPOSTID'] = $toppostid;
         $this->s['MSGDISP'] = $msgdisp;
 
-#20200210 Gikoneko: unread pointer fix
-    $this->t->addGlobalVars([
-      'TOPPOSTID' => $this->s['TOPPOSTID'],
-      'MSGDISP' => $this->s['MSGDISP']
-    ]);
+        #20200210 Gikoneko: unread pointer fix
+        $this->t->addGlobalVars([
+          'TOPPOSTID' => $this->s['TOPPOSTID'],
+          'MSGDISP' => $this->s['MSGDISP']
+        ]);
         return [$logdata, $bindex + 1, $eindex, $lastindex];
     }
 
@@ -531,10 +527,11 @@ class Treeview extends Bbs {
      * Tree view of individual threads
      *
      */
-    function prtthreadtree() {
+    public function prtthreadtree()
+    {
 
         if (!@$this->f['s']) {
-            $this->prterror ( 'There are no parameters.' );
+            $this->prterror('There are no parameters.');
         }
 
         $customstyle = <<<__XHTML__
@@ -545,14 +542,13 @@ class Treeview extends Bbs {
 __XHTML__;
 
         $this->sethttpheader();
-        print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Tree view', '', $customstyle);
+        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Tree view', '', $customstyle);
         print "<hr>\n";
 
         $result = $this->msgsearchlist('t');
         if (@$this->f['ff']) {
             $msgcurrent = $result[count($result) - 1];
-        }
-        else {
+        } else {
             $msgcurrent = $result[0];
         }
         $this->prttexttree($msgcurrent, $result);
@@ -561,7 +557,7 @@ __XHTML__;
 <span class="bbsmsg"><a href="{$this->s['DEFURL']}">Return</a></span>
 __XHTML__;
 
-        print $this->prthtmlfoot ();
+        print $this->prthtmlfoot();
 
     }
 
@@ -570,6 +566,3 @@ __XHTML__;
 
 
 }
-
-
-?>

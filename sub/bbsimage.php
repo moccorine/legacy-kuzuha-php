@@ -12,8 +12,8 @@ BBS with image upload function module
 
 */
 
-if(!defined("INCLUDED_FROM_BBS")) {
-    header ("Location: ../bbs.php");
+if (!defined("INCLUDED_FROM_BBS")) {
+    header("Location: ../bbs.php");
     exit();
 }
 
@@ -80,14 +80,15 @@ $GLOBALS['CONF_IMAGEBBS'] = [
  * @package strangeworld.cnscript
  * @access  public
  */
-class Imagebbs extends Bbs {
-
+class Imagebbs extends Bbs
+{
     /**
      * Constructor
      *
      */
-    function __construct() {
-        $GLOBALS['CONF'] = array_merge ($GLOBALS['CONF'], $GLOBALS['CONF_IMAGEBBS']);
+    public function __construct()
+    {
+        $GLOBALS['CONF'] = array_merge($GLOBALS['CONF'], $GLOBALS['CONF_IMAGEBBS']);
         parent::__construct();
     }
 
@@ -99,7 +100,8 @@ class Imagebbs extends Bbs {
      * Reflect personal settings
      */
     #[\Override]
-    function refcustom() {
+    public function refcustom()
+    {
         $this->c['SHOWIMG'] = 1;
 
         parent::refcustom();
@@ -119,8 +121,11 @@ class Imagebbs extends Bbs {
      * @return  String  Form HTML data
      */
     #[\Override]
-    function setform($dtitle, $dmsg, $dlink, $mode = '') {
-        if ($this->c['SHOWIMG']) $this->t->addVar('sicheck', 'CHK_SI', ' checked="checked"');
+    public function setform($dtitle, $dmsg, $dlink, $mode = '')
+    {
+        if ($this->c['SHOWIMG']) {
+            $this->t->addVar('sicheck', 'CHK_SI', ' checked="checked"');
+        }
         $this->t->addVar('postform', 'MAX_FILE_SIZE', $this->c['MAX_IMAGESIZE'] * 1024);
         $this->t->addVar('postform', 'mode', 'image');
         $this->t->setAttribute('sicheck', 'visibility', 'visible');
@@ -138,7 +143,8 @@ class Imagebbs extends Bbs {
      * @return  Array  Message array
      */
     #[\Override]
-    function getformmessage() {
+    public function getformmessage()
+    {
 
         $message = parent::getformmessage();
 
@@ -152,23 +158,23 @@ class Imagebbs extends Bbs {
             if ($_FILES['file']['error'] == 2
             or (file_exists($_FILES['file']['tmp_name'])
             and filesize($_FILES['file']['tmp_name']) > ($this->c['MAX_IMAGESIZE'] * 1024))) {
-                $this->prterror( 'The file size is over ' .$this->c['MAX_IMAGESIZE'] .'KB.');
+                $this->prterror('The file size is over ' .$this->c['MAX_IMAGESIZE'] .'KB.');
             }
 
             if ($_FILES['file']['error'] > 0
             or !is_uploaded_file($_FILES['file']['tmp_name'])) {
-                $this->prterror( 'File upload process failed. Code: ' . $_FILES['file']['error']);
+                $this->prterror('File upload process failed. Code: ' . $_FILES['file']['error']);
             }
 
             # Locking the image upload process
             $fh = @fopen($this->c['UPLOADIDFILE'], "rb+");
             if (!$fh) {
-                $this->prterror ( 'Failed to load the uploaded image file.' );
+                $this->prterror('Failed to load the uploaded image file.');
             }
-            flock ($fh, 2);
+            flock($fh, 2);
 
             # Obtain file ID
-            $fileid = trim(fgets ($fh, 10));
+            $fileid = trim(fgets($fh, 10));
             if (!$fileid) {
                 $fileid = 0;
             }
@@ -176,8 +182,8 @@ class Imagebbs extends Bbs {
             # File type check
             $imageinfo = GetImageSize($_FILES['file']['tmp_name']);
             if ($imageinfo[0] > $this->c['MAX_IMAGEWIDTH'] or $imageinfo[1] > $this->c['MAX_IMAGEHEIGHT']) {
-                unlink ($_FILES['file']['tmp_name']);
-                $this->prterror ( 'The width of the image exceeds the limit.' );
+                unlink($_FILES['file']['tmp_name']);
+                $this->prterror('The width of the image exceeds the limit.');
             }
 
             # GIF
@@ -186,29 +192,28 @@ class Imagebbs extends Bbs {
                 $fileext = '.gif';
             }
             # JPG
-            else if ($imageinfo[2] == 2) {
+            elseif ($imageinfo[2] == 2) {
                 $filetype = 'JPG';
                 $fileext = '.jpg';
             }
             # PNG
-            else if ($imageinfo[2] == 3) {
+            elseif ($imageinfo[2] == 3) {
                 $filetype = 'PNG';
                 $fileext = '.png';
-            }
-            else {
-                unlink ($_FILES['file']['tmp_name']);
-                $this->prterror ('The file format is incorrect.');
+            } else {
+                unlink($_FILES['file']['tmp_name']);
+                $this->prterror('The file format is incorrect.');
             }
 
             $fileid++;
             $filename = $this->c['UPLOADDIR'] . str_pad($fileid, 5, "0", STR_PAD_LEFT) . '_' . date("YmdHis", CURRENT_TIME) . $fileext;
 
-            copy ($_FILES['file']['tmp_name'], $filename);
-            unlink ($_FILES['file']['tmp_name']);
+            copy($_FILES['file']['tmp_name'], $filename);
+            unlink($_FILES['file']['tmp_name']);
 
             $message['FILEID'] = $fileid;
             $message['FILENAME'] = $filename;
-            $message['FILEMSG'] = '画像'.str_pad($fileid, 5, "0", STR_PAD_LEFT)." $filetype {$imageinfo[0]}*{$imageinfo[1]} ".floor(filesize($filename)/1024)."KB";
+            $message['FILEMSG'] = '画像'.str_pad($fileid, 5, "0", STR_PAD_LEFT)." $filetype {$imageinfo[0]}*{$imageinfo[1]} ".floor(filesize($filename) / 1024)."KB";
             $message['FILETAG'] = "<a href=\"{$filename}\" target=\"link\">"
             . "<img src=\"{$filename}\" width=\"{$imageinfo[0]}\" height=\"{$imageinfo[1]}\" border=\"0\" alt=\"{$message['FILEMSG']}\" /></a>";
 
@@ -216,21 +221,19 @@ class Imagebbs extends Bbs {
             if (str_contains((string) $message['MSG'], (string) $this->c['IMAGETEXT'])) {
                 $message['MSG'] = preg_replace("/\Q{$this->c['IMAGETEXT']}\E/", $message['FILETAG'], (string) $message['MSG'], 1);
                 $message['MSG'] = preg_replace("/\Q{$this->c['IMAGETEXT']}\E/", '', $message['MSG']);
-            }
-            else {
+            } else {
                 if (preg_match("/\r\r<a href=[^<]+>Reference: [^<]+<\/a>$/", (string) $message['MSG'])) {
                     $message['MSG'] = preg_replace("/(\r\r<a href=[^<]+>Reference: [^<]+<\/a>)$/", "\r\r{$message['FILETAG']}$1", (string) $message['MSG'], 1);
-                }
-                else {
+                } else {
                     $message['MSG'] .= "\r\r" . $message['FILETAG'];
                 }
             }
 
-            fseek ($fh, 0, 0);
-            ftruncate ($fh, 0);
-            fwrite ($fh, $fileid);
-            flock ($fh, 3);
-            fclose ($fh);
+            fseek($fh, 0, 0);
+            ftruncate($fh, 0);
+            fwrite($fh, $fileid);
+            flock($fh, 3);
+            fclose($fh);
         }
 
         return $message;
@@ -248,14 +251,14 @@ class Imagebbs extends Bbs {
      * @return  Integer  Error code
      */
     #[\Override]
-    function putmessage($message) {
+    public function putmessage($message)
+    {
 
         $posterr = parent::putmessage($message);
 
         if ($posterr) {
             return $posterr;
-        }
-        else {
+        } else {
 
             $dirspace = 0;
             $maxspace = $this->c['MAX_UPLOADSPACE'] * 1024;
@@ -271,14 +274,14 @@ class Imagebbs extends Bbs {
                     $dirspace += filesize($this->c['UPLOADDIR'] . $entry);
                 }
             }
-            closedir ($dh);
+            closedir($dh);
 
             # Delete old images
             if ($dirspace > $maxspace) {
                 sort($files);
                 foreach ($files as $filepath) {
                     $dirspace -= filesize($filepath);
-                    unlink ($filepath);
+                    unlink($filepath);
                     if ($dirspace <= $maxspace) {
                         break;
                     }
@@ -289,5 +292,3 @@ class Imagebbs extends Bbs {
     }
 
 }
-
-?>

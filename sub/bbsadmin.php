@@ -7,8 +7,8 @@ Admin mode module
 
 */
 
-if(!defined("INCLUDED_FROM_BBS")) {
-    header ("Location: ../bbs.php");
+if (!defined("INCLUDED_FROM_BBS")) {
+    header("Location: ../bbs.php");
     exit();
 }
 
@@ -22,15 +22,16 @@ if(!defined("INCLUDED_FROM_BBS")) {
  * @package strangeworld.cnscript
  * @access  public
  */
-class Bbsadmin extends Webapp {
-
+class Bbsadmin extends Webapp
+{
     public $bbs;
 
     /**
      * Constructor
      *
      */
-    function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         if (func_num_args() > 0) {
             $this->bbs = func_get_arg(0);
@@ -45,7 +46,8 @@ class Bbsadmin extends Webapp {
     /**
      * Main process
      */
-    function main() {
+    public function main()
+    {
 
         if (!defined('BBS_ACTIVATED')) {
 
@@ -67,29 +69,29 @@ class Bbsadmin extends Webapp {
 
         # Log file viewer
         if (@$this->f['ad'] == 'l') {
-            $this->prtlogview(TRUE);
+            $this->prtlogview(true);
         }
         # Message deletion mode
-        else if (@$this->f['ad'] == 'k') {
+        elseif (@$this->f['ad'] == 'k') {
             $this->prtkilllist();
         }
         # Message deletion process
-        else if (@$this->f['ad'] == 'x') {
+        elseif (@$this->f['ad'] == 'x') {
             if (isset($this->f['x'])) {
                 $this->killmessage($this->f['x']);
             }
             $this->prtkilllist();
         }
         # Encrypted password generation page
-        else if (@$this->f['ad'] == 'p') {
+        elseif (@$this->f['ad'] == 'p') {
             $this->prtsetpass();
         }
         # Encrypted password generation & display
-        else if (@$this->f['ad'] == 'ps') {
+        elseif (@$this->f['ad'] == 'ps') {
             $this->prtpass(@$this->f['ps']);
         }
         # Display server PHP configuration information
-        else if (@$this->f['ad'] == 'phpinfo') {
+        elseif (@$this->f['ad'] == 'phpinfo') {
             phpinfo();
         }
         # Admin menu page
@@ -111,14 +113,15 @@ class Bbsadmin extends Webapp {
      * Admin menu page
      *
      */
-    function prtadminmenu() {
+    public function prtadminmenu()
+    {
 
         $this->t->addVar('adminmenu', 'V', trim((string) $this->f['v']));
 
         $this->sethttpheader();
-        print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Administration menu');
+        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Administration menu');
         $this->t->displayParsedTemplate('adminmenu');
-        print $this->prthtmlfoot ();
+        print $this->prthtmlfoot();
 
     }
 
@@ -130,7 +133,8 @@ class Bbsadmin extends Webapp {
      * Message deletion mode main page display
      *
      */
-    function prtkilllist() {
+    public function prtkilllist()
+    {
 
         if (!file_exists($this->c['LOGFILENAME'])) {
             $this->prterror('Failed to load message');
@@ -159,9 +163,9 @@ class Bbsadmin extends Webapp {
         $this->t->addRows('killmessage', $messages);
 
         $this->sethttpheader();
-        print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Message deletion mode');
+        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Message deletion mode');
         $this->t->displayParsedTemplate('killlist');
-        print $this->prthtmlfoot ();
+        print $this->prthtmlfoot();
     }
 
 
@@ -172,7 +176,8 @@ class Bbsadmin extends Webapp {
      * Message deletion process
      *
      */
-    function killmessage($killids) {
+    public function killmessage($killids)
+    {
 
         if (!$killids) {
             return;
@@ -185,14 +190,14 @@ class Bbsadmin extends Webapp {
 
         $fh = @fopen($this->c['LOGFILENAME'], "r+");
         if (!$fh) {
-            $this->prterror ( 'Failed to load message' );
+            $this->prterror('Failed to load message');
         }
-        flock ($fh, 2);
-        fseek ($fh, 0, 0);
+        flock($fh, 2);
+        fseek($fh, 0, 0);
 
         $logdata = [];
-        while (($logline = Func::fgetline($fh)) !== FALSE) {
-             $logdata[] = $logline;
+        while (($logline = Func::fgetline($fh)) !== false) {
+            $logdata[] = $logline;
         }
 
         $killntimes = [];
@@ -201,27 +206,26 @@ class Bbsadmin extends Webapp {
         $i = 0;
         while ($i < count($logdata)) {
             $items = explode(',', $logdata[$i], 3);
-            if (count($items) > 2 and array_search($items[1], $killids) !== FALSE) {
+            if (count($items) > 2 and array_search($items[1], $killids) !== false) {
                 $killntimes[$items[1]] = $items[0];
                 $killlogdata[] = $logdata[$i];
-            }
-            else {
+            } else {
                 $newlogdata[] = $logdata[$i];
             }
             $i++;
         }
         {
-            fseek ($fh, 0, 0);
-            ftruncate ($fh, 0);
-            fwrite ($fh, implode ('', $newlogdata));
+            fseek($fh, 0, 0);
+            ftruncate($fh, 0);
+            fwrite($fh, implode('', $newlogdata));
         }
-        flock ($fh, 3);
-        fclose ($fh);
+        flock($fh, 3);
+        fclose($fh);
 
         # Image deletion
         foreach ($killlogdata as $eachlogdata) {
             if (preg_match("/<img [^>]*?src=\"([^\"]+)\"[^>]+>/i", $eachlogdata, $matches) and file_exists($matches[1])) {
-                unlink ($matches[1]);
+                unlink($matches[1]);
             }
         }
 
@@ -231,67 +235,61 @@ class Bbsadmin extends Webapp {
                 $oldlogfilename = '';
                 if ($this->c['OLDLOGFMT']) {
                     $oldlogext = 'dat';
-                }
-                else {
+                } else {
                     $oldlogext = 'html';
                 }
                 if ($this->c['OLDLOGSAVESW']) {
                     $oldlogfilename = date("Ym", $killntimes[$killid]) . ".$oldlogext";
-                }
-                else {
+                } else {
                     $oldlogfilename = date("Ymd", $killntimes[$killid]) . ".$oldlogext";
                 }
                 $fh = @fopen($this->c['OLDLOGFILEDIR'] . $oldlogfilename, "r+");
                 if ($fh) {
-                    flock ($fh, 2);
-                    fseek ($fh, 0, 0);
+                    flock($fh, 2);
+                    fseek($fh, 0, 0);
 
                     $newlogdata = [];
-                    $hit = FALSE;
+                    $hit = false;
 
                     if ($this->c['OLDLOGFMT']) {
                         $needle = $killntimes[$killid] . "," . $killid . ",";
-                        while (($logline = Func::fgetline($fh)) !== FALSE) {
+                        while (($logline = Func::fgetline($fh)) !== false) {
                             if (!$hit and str_contains($logline, $needle) and str_starts_with($logline, $needle)) {
-                                $hit = TRUE;
-                            }
-                            else {
+                                $hit = true;
+                            } else {
                                 $newlogdata[] = $logline;
                             }
                         }
-                    }
-                    else {
+                    } else {
                         $needle = "<div class=\"m\" id=\"m{$killid}\">";
-                        $flgbuffer = FALSE;
-                        while (($htmlline = Func::fgetline($fh)) !== FALSE) {
+                        $flgbuffer = false;
+                        while (($htmlline = Func::fgetline($fh)) !== false) {
 
                             # Start of message
                             if (!$hit and str_contains($htmlline, $needle)) {
-                                $hit = TRUE;
-                                $flgbuffer = TRUE;
+                                $hit = true;
+                                $flgbuffer = true;
                             }
                             # End of message
-                            else if ($flgbuffer and str_contains($htmlline, "<hr")) {
-                                $flgbuffer = FALSE;
+                            elseif ($flgbuffer and str_contains($htmlline, "<hr")) {
+                                $flgbuffer = false;
                             }
                             # Inside message
-                            else if ($flgbuffer) {
-                            }
-                            else {
+                            elseif ($flgbuffer) {
+                            } else {
                                 $newlogdata[] = $htmlline;
                             }
                         }
                     }
 
                     {
-                        fseek ($fh, 0, 0);
-                        ftruncate ($fh, 0);
-                        fwrite ($fh, implode ('', $newlogdata));
+                        fseek($fh, 0, 0);
+                        ftruncate($fh, 0);
+                        fwrite($fh, implode('', $newlogdata));
                     }
-                    flock ($fh, 3);
-                    fclose ($fh);
-                }
-                else {
+                    flock($fh, 3);
+                    fclose($fh);
+                } else {
                     #$this->prterror ( 'Failed to load message log' );
                 }
             }
@@ -307,14 +305,15 @@ class Bbsadmin extends Webapp {
      * Encrypted password generation screen display
      *
      */
-    function prtsetpass() {
+    public function prtsetpass()
+    {
 
         $this->t->addVar('setpass', 'V', trim((string) $this->f['v']));
 
         $this->sethttpheader();
-        print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Password settings page');
+        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Password settings page');
         $this->t->displayParsedTemplate('setpass');
-        print $this->prthtmlfoot ();
+        print $this->prthtmlfoot();
     }
 
 
@@ -325,10 +324,11 @@ class Bbsadmin extends Webapp {
      * Encrypted password generation & display
      *
      */
-    function prtpass($inputpass) {
+    public function prtpass($inputpass)
+    {
 
         if (!@$inputpass) {
-            $this->prterror ('No password has been set.');
+            $this->prterror('No password has been set.');
         }
 
         $salt = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2);
@@ -341,9 +341,9 @@ class Bbsadmin extends Webapp {
         ]);
 
         $this->sethttpheader();
-        print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Password settings page');
+        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Password settings page');
         $this->t->displayParsedTemplate('pass');
-        print $this->prthtmlfoot ();
+        print $this->prthtmlfoot();
     }
 
 
@@ -354,10 +354,11 @@ class Bbsadmin extends Webapp {
      * Log file display
      *
      */
-    function prtlogview($htmlescape = FALSE) {
+    public function prtlogview($htmlescape = false)
+    {
         if ($htmlescape) {
-            header ("Content-type: text/html");
-            $logdata = file ($this->c['LOGFILENAME']);
+            header("Content-type: text/html");
+            $logdata = file($this->c['LOGFILENAME']);
             print "<html><head><title>{$this->c['LOGFILENAME']}</title></head><body><pre>\n";
             foreach ($logdata as $logline) {
                 if (!preg_match("/^\w+$/", $logline)) {
@@ -370,10 +371,9 @@ class Bbsadmin extends Webapp {
                 print $logline;
             }
             print "\n</pre></body></html>";
-        }
-        else {
-            header ("Content-type: text/plain");
-            readfile ($this->c['LOGFILENAME']);
+        } else {
+            header("Content-type: text/plain");
+            readfile($this->c['LOGFILENAME']);
         }
     }
 
@@ -383,7 +383,3 @@ class Bbsadmin extends Webapp {
 
 
 }
-
-
-
-?>
