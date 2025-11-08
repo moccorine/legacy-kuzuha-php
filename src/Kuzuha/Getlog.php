@@ -317,6 +317,16 @@ class Getlog extends Webapp
             }
             $conditions[$formvalue] = str_pad((string) @$this->form[$formvalue], 2, "0", STR_PAD_LEFT);
         }
+        
+        // Set default values for monthly logs if not specified
+        if ($this->config['OLDLOGSAVESW']) {
+            if (empty($this->form['sd']) || $conditions['sd'] === '00') {
+                $conditions['sd'] = '01';
+            }
+            if (empty($this->form['ed']) || $conditions['ed'] === '00') {
+                $conditions['ed'] = '31';
+            }
+        }
 
         if ($conditions['q']) {
             $conditions['q'] = trim((string) $conditions['q']);
