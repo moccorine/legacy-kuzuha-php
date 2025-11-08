@@ -347,4 +347,8 @@ $CONF = [
   #------------------------- Debugging -------------------------
 
   'SHOW_PRCTIME' => 1,  # Show processing time
+
+  #------------------------- Version -------------------------
+
+  'VERSION' => '[20250909] (<span title="Heyuri Applicable Research & Development">Heyuri</span>, <span title="Hiru-ga-take">ヶ</span>, ＠Links, <span title="Giko-neko">擬古猫</span>)',
 ];
