@@ -2,9 +2,9 @@
   <div class="m" id="m{{ POSTID }}">
     <span class="nw">
       <span class="mnum">{{ POSTID }}.</span>
-      <span class="ms">{{ TITLE }}</span>&nbsp;&nbsp;
+      <span class="ms">{{ TITLE|raw }}</span>&nbsp;&nbsp;
       <span class="mu">{{ TRANS_USER }}:</span>
-      <span class="mun">{{ USER }}</span>&nbsp;&nbsp;
+      <span class="mun">{{ USER|raw }}</span>&nbsp;&nbsp;
       <span class="md">
         {{ TRANS_POST_DATE }}: {{ WDATE }}<a id="a{{ POSTID }}">&nbsp;</a
         ><span class="nb">{{ BTN|raw }}</span>
