@@ -6,7 +6,7 @@
   </p>
   {% if DEFURL %}
     <span class="bbsmsg">
-      <a href="{{ DEFURL }}" title="{{ TRANS_RETURN_TITLE }}">{{ TRANS_RETURN }}</a>
+      <a href="{{ DEFURL|raw }}" title="{{ TRANS_RETURN_TITLE }}">{{ TRANS_RETURN }}</a>
     </span>
   {% endif %}
 {% endblock %}

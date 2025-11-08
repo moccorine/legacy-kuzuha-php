@@ -6,7 +6,7 @@
     <span class="pagetitle">
       <a href="{{ CGIURL }}" style="text-decoration: none;">{{ BBSTITLE }}</a>
     </span>
-    <a href="{{ DEFURL }}">{{ TRANS_RETURN }}</a>
+    <a href="{{ DEFURL|raw }}">{{ TRANS_RETURN }}</a>
     <a href="#bottom">▼</a>
   </header>
   <h1>
@@ -18,7 +18,7 @@
     <input type="hidden" name="d" value="{{ MSGDISP }}" />
     {% if SHOW_ZIP_LINK %}
       <p class="medium">
-        <a href="{{ DEFURL }}&amp;m=g&amp;gm=z">{{ TRANS_ZIP_ARCHIVES }}</a>
+        <a href="{{ DEFURL|raw }}&amp;m=g&amp;gm=z">{{ TRANS_ZIP_ARCHIVES }}</a>
       </p>
     {% endif %}
     <h2>
@@ -31,7 +31,7 @@
             {{ file.FCHECK|raw }}
           </td>
           <td>
-            <a href="{{ DEFURL }}&amp;m=g&amp;f={{ file.FILENAME }}">
+            <a href="{{ DEFURL|raw }}&amp;m=g&amp;f={{ file.FILENAME }}">
               {{ file.FTITLE }}
             </a>
           </td>
@@ -44,7 +44,7 @@
           {% if SHOW_TOPIC_LINK %}
             <td align="right">
               <span class="medium">
-                <a href="{{ DEFURL }}&amp;m=g&amp;l={{ file.FILENAME }}">
+                <a href="{{ DEFURL|raw }}&amp;m=g&amp;l={{ file.FILENAME }}">
                   {{ TRANS_TOPIC_LIST }}
                 </a>
               </span>
@@ -53,7 +53,7 @@
           {% if SHOW_DL_LINK %}
             <td align="right">
               <span class="medium">
-                <a href="{{ DEFURL }}&amp;m=g&amp;dl={{ file.FILENAME }}">
+                <a href="{{ DEFURL|raw }}&amp;m=g&amp;dl={{ file.FILENAME }}">
                   {{ TRANS_DOWNLOAD }}
                 </a>
               </span>
@@ -171,6 +171,6 @@
     </fieldset>
   </form>
   <br />
-  <a href="{{ DEFURL }}">←{{ TRANS_BULLETIN_BOARD }}</a>
+  <a href="{{ DEFURL|raw }}">←{{ TRANS_BULLETIN_BOARD }}</a>
   <hr />
 {% endblock %}

@@ -6,8 +6,8 @@
     <span class="pagetitle">
       <a href="{{ CGIURL }}" style="text-decoration: none;">{{ BBSTITLE }}</a>
     </span>
-    <a href="{{ DEFURL }}&m=g">←{{ TRANS_MESSAGE_LOG_SEARCH }}</a>
-    <a href="{{ DEFURL }}">{{ TRANS_BULLETIN_BOARD }}</a>
+    <a href="{{ DEFURL|raw }}&m=g">←{{ TRANS_MESSAGE_LOG_SEARCH }}</a>
+    <a href="{{ DEFURL|raw }}">{{ TRANS_BULLETIN_BOARD }}</a>
     <a href="#bottom">▼</a>
   </header>
   <h1>
@@ -33,7 +33,7 @@
     {% endfor %}
   </table>
   <hr />
-  <a href="{{ DEFURL }}&m=g">←{{ TRANS_MESSAGE_LOG_SEARCH }}</a> <a href="{{
+  <a href="{{ DEFURL|raw }}&m=g">←{{ TRANS_MESSAGE_LOG_SEARCH }}</a> <a href="{{
     DEFURL
     }}">
     {{ TRANS_BULLETIN_BOARD }}
