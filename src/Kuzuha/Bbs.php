@@ -1420,11 +1420,12 @@ class Bbs extends Webapp
                     }
                     $zipfilename = preg_replace("/\.\w+$/", '.zip', $checkedfile);
 
-                    # Create a ZIP file
-                    require_once(LIB_PHPZIP);
-                    $zip = new PHPZip();
-                    $zipfiles[] = $checkedfile;
-                    $zip->Zip($zipfiles, $zipfilename);
+                    # Create a ZIP file using PHP's ZipArchive
+                    $zip = new \ZipArchive();
+                    if ($zip->open($zipfilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                        $zip->addFile($checkedfile, basename($checkedfile));
+                        $zip->close();
+                    }
 
                     # Delete temporary files
                     if ($this->config['OLDLOGFMT']) {
