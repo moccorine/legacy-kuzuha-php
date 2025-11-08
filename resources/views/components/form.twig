@@ -294,5 +294,23 @@
         class="btn"
         title="{{ TRANS_RELOAD_TITLE }}" />
     {% endif %}
+    <input type="submit"
+      name="readnew"
+      accesskey="M"
+      value="{{ TRANS_UNREAD }}"
+      class="btn"
+      title="Alt(+Shift)+M" />
+    <input type="button"
+      onclick="location.href='#bottom'"
+      accesskey="B"
+      value="▼"
+      class="btn"
+      title="{{ TRANS_BOTTOM_BTN }}" />
+    <a class="mu"
+      href="{{ CGIURL }}?c={{ C }}&amp;d=30&amp;p={{ TOPPOSTID }}&amp;d=30"
+      accesskey="J">{{ TRANS_LATEST_30 }}</a
+    >&nbsp;
+    <span class="ngset"></span>
   </div>
 </form>
+<hr />

@@ -463,6 +463,9 @@ class Bbs extends Webapp
             'TRANS_DELETE_PREVIOUS' => Translator::trans('form.delete_previous'),
             'TRANS_RELOAD' => Translator::trans('form.reload'),
             'TRANS_RELOAD_TITLE' => Translator::trans('form.reload_title'),
+            'TRANS_UNREAD' => Translator::trans('form.unread'),
+            'TRANS_BOTTOM_BTN' => Translator::trans('form.bottom_btn'),
+            'TRANS_LATEST_30' => Translator::trans('form.latest_30'),
         ]);
     }
 

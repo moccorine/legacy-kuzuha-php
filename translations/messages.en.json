@@ -225,6 +225,9 @@
     "tree_help": "Display the thread as a tree",
     "tree": "Tree",
     "undo_help": "Delete the last post you made",
-    "delete_previous": "Delete previous post"
+    "delete_previous": "Delete previous post",
+    "unread": "Unread",
+    "bottom_btn": "Bottom Alt(+Shift)+B",
+    "latest_30": "Latest 30 posts"
   }
 }

@@ -225,6 +225,9 @@
     "tree_help": "スレッドをツリーとして表示",
     "tree": "ツリー",
     "undo_help": "最後に投稿した記事を削除",
-    "delete_previous": "前の投稿を削除"
+    "delete_previous": "前の投稿を削除",
+    "unread": "未読",
+    "bottom_btn": "下へ Alt(+Shift)+B",
+    "latest_30": "最新30件"
   }
 }
