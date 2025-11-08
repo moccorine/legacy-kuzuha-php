@@ -20,6 +20,30 @@ chdir(__DIR__ . '/..');
 // Set error output level
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
+// Exception handler for logging stack traces
+set_exception_handler(function ($exception) {
+    $logFile = __DIR__ . '/../log/error.log';
+    $message = sprintf(
+        "[%s] Uncaught %s: %s\nFile: %s:%d\nStack trace:\n%s\n\n",
+        date('Y-m-d H:i:s'),
+        get_class($exception),
+        $exception->getMessage(),
+        $exception->getFile(),
+        $exception->getLine(),
+        $exception->getTraceAsString()
+    );
+    @error_log($message, 3, $logFile);
+    
+    // Display user-friendly error
+    http_response_code(500);
+    echo "<h1>An error occurred</h1>";
+    echo "<p>Error details have been logged to log/error.log</p>";
+    if (error_reporting() & E_ERROR) {
+        echo "<pre>" . htmlspecialchars($message) . "</pre>";
+    }
+    exit(1);
+});
+
 // Demote "Undefined array key" warnings to notice
 set_error_handler(function ($errno, $error) {
     if (!str_starts_with($error, 'Undefined array key')) {
