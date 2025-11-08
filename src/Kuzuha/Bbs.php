@@ -162,16 +162,13 @@ class Bbs extends Webapp
             $dmsg = $this->form['v'];
             $dlink = $this->form['l'];
         }
-        $this->setform($dtitle, $dmsg, $dlink);
-
-        # Get form HTML
-        ob_start();
-        $this->template->displayParsedTemplate('form');
-        $formHtml = ob_get_clean();
+        
+        # Get form HTML using Twig
+        $formData = $this->getFormData($dtitle, $dmsg, $dlink);
+        $formHtml = $this->renderTwig('components/form.twig', $formData);
 
         # HTML header partial output
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE']);
 
         # Upper main section
         $data = array_merge($this->config, $this->session, [
@@ -331,6 +328,144 @@ class Bbs extends Webapp
      * @param   String  $dmsg       Initial value for the form contents
      * @param   String  $dlink      Initial value for the form link
      */
+    /**
+     * Prepare form data for Twig rendering
+     */
+    private function getFormData($dtitle, $dmsg, $dlink, $mode = '')
+    {
+        # Protect code generation
+        $pcode = SecurityHelper::generateProtectCode();
+        if (!$mode) {
+            $mode = '<input type="hidden" name="m" value="p" />';
+        }
+        
+        # Hide post form
+        $hideForm = ($this->config['HIDEFORM'] && $this->form['m'] != 'f' && !$this->form['write']);
+        
+        # Counter and member count
+        $showCounter = false;
+        $counter = '';
+        if ($this->config['SHOW_COUNTER']) {
+            $counter = number_format($this->counter());
+            $showCounter = true;
+        }
+        
+        $showMbrCount = false;
+        $mbrcount = '';
+        if ($this->config['CNTFILENAME']) {
+            $mbrcount = number_format($this->mbrcount());
+            $showMbrCount = true;
+        }
+        
+        # Checkboxes
+        $chkA = $this->config['AUTOLINK'] ? ' checked="checked"' : '';
+        $chkHide = $this->config['HIDEFORM'] ? ' checked="checked"' : '';
+        $chkLoff = $this->config['LINKOFF'] ? ' checked="checked"' : '';
+        $chkSi = $this->config['SHOWIMG'] ? ' checked="checked"' : '';
+        
+        # Visibility flags
+        $showFormConfig = ($this->config['BBSMODE_ADMINONLY'] == 0);
+        $showLinkRow = !$this->config['LINKOFF'];
+        $showHelp = ($this->config['BBSMODE_ADMINONLY'] != 1);
+        $showUndo = $this->config['ALLOW_UNDO'];
+        $showSiCheck = isset($this->config['SHOWIMG']);
+        
+        # Kaomoji buttons
+        $kaomojiButtons = $this->generateKaomojiButtons();
+        
+        return array_merge($this->config, $this->session, [
+            'MODE' => $mode,
+            'PCODE' => $pcode,
+            'HIDEFORM' => $hideForm ? 1 : 0,
+            'DTITLE' => $dtitle,
+            'DMSG' => $dmsg,
+            'DLINK' => $dlink,
+            'SHOW_COUNTER' => $showCounter,
+            'COUNTER' => $counter,
+            'SHOW_MBRCOUNT' => $showMbrCount,
+            'MBRCOUNT' => $mbrcount,
+            'CHK_A' => $chkA,
+            'CHK_HIDE' => $chkHide,
+            'CHK_LOFF' => $chkLoff,
+            'CHK_SI' => $chkSi,
+            'SHOW_FORMCONFIG' => $showFormConfig,
+            'SHOW_LINKROW' => $showLinkRow,
+            'SHOW_HELP' => $showHelp,
+            'SHOW_UNDO' => $showUndo,
+            'SHOW_SICHECK' => $showSiCheck,
+            'KAOMOJI_BUTTONS' => $kaomojiButtons,
+            'BBSMODE_IMAGE' => $this->config['BBSMODE_IMAGE'] ?? 0,
+            // Translations
+            'TRANS_NAME' => Translator::trans('form.name'),
+            'TRANS_NAME_TITLE' => Translator::trans('form.name_title'),
+            'TRANS_EMAIL' => Translator::trans('form.email'),
+            'TRANS_EMAIL_TITLE' => Translator::trans('form.email_title'),
+            'TRANS_TITLE' => Translator::trans('form.title'),
+            'TRANS_TITLE_TITLE' => Translator::trans('form.title_title'),
+            'TRANS_POST_RELOAD' => Translator::trans('form.post_reload'),
+            'TRANS_POST_RELOAD_TITLE' => Translator::trans('form.post_reload_title'),
+            'TRANS_POST_RELOAD_TITLE_R' => Translator::trans('form.post_reload_title_r'),
+            'TRANS_CLEAR' => Translator::trans('form.clear'),
+            'TRANS_CLEAR_TITLE' => Translator::trans('form.clear_title'),
+            'TRANS_CONTENTS' => Translator::trans('form.contents'),
+            'TRANS_CONTENTS_TITLE' => Translator::trans('form.contents_title'),
+            'TRANS_CONTENTS_HELP' => Translator::trans('form.contents_help', [
+                '%maxcol%' => $this->config['MAXMSGCOL'],
+                '%maxline%' => $this->config['MAXMSGLINE']
+            ]),
+            'TRANS_CONTENTS_HELP_IMAGE' => Translator::trans('form.contents_help_image', [
+                '%maxcol%' => $this->config['MAXMSGCOL'],
+                '%maxline%' => $this->config['MAXMSGLINE'],
+                '%imagetext%' => $this->config['IMAGETEXT']
+            ]),
+            'TRANS_URL' => Translator::trans('form.url'),
+            'TRANS_URL_TITLE' => Translator::trans('form.url_title'),
+            'TRANS_IMAGE_UPLOAD' => Translator::trans('form.image_upload'),
+            'TRANS_IMAGE_UPLOAD_TITLE' => Translator::trans('form.image_upload_title'),
+            'TRANS_IMAGE_UPLOAD_HELP' => Translator::trans('form.image_upload_help', [
+                '%max_width%' => $this->config['MAX_IMAGEWIDTH'],
+                '%max_height%' => $this->config['MAX_IMAGEHEIGHT'],
+                '%max_size%' => $this->config['MAX_IMAGESIZE']
+            ]),
+            'TRANS_POSTS_DISPLAYED' => Translator::trans('form.posts_displayed'),
+            'TRANS_POSTS_DISPLAYED_TITLE' => Translator::trans('form.posts_displayed_title'),
+            'TRANS_AUTO_LINK' => Translator::trans('form.auto_link'),
+            'TRANS_AUTO_LINK_TITLE' => Translator::trans('form.auto_link_title'),
+            'TRANS_LOG_READING' => Translator::trans('form.log_reading'),
+            'TRANS_LOG_READING_TITLE' => Translator::trans('form.log_reading_title'),
+            'TRANS_HIDE_LINK' => Translator::trans('form.hide_link'),
+            'TRANS_HIDE_LINK_TITLE' => Translator::trans('form.hide_link_title'),
+            'TRANS_SHOW_IMAGES' => Translator::trans('form.show_images'),
+            'TRANS_SHOW_IMAGES_TITLE' => Translator::trans('form.show_images_title'),
+            'TRANS_USER_SETTINGS' => Translator::trans('form.user_settings'),
+            'TRANS_USER_SETTINGS_TITLE' => Translator::trans('form.user_settings_title'),
+            'TRANS_PAGE_VIEWS' => Translator::trans('form.page_views'),
+            'TRANS_BULLETPROOF_LEVEL' => Translator::trans('form.bulletproof_level'),
+            'TRANS_CURRENT_PARTICIPANTS' => Translator::trans('form.current_participants'),
+            'TRANS_USERS' => Translator::trans('form.users'),
+            'TRANS_WITHIN' => Translator::trans('form.within'),
+            'TRANS_SECONDS' => Translator::trans('form.seconds'),
+            'TRANS_MAX_POSTS' => Translator::trans('form.max_posts'),
+            'TRANS_POSTS' => Translator::trans('form.posts'),
+            'TRANS_TO_PR_OFFICE' => Translator::trans('form.to_pr_office'),
+            'TRANS_PR_OFFICE' => Translator::trans('form.pr_office'),
+            'TRANS_MESSAGE_LOGS_TITLE' => Translator::trans('form.message_logs_title'),
+            'TRANS_MESSAGE_LOGS' => Translator::trans('form.message_logs'),
+            'TRANS_FOLLOW_HELP' => Translator::trans('form.follow_help'),
+            'TRANS_FOLLOW_POST' => Translator::trans('form.follow_post'),
+            'TRANS_AUTHOR_HELP' => Translator::trans('form.author_help'),
+            'TRANS_SEARCH_BY_USER' => Translator::trans('form.search_by_user'),
+            'TRANS_THREAD_HELP' => Translator::trans('form.thread_help'),
+            'TRANS_THREAD' => Translator::trans('form.thread'),
+            'TRANS_TREE_HELP' => Translator::trans('form.tree_help'),
+            'TRANS_TREE' => Translator::trans('form.tree'),
+            'TRANS_UNDO_HELP' => Translator::trans('form.undo_help'),
+            'TRANS_DELETE_PREVIOUS' => Translator::trans('form.delete_previous'),
+            'TRANS_RELOAD' => Translator::trans('form.reload'),
+            'TRANS_RELOAD_TITLE' => Translator::trans('form.reload_title'),
+        ]);
+    }
+
     /**
      * Generate kaomoji buttons HTML
      */
