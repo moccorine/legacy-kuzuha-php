@@ -174,51 +174,53 @@
   {% endif %}
 
   {# Extra form controls #}
-  <div class="small">
-    <label for="num1">{{ TRANS_POSTS_DISPLAYED }}</label>&nbsp;<input type="number"
-      size="2"
-      name="d"
-      accesskey="6"
-      value="{{ MSGDISP }}"
-      min="0"
-      title="{{ TRANS_POSTS_DISPLAYED_TITLE }}"
-      id="num1" />&nbsp; {% if not HIDEFORM %}
-      <label for="a1">{{ TRANS_AUTO_LINK }}</label><input type="checkbox"
-        name="a"
-        accesskey="U"
+  {% if SHOW_FORMCONFIG %}
+    <div class="small">
+      <label for="num1">{{ TRANS_POSTS_DISPLAYED }}</label>&nbsp;<input type="number"
+        size="2"
+        name="d"
+        accesskey="6"
+        value="{{ MSGDISP }}"
+        min="0"
+        title="{{ TRANS_POSTS_DISPLAYED_TITLE }}"
+        id="num1" />&nbsp; {% if not HIDEFORM %}
+        <label for="a1">{{ TRANS_AUTO_LINK }}</label><input type="checkbox"
+          name="a"
+          accesskey="U"
+          value="checked"
+          {{ CHK_A }}
+          title="{{ TRANS_AUTO_LINK_TITLE }}"
+          id="a1" />&nbsp;
+        <label for="hide1">{{ TRANS_LOG_READING }}</label><input type="checkbox"
+          name="hide"
+          accesskey="I"
+          value="checked"
+          {{ CHK_HIDE }}
+          title="{{ TRANS_LOG_READING_TITLE }}"
+          id="hide1" />&nbsp;
+      {% endif %}
+      <label for="loff1">{{ TRANS_HIDE_LINK }}</label><input type="checkbox"
+        name="loff"
+        accesskey="L"
         value="checked"
-        {{ CHK_A }}
-        title="{{ TRANS_AUTO_LINK_TITLE }}"
-        id="a1" />&nbsp;
-      <label for="hide1">{{ TRANS_LOG_READING }}</label><input type="checkbox"
-        name="hide"
-        accesskey="I"
-        value="checked"
-        {{ CHK_HIDE }}
-        title="{{ TRANS_LOG_READING_TITLE }}"
-        id="hide1" />&nbsp;
-    {% endif %}
-    <label for="loff1">{{ TRANS_HIDE_LINK }}</label><input type="checkbox"
-      name="loff"
-      accesskey="L"
-      value="checked"
-      {{ CHK_LOFF }}
-      title="{{ TRANS_HIDE_LINK_TITLE }}"
-      id="loff1" />&nbsp; {% if SHOW_SICHECK %}
-      <label for="sim1">{{ TRANS_SHOW_IMAGES }}</label><input type="checkbox"
-        name="sim"
-        accesskey="S"
-        value="checked"
-        {{ CHK_SI }}
-        title="{{ TRANS_SHOW_IMAGES_TITLE }}"
-        id="sim1" />&nbsp;
-    {% endif %}
-    <input type="submit"
-      name="setup"
-      accesskey="C"
-      value="{{ TRANS_USER_SETTINGS }}"
-      class="btn"
-      title="{{ TRANS_USER_SETTINGS_TITLE }}" />
-  </div>
+        {{ CHK_LOFF }}
+        title="{{ TRANS_HIDE_LINK_TITLE }}"
+        id="loff1" />&nbsp; {% if SHOW_SICHECK %}
+        <label for="sim1">{{ TRANS_SHOW_IMAGES }}</label><input type="checkbox"
+          name="sim"
+          accesskey="S"
+          value="checked"
+          {{ CHK_SI }}
+          title="{{ TRANS_SHOW_IMAGES_TITLE }}"
+          id="sim1" />&nbsp;
+      {% endif %}
+      <input type="submit"
+        name="setup"
+        accesskey="C"
+        value="{{ TRANS_USER_SETTINGS }}"
+        class="btn"
+        title="{{ TRANS_USER_SETTINGS_TITLE }}" />
+    </div>
+  {% endif %}
 </form>
 <hr />

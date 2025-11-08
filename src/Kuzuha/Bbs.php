@@ -703,8 +703,9 @@ class Bbs extends Webapp
         // Get message HTML using Twig
         $messageHtml = $this->prtmessage($message, $mode, $filename);
 
-        // Get form HTML using Twig
+        // Get form HTML using Twig (hide form config on follow page)
         $formData = $this->getFormData('＞' . preg_replace('/<[^>]*>/', '', (string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
+        $formData['SHOW_FORMCONFIG'] = false;
         $formHtml = $this->renderTwig('components/form.twig', $formData);
         
         // Add follow-specific hidden inputs before </form>
