@@ -110,3 +110,26 @@ $app->map(['GET', 'POST'], '/admin', function (Request $request, Response $respo
     }
     return $response;
 });
+
+// Thread view (follow mode)
+$app->map(['GET', 'POST'], '/thread', function (Request $request, Response $response) {
+    ob_start();
+
+    $_GET = $request->getQueryParams();
+    $_POST = $request->getParsedBody() ?? [];
+
+    $config = Config::getInstance();
+    if ($config->get('BBSMODE_IMAGE') == 1) {
+        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs->main();
+    } else {
+        $bbs = new \Kuzuha\Bbs();
+        $bbs->main();
+    }
+
+    $output = ob_get_clean();
+    if ($output !== false) {
+        $response->getBody()->write($output);
+    }
+    return $response;
+});
