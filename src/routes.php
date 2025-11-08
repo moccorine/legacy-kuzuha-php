@@ -10,11 +10,10 @@ $app->get('/', function (Request $request, Response $response) {
     
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        require_once PHP_IMAGEBBS;
-        $imagebbs = new Imagebbs();
+        $imagebbs = new \Kuzuha\Imagebbs();
         $imagebbs->main();
     } else {
-        $bbs = new Bbs();
+        $bbs = new \Kuzuha\Bbs();
         $bbs->main();
     }
     
@@ -27,13 +26,16 @@ $app->get('/', function (Request $request, Response $response) {
 $app->post('/', function (Request $request, Response $response) {
     ob_start();
     
+    // Set $_POST and $_GET for legacy code
+    $_POST = $request->getParsedBody() ?? [];
+    $_GET = $request->getQueryParams();
+    
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        require_once PHP_IMAGEBBS;
-        $imagebbs = new Imagebbs();
+        $imagebbs = new \Kuzuha\Imagebbs();
         $imagebbs->main();
     } else {
-        $bbs = new Bbs();
+        $bbs = new \Kuzuha\Bbs();
         $bbs->main();
     }
     
@@ -46,8 +48,7 @@ $app->post('/', function (Request $request, Response $response) {
 $app->map(['GET', 'POST'], '/search', function (Request $request, Response $response) {
     ob_start();
     
-    require_once PHP_GETLOG;
-    $getlog = new Getlog();
+    $getlog = new \Kuzuha\Getlog();
     $getlog->main();
     
     $output = ob_get_clean();
@@ -59,8 +60,7 @@ $app->map(['GET', 'POST'], '/search', function (Request $request, Response $resp
 $app->map(['GET', 'POST'], '/tree', function (Request $request, Response $response) {
     ob_start();
     
-    require_once PHP_TREEVIEW;
-    $treeview = new Treeview();
+    $treeview = new \Kuzuha\Treeview();
     $treeview->main();
     
     $output = ob_get_clean();
@@ -79,15 +79,13 @@ $app->post('/admin', function (Request $request, Response $response) {
     if ($config->get('ADMINPOST') && $config->get('ADMINKEY') 
         && $_POST['v'] == $config->get('ADMINKEY')
         && crypt((string) $_POST['u'], (string) $config->get('ADMINPOST')) == $config->get('ADMINPOST')) {
-        require_once PHP_BBSADMIN;
-        $bbsadmin = new Bbsadmin();
+        $bbsadmin = new \Kuzuha\Bbsadmin();
         $bbsadmin->main();
     } elseif ($config->get('BBSMODE_IMAGE') == 1) {
-        require_once PHP_IMAGEBBS;
-        $imagebbs = new Imagebbs();
+        $imagebbs = new \Kuzuha\Imagebbs();
         $imagebbs->main();
     } else {
-        $bbs = new Bbs();
+        $bbs = new \Kuzuha\Bbs();
         $bbs->main();
     }
     

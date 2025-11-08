@@ -1,5 +1,17 @@
 <?php
 
+namespace Kuzuha;
+
+use App\Config;
+use App\Translator;
+use App\Utils\DateHelper;
+use App\Utils\NetworkHelper;
+use App\Utils\StringHelper;
+use App\Utils\SecurityHelper;
+use App\Utils\FileHelper;
+use App\Utils\TripHelper;
+
+
 /*
 
 KuzuhaScriptPHP ver0.0.7alpha (13:04 2003/02/18)
