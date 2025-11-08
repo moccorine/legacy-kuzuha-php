@@ -42,6 +42,14 @@ class Bbs extends Webapp
         # Reflect user settings
         $this->refcustom();
         $this->setusersession();
+        
+        # If ADMINPOST is empty and not setting password, show password setup page
+        if (empty($this->config['ADMINPOST']) && $this->form['m'] != 'ad') {
+            $bbsadmin = new Bbsadmin($this);
+            $bbsadmin->prtsetpass();
+            return;
+        }
+        
         # gzip compression transfer
         if ($this->config['GZIPU']) {
             ob_start("ob_gzhandler");
@@ -98,6 +106,12 @@ class Bbs extends Webapp
         elseif ($this->form['m'] == 'tree') {
             $treeview = new \Kuzuha\Treeview();
             $treeview->main();
+            return;
+        }
+        # Admin mode
+        elseif ($this->form['m'] == 'ad') {
+            $bbsadmin = new Bbsadmin($this);
+            $bbsadmin->main();
             return;
         }
         # Post search

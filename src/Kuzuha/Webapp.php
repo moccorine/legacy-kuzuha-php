@@ -194,6 +194,18 @@ class Webapp
     }
 
     /**
+     * Render Twig template
+     */
+    public function renderTwig($template, $data = [])
+    {
+        if (class_exists('\\App\\View')) {
+            return \App\View::getInstance()->render($template, $data);
+        }
+        // Fallback to patTemplate
+        return '';
+    }
+
+    /**
      * Copyright notice
      */
     public function prtcopyright()

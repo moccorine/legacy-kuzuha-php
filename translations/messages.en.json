@@ -22,5 +22,12 @@
   "error.prohibited_words": "The post contains prohibited words.",
   "error.reference_not_found": "Reference post not found.",
   "error.log_size_limit": "Message log file exceeds the file size limit",
-  "error.log_output_failed": "Failed to output message log"
+  "error.log_output_failed": "Failed to output message log",
+  "admin.password_setup_instruction": "Set your password.<br>Please enter the administrator password that you will use to administer the bulletin board from now on.<br>The password you enter here will be used for posting with the administrator's name, and for authenticating you when entering admin mode.",
+  "admin.password_settings_page": "Password settings page",
+  "admin.admin_password": "Admin password",
+  "admin.set": "Set",
+  "admin.reset": "Reset",
+  "admin.password_generated": "Encrypted password generated!<br>Paste the following encrypted password string into the designated section of the main bulletin board script.",
+  "admin.bulletin_board": "Bulletin board"
 }

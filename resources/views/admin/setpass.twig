@@ -3,7 +3,7 @@
 {% block content %}
   <header>
     <span class="pagetitle">{{ BBSTITLE }}</span>
-    - Password settings page
+    - {{ TRANS_PASSWORD_SETTINGS_PAGE }}
   </header>
   <br />
   <form method="post" action="{{ CGIURL }}">
@@ -12,17 +12,13 @@
     <input type="hidden" name="u" value="{{ U }}" />
     <input type="hidden" name="v" value="{{ V }}" />
     <div class="bbsmsg">
-      Set your password.<br />
-      Please enter the administrator password that you will use to administer the
-      bulletin board from now on.<br />
-      The password you enter here will be used for posting with the administrator's
-      name, and for authenticating you when entering admin mode.
+      {{ TRANS_PASSWORD_INSTRUCTION|raw }}
     </div>
     <br /><br />
     <table border="2" cellspacing="4">
       <tr>
         <td align="center">
-          Admin password
+          {{ TRANS_ADMIN_PASSWORD }}
         </td>
         <td align="center">
           <input size="30"
@@ -35,7 +31,7 @@
       </tr>
     </table>
     <br /><br />
-    <input type="submit" value="Set" class="btn" />
-    <input type="reset" value="Reset" class="btn" />
+    <input type="submit" value="{{ TRANS_SET }}" class="btn" />
+    <input type="reset" value="{{ TRANS_RESET }}" class="btn" />
   </form>
 {% endblock %}

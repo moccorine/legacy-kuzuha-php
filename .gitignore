@@ -9,3 +9,10 @@ storage/app/bbs.log
 storage/app/bbs.cnt
 storage/logs/*.log
 storage/cache/twig/*
+
+# Vim swap files
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo

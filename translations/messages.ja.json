@@ -22,5 +22,12 @@
   "error.prohibited_words": "投稿に禁止ワードが含まれています。",
   "error.reference_not_found": "参照先の投稿が見つかりません。",
   "error.log_size_limit": "メッセージログファイルがファイルサイズ制限を超えています",
-  "error.log_output_failed": "メッセージログの出力に失敗しました"
+  "error.log_output_failed": "メッセージログの出力に失敗しました",
+  "admin.password_setup_instruction": "パスワードを設定してください。<br>これから掲示板を管理するために使用する管理者パスワードを入力してください。<br>ここで入力したパスワードは、管理者名での投稿や、管理モードへの入室時の認証に使用されます。",
+  "admin.password_settings_page": "パスワード設定ページ",
+  "admin.admin_password": "管理者パスワード",
+  "admin.set": "設定",
+  "admin.reset": "リセット",
+  "admin.password_generated": "暗号化パスワードが生成されました！<br>以下の暗号化パスワード文字列を、メイン掲示板スクリプトの指定箇所に貼り付けてください。",
+  "admin.bulletin_board": "掲示板"
 }

@@ -74,7 +74,7 @@ class Bbsadmin extends Webapp
             $this->setusersession();
 
             # gzip compressed transfer
-            if ($this->config['GZIPU']) {
+            if ($this->config['GZIPU'] && ob_get_level() === 0) {
                 ob_start("ob_gzhandler");
             }
         }
@@ -108,7 +108,12 @@ class Bbsadmin extends Webapp
         }
         # Admin menu page
         else {
-            $this->prtadminmenu();
+            // If ADMINPOST is empty, show password setup page
+            if (empty($this->config['ADMINPOST'])) {
+                $this->prtsetpass();
+            } else {
+                $this->prtadminmenu();
+            }
         }
 
 
@@ -132,7 +137,7 @@ class Bbsadmin extends Webapp
             'TITLE' => $this->config['BBSTITLE'] . ' Administration menu',
             'V' => trim((string) $this->form['v']),
         ]);
-        echo $this->renderPage('admin/menu.twig', $data);
+        echo $this->renderTwig('admin/menu.twig', $data);
     }
 
 
@@ -173,7 +178,7 @@ class Bbsadmin extends Webapp
             'V' => trim((string) $this->form['v']),
             'messages' => $messages,
         ]);
-        echo $this->renderPage('admin/killlist.twig', $data);
+        echo $this->renderTwig('admin/killlist.twig', $data);
     }
 
 
@@ -317,10 +322,15 @@ class Bbsadmin extends Webapp
     {
         $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
-            'TITLE' => $this->config['BBSTITLE'] . ' Password settings page',
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.password_settings_page'),
             'V' => trim((string) $this->form['v']),
+            'TRANS_PASSWORD_SETTINGS_PAGE' => Translator::trans('admin.password_settings_page'),
+            'TRANS_PASSWORD_INSTRUCTION' => Translator::trans('admin.password_setup_instruction'),
+            'TRANS_ADMIN_PASSWORD' => Translator::trans('admin.admin_password'),
+            'TRANS_SET' => Translator::trans('admin.set'),
+            'TRANS_RESET' => Translator::trans('admin.reset'),
         ]);
-        echo $this->renderPage('admin/setpass.twig', $data);
+        echo $this->renderTwig('admin/setpass.twig', $data);
     }
 
     /**
@@ -339,11 +349,15 @@ class Bbsadmin extends Webapp
 
         $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
-            'TITLE' => $this->config['BBSTITLE'] . ' Password settings page',
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.password_settings_page'),
             'CRYPTPASS' => $cryptpass,
             'INPUTSIZE' => $inputsize,
+            'TRANS_PASSWORD_SETTINGS_PAGE' => Translator::trans('admin.password_settings_page'),
+            'TRANS_PASSWORD_GENERATED' => Translator::trans('admin.password_generated'),
+            'TRANS_ADMIN_PASSWORD' => Translator::trans('admin.admin_password'),
+            'TRANS_BULLETIN_BOARD' => Translator::trans('admin.bulletin_board'),
         ]);
-        echo $this->renderPage('admin/pass.twig', $data);
+        echo $this->renderTwig('admin/pass.twig', $data);
     }
 
 

@@ -3,19 +3,17 @@
 {% block content %}
   <header>
     <span class="pagetitle">{{ BBSTITLE }}</span>
-    - Password settings page
+    - {{ TRANS_PASSWORD_SETTINGS_PAGE }}
   </header>
   <form method="post" action="{{ CGIURL }}">
     <div class="bbsmsg">
-      Encrypted password generated!<br />
-      Paste the following encrypted password string into the designated section of
-      the main bulletin board script.
+      {{ TRANS_PASSWORD_GENERATED|raw }}
     </div>
     <br /><br />
     <table border="2" cellspacing="4">
       <tr>
         <td align="center">
-          Admin password
+          {{ TRANS_ADMIN_PASSWORD }}
         </td>
         <td align="center">
           <input size="{{ INPUTSIZE }}"
@@ -28,6 +26,6 @@
       </tr>
     </table>
     <br /><br />
-    <a href="{{ CGIURL }}">Bulletin board</a>
+    <a href="{{ CGIURL }}">{{ TRANS_BULLETIN_BOARD }}</a>
   </form>
 {% endblock %}
