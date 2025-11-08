@@ -51,12 +51,12 @@
         <a href="mailto:{{ ADMINMAIL }}" title="{{ TRANS_EMAIL_ADMIN }}">
           {{ TRANS_CONTACT }}
         </a>
-        <a href="/search"
+        <a href="{{ route('search') }}"
           target="_blank"
           title="{{ TRANS_MESSAGE_LOGS_TITLE }}">
           {{ TRANS_MESSAGE_LOGS }}
         </a>
-        <a href="/tree?{{ QUERY|raw }}"
+        <a href="{{ route('tree', {c: COUNTLEVEL, d: LOGSAVE}) }}"
           title="{{ TRANS_TREE_VIEW_TITLE }}">
           {{ TRANS_TREE_VIEW }}
         </a>

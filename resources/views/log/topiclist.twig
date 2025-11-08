@@ -24,10 +24,10 @@
   </div>
   <hr />
   <pre>{%- for topic in topics %}
-<a href="/thread?ff={{ FILENAME }}&amp;s={{ topic.TID }}" target="link">{{ TXTTHREAD }}</a> <a href="/tree?ff={{ FILENAME }}&amp;s={{ topic.TID }}" target="link">{{ TXTTREE }}</a> {{ topic.TC }} <i>[{{ topic.TT }}]</i> {{ topic.TTITLE|raw }}
+<a href="{{ route('thread', {ff: FILENAME, s: topic.TID}) }}" target="link">{{ TXTTHREAD }}</a> <a href="{{ route('tree', {ff: FILENAME, s: topic.TID}) }}" target="link">{{ TXTTREE }}</a> {{ topic.TC }} <i>[{{ topic.TT }}]</i> {{ topic.TTITLE|raw }}
 {% endfor -%}</pre>
   <hr />
-  <a href="/search">{{ TRANS_MESSAGE_LOG_SEARCH }}</a> <a href="/">
+  <a href="{{ route('search') }}">{{ TRANS_MESSAGE_LOG_SEARCH }}</a> <a href="{{ home() }}">
     {{ TRANS_BULLETIN_BOARD }}
   </a><br />
 {% endblock %}
