@@ -601,11 +601,20 @@ __XHTML__;
         $this->prttexttree($msgcurrent, $result);
 
         $returnLabel = Translator::trans('tree.return');
-        print <<<__XHTML__
-<span class="bbsmsg"><a href="{$this->session['DEFURL']}">{$returnLabel}</a></span>
-__XHTML__;
+        echo "<span class=\"bbsmsg\"><a href=\"{$this->session['DEFURL']}\">{$returnLabel}</a></span>\n";
 
-        print $this->prthtmlfoot();
+        // Footer
+        echo "<footer>\n";
+        if ($this->config['SHOW_PRCTIME'] and $this->session['START_TIME']) {
+            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
+            $duration = sprintf('%0.6f', $duration);
+            $pageGenLabel = Translator::trans('main.page_generation_time');
+            $secondsLabel = Translator::trans('main.seconds');
+            echo "<p><span class=\"msgmore\">{$pageGenLabel}: {$duration} {$secondsLabel}</span>　<a href=\"#top\" title=\"" . Translator::trans('main.top') . "\">▲</a></p>\n";
+        } else {
+            echo "<p><a href=\"#top\" title=\"" . Translator::trans('main.top') . "\">▲</a></p>\n";
+        }
+        echo "</footer>\n</body>\n</html>\n";
 
     }
 

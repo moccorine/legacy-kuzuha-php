@@ -152,10 +152,11 @@
   "log.bulletin_board": "掲示板",
   "log.archive_header": "ダウンロード - 日付 - 時刻 - サイズ",
   "main": {
-    "page_generation_time": "ページ生成時間: %duration% 秒",
+    "page_generation_time": "ページ生成時間",
     "shown_posts": "上記は投稿 %bindex% から %eindex% までを新しい順に表示しています。 ",
     "no_unread_messages": "未読メッセージはありません。 ",
-    "no_posts_below": "これより下に投稿はありません。"
+    "no_posts_below": "これより下に投稿はありません。",
+    "seconds": "秒"
   },
   "message": {
     "user": "投稿者",
