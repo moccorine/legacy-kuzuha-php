@@ -7,7 +7,10 @@
     "psr-4": {
       "App\\": "src/",
       "Kuzuha\\": "src/Kuzuha/"
-    }
+    },
+    "files": [
+      "src/helpers.php"
+    ]
   },
   "require": {
     "slim/slim": "^4.15",

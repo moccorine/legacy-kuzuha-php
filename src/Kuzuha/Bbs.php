@@ -564,7 +564,7 @@ class Bbs extends Webapp
         if (!$retry) {
             $formmsg = $message['MSG'];
             $formmsg = preg_replace("/&gt; &gt;[^\r]+\r/", '', (string) $formmsg);
-            $formmsg = preg_replace("/<a href=\"\/follow\S+\"[^>]*>[^<]+<\/a>/i", '', $formmsg);
+            $formmsg = preg_replace("/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "[^\"]*\"[^>]*>[^<]+<\/a>/i", '', $formmsg);
             $formmsg = preg_replace("/<a href=\"[^>]+>([^<]+)<\/a>/i", '$1', $formmsg);
             $formmsg = preg_replace("/\r*<a href=[^>]+><img [^>]+><\/a>/i", '', $formmsg);
             $formmsg = preg_replace("/\r/", "\r> ", $formmsg);
@@ -573,7 +573,7 @@ class Bbs extends Webapp
             $formmsg = preg_replace("/\r>\s+\r$/", "\r", (string) $formmsg);
         } else {
             $formmsg = $this->form['v'];
-            $formmsg = preg_replace("/<a href=\"\/follow\S+\"[^>]*>[^<]+<\/a>/i", '', (string) $formmsg);
+            $formmsg = preg_replace("/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "[^\"]*\"[^>]*>[^<]+<\/a>/i", '', (string) $formmsg);
         }
         $formmsg .= "\r";
 
@@ -1150,7 +1150,7 @@ class Bbs extends Webapp
             $refmessage = $this->getmessage($refdata[0]);
             $refmessage['WDATE'] = DateHelper::getDateString($refmessage['NDATE'], $this->config['DATEFORMAT']);
             $refLabel = Translator::trans('message.reference');
-            $message['MSG'] .= "\r\r<a href=\"/follow?s={$message['REFID']}&r=&\">{$refLabel}: {$refmessage['WDATE']}</a>";
+            $message['MSG'] .= "\r\r<a href=\"" . route('follow', ['s' => $message['REFID'], 'r' => '']) . "\">{$refLabel}: {$refmessage['WDATE']}</a>";
             # Simple self-reply prevention function
             if ($this->config['IPREC'] and $this->config['SHOW_SELFFOLLOW']
                 and $refmessage['PHOST'] != '' and $refmessage['PHOST'] == $message['PHOST']) {
