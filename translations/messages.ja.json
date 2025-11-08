@@ -253,5 +253,16 @@
     "tree_desc": "ツリー",
     "undo_title": "前の投稿を削除",
     "undo_desc": "前の投稿を削除"
+  },
+  "tree": {
+    "tree_view": "ツリー表示",
+    "pr_office": "広報室",
+    "email_admin": "管理者にメール",
+    "contact": "連絡",
+    "message_logs": "過去ログ",
+    "message_logs_title": "過去の投稿を閲覧・検索します。",
+    "standard_view": "標準表示",
+    "standard_view_title": "標準表示に戻る",
+    "bottom": "下へ"
   }
 }

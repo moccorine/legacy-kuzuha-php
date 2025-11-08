@@ -253,5 +253,16 @@
     "tree_desc": "Tree",
     "undo_title": "Delete previous post",
     "undo_desc": "Delete previous post"
+  },
+  "tree": {
+    "tree_view": "Tree view",
+    "pr_office": "PR office",
+    "email_admin": "Email admin",
+    "contact": "Contact",
+    "message_logs": "Message logs",
+    "message_logs_title": "Browse and search through old posts.",
+    "standard_view": "Standard view",
+    "standard_view_title": "Return to standard view",
+    "bottom": "Bottom"
   }
 }

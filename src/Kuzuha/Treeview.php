@@ -587,7 +587,7 @@ class Treeview extends Bbs
 __XHTML__;
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Tree view', '', $customstyle);
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'), '', $customstyle);
         print "<hr>\n";
 
         $result = $this->msgsearchlist('t');
