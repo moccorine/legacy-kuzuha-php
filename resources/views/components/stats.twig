@@ -1,11 +1,11 @@
 <br />
 <div>
-  {% if COUNTER %}
+  {% if SHOW_COUNTER %}
     {{ TRANS_PAGEVIEW }}: {{ COUNTER }} ({{ TRANS_BULLETPROOF_LEVEL }}: {{
       COUNTLEVEL
     }})
   {% endif %}
-  {% if MBRCOUNT %}
+  {% if SHOW_MBRCOUNT %}
     {{ TRANS_CURRENT_PARTICIPANTS }}: {{ MBRCOUNT }} {{ TRANS_USERS }} ({{
       CNTLIMIT
     }}

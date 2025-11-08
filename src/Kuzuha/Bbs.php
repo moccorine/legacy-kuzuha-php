@@ -171,6 +171,11 @@ class Bbs extends Webapp
         $statsData = $this->getStatsData();
         $statsHtml = $this->renderTwig('components/stats.twig', $statsData);
 
+        # Hide patTemplate stats sections (using Twig component instead)
+        $this->template->setAttribute('counterrow', 'visibility', 'hidden');
+        $this->template->setAttribute('linkrow', 'visibility', 'hidden');
+        $this->template->setAttribute('helprow', 'visibility', 'hidden');
+
         # HTML header partial output
         $this->sethttpheader();
 
@@ -340,12 +345,29 @@ class Bbs extends Webapp
      */
     protected function getStatsData()
     {
+        $counter = '';
+        $showCounter = false;
+        if ($this->config['SHOW_COUNTER']) {
+            $counter = number_format($this->counter());
+            $showCounter = true;
+        }
+        
+        $mbrcount = '';
+        $showMbrCount = false;
+        if ($this->config['CNTFILENAME']) {
+            $mbrcount = number_format($this->mbrcount());
+            $showMbrCount = true;
+        }
+        
         return [
-            'COUNTER' => $this->session['COUNTER'] ?? '',
+            'COUNTER' => $counter,
+            'SHOW_COUNTER' => $showCounter,
             'COUNTLEVEL' => $this->config['COUNTLEVEL'] ?? '',
-            'MBRCOUNT' => $this->session['MBRCOUNT'] ?? '',
+            'MBRCOUNT' => $mbrcount,
+            'SHOW_MBRCOUNT' => $showMbrCount,
             'CNTLIMIT' => $this->config['CNTLIMIT'] ?? '',
             'LOGSAVE' => $this->config['LOGSAVE'] ?? '',
+            'COUNTDATE' => $this->config['COUNTDATE'] ?? '',
             'INFOPAGE' => $this->config['INFOPAGE'] ?? '',
             'DEFURL' => $this->session['DEFURL'] ?? '',
             'BBSLINK' => $this->session['BBSLINK'] ?? '',
@@ -692,6 +714,12 @@ class Bbs extends Webapp
         $formHtml = str_replace('</form>', $hiddenInputs . '</form>', $formHtml);
 
         $this->sethttpheader();
+        
+        // Hide stats sections on follow page
+        $this->template->setAttribute('counterrow', 'visibility', 'hidden');
+        $this->template->setAttribute('linkrow', 'visibility', 'hidden');
+        $this->template->setAttribute('helprow', 'visibility', 'hidden');
+        
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('follow.followup_post'),
             'MESSAGE' => $messageHtml,
