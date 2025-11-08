@@ -163,11 +163,32 @@ class Bbs extends Webapp
             $dlink = $this->form['l'];
         }
         $this->setform($dtitle, $dmsg, $dlink);
+
+        # Get form HTML
+        ob_start();
+        $this->template->displayParsedTemplate('form');
+        $formHtml = ob_get_clean();
+
         # HTML header partial output
         $this->sethttpheader();
         print $this->prthtmlhead($this->config['BBSTITLE']);
+
         # Upper main section
-        $this->template->displayParsedTemplate('main_upper');
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'],
+            'FORM' => $formHtml,
+            'TRANS_PR_OFFICE' => Translator::trans('main.pr_office'),
+            'TRANS_PR_OFFICE_TITLE' => Translator::trans('main.pr_office_title'),
+            'TRANS_EMAIL_ADMIN' => Translator::trans('main.email_admin'),
+            'TRANS_CONTACT' => Translator::trans('main.contact'),
+            'TRANS_MESSAGE_LOGS' => Translator::trans('main.message_logs'),
+            'TRANS_MESSAGE_LOGS_TITLE' => Translator::trans('main.message_logs_title'),
+            'TRANS_TREE_VIEW' => Translator::trans('main.tree_view'),
+            'TRANS_TREE_VIEW_TITLE' => Translator::trans('main.tree_view_title'),
+            'TRANS_BOTTOM' => Translator::trans('main.bottom'),
+        ]);
+        echo $this->renderTwig('main/upper.twig', $data);
+
         # Display message
         foreach ($logdatadisp as $msgdata) {
             print $this->prtmessage($this->getmessage($msgdata), 0, 0);
@@ -183,24 +204,42 @@ class Bbs extends Webapp
         if ($eindex >= $lastindex) {
             $msgmore .= 'There are no posts below this point.';
         }
-        $this->template->addVar('main_lower', 'MSGMORE', $msgmore);
+
         # Navigation buttons
+        $showNextPage = false;
         if ($eindex > 0) {
-            if ($eindex >= $lastindex) {
-                $this->template->setAttribute('nextpage', 'visibility', 'hidden');
-            } else {
-                $this->template->addVar('nextpage', 'EINDEX', $eindex);
+            if ($eindex < $lastindex) {
+                $showNextPage = true;
             }
-            if (!$this->config['SHOW_READNEWBTN']) {
-                $this->template->setAttribute('readnew', 'visibility', 'hidden');
-            }
+            $showReadNew = $this->config['SHOW_READNEWBTN'];
+        } else {
+            $showReadNew = false;
         }
+
         # Post as administrator
-        if ($this->config['BBSMODE_ADMINONLY'] == 0) {
-            $this->template->setAttribute('adminlogin', 'visibility', 'hidden');
-        }
+        $showAdminLogin = ($this->config['BBSMODE_ADMINONLY'] != 0);
+
+        # Get copyright HTML
+        ob_start();
+        $this->template->displayParsedTemplate('copyright');
+        $copyrightHtml = ob_get_clean();
+
         # Lower main section
-        $this->template->displayParsedTemplate('main_lower');
+        $data = array_merge($this->config, $this->session, [
+            'MSGMORE' => $msgmore,
+            'SHOW_NEXTPAGE' => $showNextPage,
+            'EINDEX' => $eindex ?? '',
+            'SHOW_READNEW' => $showReadNew,
+            'SHOW_ADMINLOGIN' => $showAdminLogin,
+            'COPYRIGHT' => $copyrightHtml,
+            'TRANS_NEXT_PAGE' => Translator::trans('main.next_page'),
+            'TRANS_RELOAD' => Translator::trans('main.reload'),
+            'TRANS_UNREAD' => Translator::trans('main.unread'),
+            'TRANS_TOP' => Translator::trans('main.top'),
+            'TRANS_POST_AS_ADMIN' => Translator::trans('main.post_as_admin'),
+        ]);
+        echo $this->renderTwig('main/lower.twig', $data);
+
         print $this->prthtmlfoot();
     }
 

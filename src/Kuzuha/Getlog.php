@@ -416,8 +416,13 @@ class Getlog extends Webapp
 
         if ($this->config['OLDLOGFMT']) {
             $this->sethttpheader();
-            print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log');
-            $this->template->displayParsedTemplate('htmldownload');
+            print $this->prthtmlhead($this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'));
+            $data = array_merge($this->config, $this->session, [
+                'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'),
+                'TRANS_MESSAGE_LOGS' => Translator::trans('log.message_logs'),
+                'TRANS_RETURN' => Translator::trans('log.return'),
+            ]);
+            echo $this->renderTwig('log/htmldownload.twig', $data);
         }
 
         $conditions = $this->getconditions($filename);
@@ -878,35 +883,36 @@ class Getlog extends Webapp
         if (!$dh) {
             $this->prterror('This directory could not be opened.');
         }
-        $files = [];
+        $archives = [];
         while ($entry = readdir($dh)) {
             if (is_file($dir . $entry) and preg_match("/\.(zip|lzh|rar|gz|tar\.gz)$/i", $entry)) {
-                $files[] = $entry;
+                $fstat = stat($dir . $entry);
+                $archives[] = [
+                    'DIR' => $dir,
+                    'FILENAME' => $entry,
+                    'FTIME' => date('Y/m/d H:i:s', $fstat[9]),
+                    'FSIZE' => $fstat[7],
+                ];
             }
         }
         closedir($dh);
 
         # Sort by natural file name order
-        natsort($files);
-
-        foreach ($files as $filename) {
-            $fstat = stat($dir . $filename);
-            $fsize = $fstat[7];
-            $ftime = date('Y/m/d H:i:s', $fstat[9]);
-
-            $this->template->setAttribute('archive', 'visibility', 'visible');
-            $this->template->addVars('archive', [
-                'DIR' => $dir,
-                'FILENAME' => $filename,
-                'FTIME' => $ftime,
-                'FSIZE' => $fsize,
-            ]);
-            $this->template->parseTemplate('archive', 'a');
-        }
+        usort($archives, function ($a, $b) {
+            return strnatcmp($a['FILENAME'], $b['FILENAME']);
+        });
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log archive');
-        $this->template->displayParsedTemplate('archivelist');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' ' . Translator::trans('log.archive_title'));
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.archive_title'),
+            'ARCHIVES' => $archives,
+            'TRANS_MESSAGE_LOG_SEARCH' => Translator::trans('log.message_log_search'),
+            'TRANS_BULLETIN_BOARD' => Translator::trans('log.bulletin_board'),
+            'TRANS_ZIP_ARCHIVES' => Translator::trans('log.zip_archives'),
+            'TRANS_ARCHIVE_HEADER' => Translator::trans('log.archive_header'),
+        ]);
+        echo $this->renderTwig('log/archivelist.twig', $data);
         print $this->prthtmlfoot();
 
     }

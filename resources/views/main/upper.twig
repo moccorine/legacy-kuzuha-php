@@ -1,0 +1,28 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <header>
+    <span class="pagetitle">
+      <a href="{{ CGIURL }}" style="text-decoration: none;">{{ BBSTITLE }}</a>
+    </span>
+    <span class="link_upper">
+      <a href="{{ INFOPAGE }}" title="{{ TRANS_PR_OFFICE_TITLE }}">
+        {{ TRANS_PR_OFFICE }}
+      </a>
+      <a href="mailto:{{ ADMINMAIL }}" title="{{ TRANS_EMAIL_ADMIN }}">
+        {{ TRANS_CONTACT }}
+      </a>
+      <a href="{{ DEFURL }}&amp;m=g"
+        target="_blank"
+        title="{{ TRANS_MESSAGE_LOGS_TITLE }}">
+        {{ TRANS_MESSAGE_LOGS }}
+      </a>
+      <a href="{{ CGIURL }}?{{ QUERY }}&amp;m=tree"
+        title="{{ TRANS_TREE_VIEW_TITLE }}">
+        {{ TRANS_TREE_VIEW }}
+      </a>
+      |&nbsp;<a href="#bottom" title="{{ TRANS_BOTTOM }}">▼</a>
+    </span>
+  </header>
+  {{ FORM|raw }}
+{% endblock %}
