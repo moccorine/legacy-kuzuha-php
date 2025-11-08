@@ -16,10 +16,17 @@ Specifies the display mode of the bulletin board.
 
 ## Display Parameters
 
-### `c` - Cookie/Session ID
-Session identifier for maintaining user state.
+### `c` - Custom settings (encoded)
+Encodes user's custom settings (colors, display options) in the URL.
 
-Example: `?c=58`
+Format: `[2-char flags][base64-encoded colors]`
+- First 2 characters: Flags for display options (autolink, hide form, etc.)
+- Remaining characters: Base64-encoded color settings
+
+This allows the BBS to maintain user preferences without server-side sessions.
+The same value is also stored in a cookie named `c`.
+
+Example: `?c=58` (specific color/display configuration)
 
 ### `d` - Display count (MSGDISP)
 Number of posts to display per page.
