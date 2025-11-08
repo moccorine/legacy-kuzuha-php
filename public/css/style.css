@@ -1,10 +1,10 @@
     html { scroll-behavior: smooth; }
-    body { max-height: 100%; -webkit-text-size-adjust: 100%; background: #{C_BACKGROUND}; color: #{C_TEXT};font-family: "BIZ UDゴシック", "Noto Sans Mono CJK JP", "Noto Sans Mono", "IPAゴシック", "HGゴシックM", "ＭＳ ゴシック", "MS Gothic", monospace; font-size: 14px; }
+    body { max-height: 100%; -webkit-text-size-adjust: 100%; background: var(--color-background); color: var(--color-text);font-family: "BIZ UDゴシック", "Noto Sans Mono CJK JP", "Noto Sans Mono", "IPAゴシック", "HGゴシックM", "ＭＳ ゴシック", "MS Gothic", monospace; font-size: 14px; }
     /* Links */
-    a:link { color: #{C_A_COLOR}; transition:0.2s; }
-    a:visited { color: #{C_A_VISITED}; }
-    a:active { color: #{C_A_ACTIVE}; }
-    a:hover { color: #{C_A_HOVER}; }
+    a:link { color: var(--color-link); transition:0.2s; }
+    a:visited { color: var(--color-visited); }
+    a:active { color: var(--color-active); }
+    a:hover { color: var(--color-hover); }
     a.help { text-decoration-line: underline; }
     .deadLink, .deadLink:link, .deadLink:visited, .deadLink:hover, .deadLink:active { opacity: 0.6; text-decoration: line-through; }
     /* Horizontal lines */
@@ -45,9 +45,9 @@
     /* Copyright notice */
     .copyright { font-size: 13px; font-size: 0.8rem; text-align: right;}
     /* Title */
-    .ms { color: #{C_SUBJ}; font-size: 17px; font-size: 1.05rem; font-weight: bold; }
+    .ms { color: var(--color-subject); font-size: 17px; font-size: 1.05rem; font-weight: bold; }
     /* Post number */
-    .mnum { font-size: 0.8rem; font-size: 12px; color : #{C_TEXT}; display:none; }
+    .mnum { font-size: 0.8rem; font-size: 12px; color : var(--color-text); display:none; }
     /* User label */
     .mu { font-size: 14px; font-size: 0.9rem; }
     /* Username */
@@ -63,9 +63,9 @@
     /* Post form explanation */
     .pfhelp { font-size: 13px; font-size: 0.8rem; font-style: italic; }
     /* Quotes */
-    .q { color: #{C_QMSG}; }
+    .q { color: var(--color-quote); }
     /* Error */
-    .error { font-size: 20px; font-size: 1.2rem; font-weight: bold; color: #{C_ERROR}; }
+    .error { font-size: 20px; font-size: 1.2rem; font-weight: bold; color: var(--color-error); }
     /* Environment variables */
     .env { font-size: 13px; font-size: 0.8rem; font-size: 0.8rem; font-style: italic; }
     /* Buttons */
