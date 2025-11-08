@@ -4,6 +4,33 @@ use App\Config;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
+// Middleware: Redirect legacy m= parameter to RESTful paths
+$app->add(function (Request $request, $handler) {
+    $queryParams = $request->getQueryParams();
+    
+    if (isset($queryParams['m'])) {
+        $m = $queryParams['m'];
+        $pathMap = [
+            'g' => '/search',
+            'tree' => '/tree',
+            't' => '/thread',
+            'ad' => '/admin',
+        ];
+        
+        if (isset($pathMap[$m])) {
+            unset($queryParams['m']);
+            $newQuery = http_build_query($queryParams);
+            $newPath = $pathMap[$m] . ($newQuery ? '?' . $newQuery : '');
+            
+            return $handler->handle($request)
+                ->withStatus(301)
+                ->withHeader('Location', $newPath);
+        }
+    }
+    
+    return $handler->handle($request);
+});
+
 // Main bulletin board
 $app->get('/', function (Request $request, Response $response) {
     ob_start();

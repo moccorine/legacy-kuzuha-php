@@ -1,19 +1,4 @@
 RewriteEngine On
-
-# Redirect old query parameter format to new RESTful paths
-RewriteCond %{QUERY_STRING} ^m=g(&.*)?$
-RewriteRule ^bbs\.php$ /search?%1 [R=301,L]
-
-RewriteCond %{QUERY_STRING} ^m=tree(&.*)?$
-RewriteRule ^bbs\.php$ /tree?%1 [R=301,L]
-
-RewriteCond %{QUERY_STRING} ^m=ad(&.*)?$
-RewriteRule ^bbs\.php$ /admin?%1 [R=301,L]
-
-RewriteCond %{QUERY_STRING} ^m=t(&.*)?$
-RewriteRule ^bbs\.php$ /thread?%1 [R=301,L]
-
-# Route all requests to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]

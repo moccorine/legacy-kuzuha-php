@@ -327,7 +327,7 @@ class Bbs extends Webapp
         $mbrcount = '';
         $showMbrCount = false;
         if ($this->config['CNTFILENAME']) {
-            $mbrcount = number_format($this->mbrcount());
+            $mbrcount = number_format($this->getParticipantCount());
             $showMbrCount = true;
         }
         
@@ -398,7 +398,7 @@ class Bbs extends Webapp
         $showMbrCount = false;
         $mbrcount = '';
         if ($this->config['CNTFILENAME']) {
-            $mbrcount = number_format($this->mbrcount());
+            $mbrcount = number_format($this->getParticipantCount());
             $showMbrCount = true;
         }
         
@@ -1512,7 +1512,7 @@ class Bbs extends Webapp
      * @param   $cntfilename  Record file name
      * @return  String  Number of participants
      */
-    public function mbrcount($cntfilename = '')
+    public function getParticipantCount($cntfilename = '')
     {
         if (!$cntfilename) {
             $cntfilename = $this->config['CNTFILENAME'];
