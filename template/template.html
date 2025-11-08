@@ -25,7 +25,20 @@
     <script type="text/javascript" src="js/upthumb.js" defer></script>
     <script type="text/javascript" src="js/vidembed.js" defer></script>
     <link rel="stylesheet" href="css/style.css">
-    <style>{CUSTOMSTYLE}</style>
+    <style>
+        :root {
+            --color-background: #{C_BACKGROUND};
+            --color-text: #{C_TEXT};
+            --color-link: #{C_A_COLOR};
+            --color-visited: #{C_A_VISITED};
+            --color-active: #{C_A_ACTIVE};
+            --color-hover: #{C_A_HOVER};
+            --color-subject: #{C_SUBJ};
+            --color-quote: #{C_QMSG};
+            --color-error: #{C_ERROR};
+        }
+        {CUSTOMSTYLE}
+    </style>
 {CUSTOMHEAD}
 </head>
 <body>

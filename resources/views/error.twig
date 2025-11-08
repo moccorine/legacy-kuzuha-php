@@ -1,0 +1,12 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <p class="error">
+    {{ ERR_MESSAGE }}
+  </p>
+  {% if DEFURL %}
+    <span class="bbsmsg">
+      <a href="{{ DEFURL }}" title="Return to previous page">Return</a>
+    </span>
+  {% endif %}
+{% endblock %}

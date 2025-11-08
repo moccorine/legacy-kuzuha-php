@@ -88,7 +88,7 @@ class Getlog extends Webapp
         $this->setusersession();
 
         # gzip compressed transfer
-        if ($this->config['GZIPU']) {
+        if ($this->config['GZIPU'] && ob_get_level() === 0) {
             ob_start("ob_gzhandler");
         }
 

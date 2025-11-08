@@ -103,7 +103,7 @@ class Treeview extends Bbs
         $this->setusersession();
 
         # gzip compressed transfer
-        if ($this->config['GZIPU']) {
+        if ($this->config['GZIPU'] && ob_get_level() === 0) {
             ob_start("ob_gzhandler");
         }
 
@@ -331,7 +331,7 @@ class Treeview extends Bbs
     {
 
         print "<pre class=\"msgtree\"><a href=\"{$this->session['DEFURL']}&amp;m=t&amp;s={$msgcurrent['THREAD']}\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
-        $msgcurrent['WDATE'] = Func::getdatestr($msgcurrent['NDATE']);
+        $msgcurrent['WDATE'] = DateHelper::getDateString($msgcurrent['NDATE']);
         print "<span class=\"update\"> [Date updated: {$msgcurrent['WDATE']}]</span>\r";
         $tree = & $this->gentree(array_reverse($thread), $msgcurrent['THREAD']);
         $tree = str_replace("</span><span class=\"bc\">", "", $tree);
@@ -407,7 +407,7 @@ class Treeview extends Bbs
                 }
 
                 # Hide images on the imageBBS
-                $treemsg['MSG'] = Func::conv_imgtag($treemsg['MSG']);
+                $treemsg['MSG'] = StringHelper::convertImageTag($treemsg['MSG']);
 
                 $treeprint .= $treemsg['MSG'];
 
@@ -481,7 +481,7 @@ class Treeview extends Bbs
         $toppostid = @$items[1];
 
         # Display results
-        $msgdisp = Func::fixnumberstr(@$this->form['d']);
+        $msgdisp = StringHelper::fixNumberString(@$this->form['d']);
         if ($msgdisp === false) {
             $msgdisp = $this->config['TREEDISP'];
         } elseif ($msgdisp < 0) {

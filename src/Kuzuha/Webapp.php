@@ -114,6 +114,20 @@ class Webapp
      */
     public function prterror($err_message)
     {
+        // Try Twig first, fallback to patTemplate
+        if (class_exists('\App\View')) {
+            $this->sethttpheader();
+            $data = array_merge($this->config, $this->session, [
+                'TITLE' => $this->config['BBSTITLE'] . ' Error',
+                'ERR_MESSAGE' => $err_message,
+                'CUSTOMSTYLE' => '',
+                'CUSTOMHEAD' => '',
+            ]);
+            echo \App\View::getInstance()->render('error.twig', $data);
+            exit();
+        }
+        
+        // Fallback to patTemplate
         $this->sethttpheader();
         print $this->prthtmlhead($this->config['BBSTITLE'] . ' Error');
         $this->template->addVar('error', 'ERR_MESSAGE', $err_message);
@@ -484,7 +498,7 @@ class Webapp
             'SHOWIMG',
         ];
         # Update from settings string
-        if ($this->form['c']) {
+        if (isset($this->form['c']) && $this->form['c']) {
             $strflag = '';
             $formc = $this->form['c'];
             if (strlen((string) $formc) > 5) {
@@ -515,11 +529,11 @@ class Webapp
             }
         }
         # Update settings information
-        if ($this->form['m'] == 'p' or $this->form['m'] == 'c' or $this->form['m'] == 'g') {
-            $this->form['a'] ? $this->config['AUTOLINK'] = 1 : $this->config['AUTOLINK'] = 0;
-            $this->form['g'] ? $this->config['GZIPU'] = 1 : $this->config['GZIPU'] = 0;
-            $this->form['loff'] ? $this->config['LINKOFF'] = 1 : $this->config['LINKOFF'] = 0;
-            $this->form['hide'] ? $this->config['HIDEFORM'] = 1 : $this->config['HIDEFORM'] = 0;
+        if (isset($this->form['m']) && ($this->form['m'] == 'p' or $this->form['m'] == 'c' or $this->form['m'] == 'g')) {
+            $this->config['AUTOLINK'] = !empty($this->form['a']) ? 1 : 0;
+            $this->config['GZIPU'] = !empty($this->form['g']) ? 1 : 0;
+            $this->config['LINKOFF'] = !empty($this->form['loff']) ? 1 : 0;
+            $this->config['HIDEFORM'] = !empty($this->form['hide']) ? 1 : 0;
             $this->form['sim'] ? $this->config['SHOWIMG'] = 1 : $this->config['SHOWIMG'] = 0;
             if ($this->form['m'] == 'c') {
                 $this->form['fw'] ? $this->config['FOLLOWWIN'] = 1 : $this->config['FOLLOWWIN'] = 0;

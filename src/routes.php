@@ -21,7 +21,11 @@ $app->get('/', function (Request $request, Response $response) {
     }
     
     $output = ob_get_clean();
-    $response->getBody()->write($output);
+    if ($output !== false) {
+    if ($output !== false) {
+        $response->getBody()->write($output);
+    }
+    }
     return $response;
 });
 
@@ -43,7 +47,9 @@ $app->post('/', function (Request $request, Response $response) {
     }
     
     $output = ob_get_clean();
+    if ($output !== false) {
     $response->getBody()->write($output);
+    }
     return $response;
 });
 
@@ -55,7 +61,9 @@ $app->map(['GET', 'POST'], '/search', function (Request $request, Response $resp
     $getlog->main();
     
     $output = ob_get_clean();
+    if ($output !== false) {
     $response->getBody()->write($output);
+    }
     return $response;
 });
 
@@ -67,7 +75,9 @@ $app->map(['GET', 'POST'], '/tree', function (Request $request, Response $respon
     $treeview->main();
     
     $output = ob_get_clean();
+    if ($output !== false) {
     $response->getBody()->write($output);
+    }
     return $response;
 });
 
@@ -93,6 +103,8 @@ $app->post('/admin', function (Request $request, Response $response) {
     }
     
     $output = ob_get_clean();
+    if ($output !== false) {
     $response->getBody()->write($output);
+    }
     return $response;
 });

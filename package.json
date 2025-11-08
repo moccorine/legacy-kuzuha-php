@@ -1,0 +1,30 @@
+{
+  "name": "legacy-kuzuha-php",
+  "version": "1.0.0",
+  "description": "## Deploy",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "format": "prettier --write resources/views",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moccorine/legacy-kuzuha-php.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/moccorine/legacy-kuzuha-php/issues"
+  },
+  "homepage": "https://github.com/moccorine/legacy-kuzuha-php#readme",
+  "devDependencies": {
+    "prettier": "^2.8.8",
+    "prettier-plugin-twig-melody": "^0.4.6"
+  }
+}

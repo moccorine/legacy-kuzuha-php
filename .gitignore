@@ -1,4 +1,5 @@
 vendor/
+node_modules/
 composer.lock
 .php-cs-fixer.cache
 .env
@@ -7,3 +8,4 @@ archives/*.dat
 storage/app/bbs.log
 storage/app/bbs.cnt
 storage/logs/*.log
+storage/cache/twig/*
