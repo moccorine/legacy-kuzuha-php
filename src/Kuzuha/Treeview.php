@@ -268,7 +268,7 @@ class Treeview extends Bbs
             # Extract reference IDs from "reference"
             foreach ($thread as $message) {
                 if (!@$message['REFID']) {
-                    if (preg_match("/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
+                    if (preg_match("/<a href=\"\/follow\?s=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
                         $message['REFID'] = $matches[1];
                     } elseif (preg_match("/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
                         $message['REFID'] = $matches[1];
@@ -356,7 +356,7 @@ class Treeview extends Bbs
     public function prttexttree(&$msgcurrent, &$thread)
     {
 
-        print "<pre class=\"msgtree\"><a href=\"{$this->session['DEFURL']}&amp;m=t&amp;s={$msgcurrent['THREAD']}\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
+        print "<pre class=\"msgtree\"><a href=\"/thread?s={$msgcurrent['THREAD']}&amp;{$this->session['QUERY']}\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
         $msgcurrent['WDATE'] = DateHelper::getDateString($msgcurrent['NDATE']);
         $dateUpdatedLabel = Translator::trans('tree.date_updated');
         print "<span class=\"update\"> [{$dateUpdatedLabel}: {$msgcurrent['WDATE']}]</span>\r";
@@ -421,7 +421,7 @@ class Treeview extends Bbs
                 $treemsg['MSG']  = preg_replace('/(.+)/', "<span class= \"ngline\">$1</span>\r", $treemsg['MSG']);
 
                 # Link to the follow-up post page
-                $treeprint .= "<a href=\"{$this->session['DEFURL']}&amp;m=f&amp;s={$parentid}\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
+                $treeprint .= "<a href=\"/follow?s={$parentid}&amp;{$this->session['QUERY']}\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
 
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->config['ANONY_NAME']) {

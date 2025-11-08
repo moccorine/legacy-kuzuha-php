@@ -180,20 +180,20 @@ class Webapp
         # "Reference"
         if (!$mode) {
             $message['MSG'] = preg_replace(
-                "/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"{$this->config['CGIURL']}?m=f&amp;s=$1&amp;{$this->session['QUERY']}\">$2</a>",
+                "/<a href=\"\/follow\?s=(\d+)[^>]+>([^<]+)<\/a>$/i",
+                "<a href=\"{$this->config['CGIURL']}/follow?s=$1&amp;{$this->session['QUERY']}\">$2</a>",
                 $message['MSG'],
                 1
             );
             $message['MSG'] = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"{$this->config['CGIURL']}?m=f&amp;s=$1&amp;{$this->session['QUERY']}\">$2</a>",
+                "<a href=\"{$this->config['CGIURL']}/follow?s=$1&amp;{$this->session['QUERY']}\">$2</a>",
                 $message['MSG'],
                 1
             );
         } else {
             $message['MSG'] = preg_replace(
-                "/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i",
+                "/<a href=\"\/follow\?s=(\d+)[^>]+>([^<]+)<\/a>$/i",
                 '<a href="#a$1">$2</a>',
                 $message['MSG'],
                 1
@@ -218,7 +218,7 @@ class Webapp
             $message['BTNFOLLOW'] = '';
             if ($this->config['BBSMODE_ADMINONLY'] != 1) {
                 $message['BTNFOLLOW'] = "$spacer<a href=\"{$this->config['CGIURL']}"
-                    ."?m=f&amp;s={$message['POSTID']}&amp;".$this->session['QUERY'];
+                    ."/follow?s={$message['POSTID']}&amp;".$this->session['QUERY'];
                 if ($this->form['w']) {
                     $message['BTNFOLLOW'] .= '&amp;w='.$this->form['w'];
                 }
@@ -246,7 +246,7 @@ class Webapp
             }
             $message['BTNTHREAD'] = '';
             if ($this->config['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNTHREAD'] = "$spacer<a href=\"{$this->config['CGIURL']}?m=t&amp;s={$message['THREAD']}&amp;".$this->session['QUERY'];
+                $message['BTNTHREAD'] = "$spacer<a href=\"{$this->config['CGIURL']}/thread?s={$message['THREAD']}&amp;".$this->session['QUERY'];
                 if ($mode == 1) {
                     $message['BTNTHREAD'] .= "&amp;ff=$tlog";
                 }
