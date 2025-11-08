@@ -165,6 +165,21 @@ class Webapp
     }
 
     /**
+     * Render complete page with header and footer
+     *
+     * @param string $title Page title
+     * @param callable $contentCallback Callback to render page content
+     * @param string $customhead Custom head content
+     * @param string $customstyle Custom style content
+     */
+    public function renderPage($title, $contentCallback, $customhead = "", $customstyle = "")
+    {
+        print $this->prthtmlhead($title, $customhead, $customstyle);
+        $contentCallback();
+        print $this->prthtmlfoot();
+    }
+
+    /**
      * Copyright notice
      */
     public function prtcopyright()

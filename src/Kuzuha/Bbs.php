@@ -411,10 +411,9 @@ class Bbs extends Webapp
         $this->template->addVar('follow', 'FF', $this->form['ff']);
         # Display
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Follow-up post');
-        $this->template->displayParsedTemplate('follow');
-        print $this->prthtmlfoot();
-
+        $this->renderPage($this->config['BBSTITLE'] . ' Follow-up post', function () {
+            $this->template->displayParsedTemplate('follow');
+        });
     }
 
     /**
@@ -446,10 +445,9 @@ class Bbs extends Webapp
         }
 
         $this->sethttpheader();
-        print $this->prthtmlhead("{$this->config['BBSTITLE']} New post");
-        $this->template->displayParsedTemplate('newpost');
-        print $this->prthtmlfoot();
-
+        $this->renderPage("{$this->config['BBSTITLE']} New post", function () {
+            $this->template->displayParsedTemplate('newpost');
+        });
     }
 
     /**
@@ -467,19 +465,18 @@ class Bbs extends Webapp
             $mode = $this->form['m'];
         }
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Post search');
-        $this->template->displayParsedTemplate('searchlist_upper');
+        $this->renderPage($this->config['BBSTITLE'] . ' Post search', function () use ($mode) {
+            $this->template->displayParsedTemplate('searchlist_upper');
 
-        $result = $this->msgsearchlist($mode);
-        foreach ($result as $message) {
-            print $this->prtmessage($message, $mode, $this->form['ff']);
-        }
-        $success = count($result);
+            $result = $this->msgsearchlist($mode);
+            foreach ($result as $message) {
+                print $this->prtmessage($message, $mode, $this->form['ff']);
+            }
+            $success = count($result);
 
-        $this->template->addVar('searchlist_lower', 'SUCCESS', $success);
-        $this->template->displayParsedTemplate('searchlist_lower');
-        print $this->prthtmlfoot();
-
+            $this->template->addVar('searchlist_lower', 'SUCCESS', $success);
+            $this->template->displayParsedTemplate('searchlist_lower');
+        });
     }
 
     /**
@@ -555,10 +552,9 @@ class Bbs extends Webapp
     {
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Post complete');
-        $this->template->displayParsedTemplate('postcomplete');
-        print $this->prthtmlfoot();
-
+        $this->renderPage($this->config['BBSTITLE'] . ' Post complete', function () {
+            $this->template->displayParsedTemplate('postcomplete');
+        });
     }
 
     /**
@@ -596,9 +592,9 @@ class Bbs extends Webapp
         $this->template->addVar('custom', 'MODE', $mode);
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' User settings');
-        $this->template->displayParsedTemplate('custom');
-        print $this->prthtmlfoot();
+        $this->renderPage($this->config['BBSTITLE'] . ' User settings', function () {
+            $this->template->displayParsedTemplate('custom');
+        });
     }
 
     /**
@@ -698,9 +694,9 @@ class Bbs extends Webapp
             $this->prterror(Translator::trans('error.deletion_not_permitted'));
         }
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Deletion complete');
-        $this->template->displayParsedTemplate('undocomplete');
-        print $this->prthtmlfoot();
+        $this->renderPage($this->config['BBSTITLE'] . ' Deletion complete', function () {
+            $this->template->displayParsedTemplate('undocomplete');
+        });
     }
 
     /**
