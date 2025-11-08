@@ -5,3 +5,5 @@ composer.lock
 .php-cs-fixer.cache
 .env
 .phpunit.result.cache
+archives/*.dat
+log/error.log
