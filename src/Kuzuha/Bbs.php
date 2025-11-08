@@ -563,11 +563,14 @@ class Bbs extends Webapp
      */
     public function prtputcomplete()
     {
-
         $this->sethttpheader();
-        $this->renderPage($this->config['BBSTITLE'] . ' Post complete', function () {
-            $this->template->displayParsedTemplate('postcomplete');
-        });
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('complete.post_complete'),
+            'TRANS_POST_COMPLETE' => Translator::trans('complete.post_complete'),
+            'TRANS_RETURN_TO_BBS' => Translator::trans('complete.return_to_bbs'),
+            'TRANS_RETURN_INSTRUCTION' => Translator::trans('complete.return_instruction'),
+        ]);
+        echo $this->renderTwig('postcomplete.twig', $data);
     }
 
     /**
@@ -706,9 +709,13 @@ class Bbs extends Webapp
             $this->prterror(Translator::trans('error.deletion_not_permitted'));
         }
         $this->sethttpheader();
-        $this->renderPage($this->config['BBSTITLE'] . ' Deletion complete', function () {
-            $this->template->displayParsedTemplate('undocomplete');
-        });
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('complete.deletion_complete'),
+            'TRANS_DELETION_COMPLETE' => Translator::trans('complete.deletion_complete'),
+            'TRANS_RETURN_TO_BBS' => Translator::trans('complete.return_to_bbs'),
+            'TRANS_RETURN_INSTRUCTION' => Translator::trans('complete.return_instruction'),
+        ]);
+        echo $this->renderTwig('undocomplete.twig', $data);
     }
 
     /**

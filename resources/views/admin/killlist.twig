@@ -6,7 +6,9 @@
       <a href="{{ CGIURL }}" style="text-decoration: none;">{{ BBSTITLE }}</a>
     </span>
   </header>
-  <h1>{{ TRANS_DELETION_MODE }}</h1>
+  <h1>
+    {{ TRANS_DELETION_MODE }}
+  </h1>
   <form method="post" action="{{ CGIURL }}">
     <input type="hidden" name="m" value="ad" />
     <input type="hidden" name="u" value="{{ U }}" />
@@ -20,21 +22,32 @@
       title="Alt(+Shift)+B" />
   </form>
   <form method="post" action="{{ CGIURL }}">
-    <input type="submit" value="　[!] {{ TRANS_PERFORM_DELETION }}　" class="btn" />
+    <input type="submit"
+      value="　[!] {{ TRANS_PERFORM_DELETION }}　"
+      class="btn" />
     <input type="hidden" name="m" value="ad" />
     <input type="hidden" name="ad" value="x" />
     <input type="hidden" name="u" value="{{ U }}" />
     <input type="hidden" name="v" value="{{ V }}" />
-    <p>{{ TRANS_DELETION_INSTRUCTION }}</p>
+    <p>
+      {{ TRANS_DELETION_INSTRUCTION }}
+    </p>
     <hr />
     <span class="medium">{{ TRANS_DELETION_HEADER }}</span>
     <pre>
-{%- for msg in messages %}
-<input type="checkbox" name="x[]" value="{{ msg.POSTID }}" />- <a href="{{ CGIURL }}?m=f&amp;s={{ msg.POSTID }}" target="link">{{ msg.POSTID }}</a> - [{{ msg.WDATE }}] - {{ msg.TITLE }} - {{ msg.USER_NOTAG }} - {{ msg.MSGDIGEST }}
-{% endfor -%}
-</pre>
+      {%- for msg in messages %}
+        <input type="checkbox" name="x[]" value="{{ msg.POSTID }}" />- <a href="{{
+          CGIURL
+          }}?m=f&amp;s={{ msg.POSTID }}"
+          target="link">
+          {{ msg.POSTID }}
+        </a> - [{{ msg.WDATE }}] - {{ msg.TITLE }} - {{ msg.USER_NOTAG }} - {{ msg.MSGDIGEST }}
+      {% endfor -%}
+    </pre>
     <hr />
-    <input type="submit" value="　[!] {{ TRANS_PERFORM_DELETION }}　" class="btn" />
+    <input type="submit"
+      value="　[!] {{ TRANS_PERFORM_DELETION }}　"
+      class="btn" />
   </form>
   <form method="post" action="{{ CGIURL }}">
     <input type="hidden" name="m" value="ad" />

@@ -79,5 +79,9 @@
   "admin.return": "戻る",
   "admin.perform_deletion": "削除実行",
   "admin.deletion_instruction": "削除したい投稿のチェックボックスにチェックを入れ、下部の[削除実行]ボタンをクリックしてください。",
-  "admin.deletion_header": "削除 - 表示 - 投稿日時 - 題名 - 投稿者名 - 内容（抜粋）"
+  "admin.deletion_header": "削除 - 表示 - 投稿日時 - 題名 - 投稿者名 - 内容（抜粋）",
+  "complete.post_complete": "投稿完了",
+  "complete.deletion_complete": "削除完了",
+  "complete.return_to_bbs": "掲示板に戻る",
+  "complete.return_instruction": "上記のリンクをクリックするか、Alt(+Shift)+Oキーを押して掲示板に戻ってください。"
 }

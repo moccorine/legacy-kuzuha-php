@@ -1,0 +1,16 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <p>
+    <a href="{{ DEFURL }}"
+      accesskey="o"
+      title="{{ TRANS_RETURN_TO_BBS }} Alt(+Shift)+O">
+      <div class="msg-complete">
+        {{ TRANS_DELETION_COMPLETE }}
+      </div>
+    </a>
+  </p>
+  <p>
+    <i>{{ TRANS_RETURN_INSTRUCTION }}</i>
+  </p>
+{% endblock %}

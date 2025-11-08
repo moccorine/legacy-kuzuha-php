@@ -79,5 +79,9 @@
   "admin.return": "Return",
   "admin.perform_deletion": "Perform deletion",
   "admin.deletion_instruction": "Please check the checkboxes of the posts you wish to delete, then click the [Perform deletion] button at the bottom.",
-  "admin.deletion_header": "Delete - View - Date posted - Subject - Username - Contents (truncated)"
+  "admin.deletion_header": "Delete - View - Date posted - Subject - Username - Contents (truncated)",
+  "complete.post_complete": "Post complete",
+  "complete.deletion_complete": "Deletion complete",
+  "complete.return_to_bbs": "Return to the bulletin board",
+  "complete.return_instruction": "Click the link above or press Alt(+Shift)+O to return to the bulletin board."
 }
