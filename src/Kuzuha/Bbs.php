@@ -636,10 +636,11 @@ class Bbs extends Webapp
         $formData = $this->getFormData('＞' . preg_replace('/<[^>]*>/', '', (string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
         $formHtml = $this->renderTwig('components/form.twig', $formData);
         
-        // Add follow-specific hidden inputs
-        $formHtml .= '<input type="hidden" name="f" value="' . htmlspecialchars($this->form['s']) . '" />';
-        $formHtml .= '<input type="hidden" name="ff" value="' . htmlspecialchars($this->form['ff']) . '" />';
-        $formHtml .= '<input type="hidden" name="s" value="' . htmlspecialchars($this->form['s']) . '" />';
+        // Add follow-specific hidden inputs before </form>
+        $hiddenInputs = '<input type="hidden" name="f" value="' . htmlspecialchars($this->form['s']) . '" />';
+        $hiddenInputs .= '<input type="hidden" name="ff" value="' . htmlspecialchars($this->form['ff']) . '" />';
+        $hiddenInputs .= '<input type="hidden" name="s" value="' . htmlspecialchars($this->form['s']) . '" />';
+        $formHtml = str_replace('</form>', $hiddenInputs . '</form>', $formHtml);
 
         $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
