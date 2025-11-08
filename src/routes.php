@@ -14,6 +14,7 @@ $app->add(function (Request $request, $handler) {
             'g' => '/search',
             'tree' => '/tree',
             't' => '/thread',
+            'f' => '/follow',
             'ad' => '/admin',
         ];
         
@@ -138,7 +139,7 @@ $app->map(['GET', 'POST'], '/admin', function (Request $request, Response $respo
     return $response;
 });
 
-// Thread view (follow mode)
+// Thread view
 $app->map(['GET', 'POST'], '/thread', function (Request $request, Response $response) {
     ob_start();
 
@@ -148,10 +149,33 @@ $app->map(['GET', 'POST'], '/thread', function (Request $request, Response $resp
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Imagebbs();
-        $imagebbs->main();
+        $imagebbs->prtsearchlist();
     } else {
         $bbs = new \Kuzuha\Bbs();
-        $bbs->main();
+        $bbs->prtsearchlist();
+    }
+
+    $output = ob_get_clean();
+    if ($output !== false) {
+        $response->getBody()->write($output);
+    }
+    return $response;
+});
+
+// Follow-up post page
+$app->map(['GET', 'POST'], '/follow', function (Request $request, Response $response) {
+    ob_start();
+
+    $_GET = $request->getQueryParams();
+    $_POST = $request->getParsedBody() ?? [];
+
+    $config = Config::getInstance();
+    if ($config->get('BBSMODE_IMAGE') == 1) {
+        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs->prtfollow();
+    } else {
+        $bbs = new \Kuzuha\Bbs();
+        $bbs->prtfollow();
     }
 
     $output = ob_get_clean();

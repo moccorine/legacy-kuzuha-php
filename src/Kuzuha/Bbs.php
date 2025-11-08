@@ -91,14 +91,6 @@ class Bbs extends Webapp
                 $this->prtmain();
             }
         }
-        # Display follow-up page
-        elseif ($this->form['m'] == 'f') {
-            $this->prtfollow();
-        }
-        # Post search (thread view)
-        elseif ($this->form['m'] == 't' or $this->form['m'] == 's') {
-            $this->prtsearchlist();
-        }
         # Display user settings page
         elseif ($this->form['setup']) {
             $this->prtcustom();

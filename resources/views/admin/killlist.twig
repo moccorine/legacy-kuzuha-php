@@ -38,7 +38,7 @@
       {%- for msg in messages %}
         <input type="checkbox" name="x[]" value="{{ msg.POSTID }}" />- <a href="{{
           CGIURL
-          }}?m=f&amp;s={{ msg.POSTID }}"
+          }}/follow?s={{ msg.POSTID }}"
           target="link">
           {{ msg.POSTID }}
         </a> - [{{ msg.WDATE }}] - {{ msg.TITLE }} - {{ msg.USER_NOTAG }} - {{ msg.MSGDIGEST }}
