@@ -4,10 +4,7 @@ namespace Kuzuha;
 
 use App\Config;
 use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
 use App\Utils\StringHelper;
-use App\Utils\FileHelper;
-use App\Utils\TripHelper;
 
 class Webapp
 {
@@ -69,7 +66,7 @@ class Webapp
         $this->session['TOPPOSTID'] = $this->form['p'];
         # Get settings information cookies
         if ($this->config['COOKIE'] and $_COOKIE['c']
-            and preg_match("/u=([^&]*)&i=([^&]*)&c=([^&]*)/", (string) $_COOKIE['c'], $matches)) {
+            and preg_match('/u=([^&]*)&i=([^&]*)&c=([^&]*)/', (string) $_COOKIE['c'], $matches)) {
             if (!isset($this->form['u'])) {
                 $this->session['U'] = urldecode($matches[1]);
             }
@@ -82,17 +79,17 @@ class Webapp
         }
         # Get cookie for the UNDO button
         if ($this->config['COOKIE'] and $this->config['ALLOW_UNDO'] and $_COOKIE['undo']
-            and preg_match("/p=([^&]*)&k=([^&]*)/", (string) $_COOKIE['undo'], $matches)) {
+            and preg_match('/p=([^&]*)&k=([^&]*)/', (string) $_COOKIE['undo'], $matches)) {
             $this->session['UNDO_P'] = $matches[1];
             $this->session['UNDO_K'] = $matches[2];
         }
         # Default query
-        $this->session['QUERY'] = "c=".$this->session['C'];
+        $this->session['QUERY'] = 'c='.$this->session['C'];
         if ($this->session['MSGDISP']) {
-            $this->session['QUERY'] .= "&amp;d=".$this->session['MSGDISP'];
+            $this->session['QUERY'] .= '&amp;d='.$this->session['MSGDISP'];
         }
         if ($this->session['TOPPOSTID']) {
-            $this->session['QUERY'] .= "&amp;p=".$this->session['TOPPOSTID'];
+            $this->session['QUERY'] .= '&amp;p='.$this->session['TOPPOSTID'];
         }
         # Default URL
         $this->session['DEFURL'] = $this->config['CGIURL'] . '?' . $this->session['QUERY'];
@@ -126,7 +123,7 @@ class Webapp
             echo \App\View::getInstance()->render('error.twig', $data);
             exit();
         }
-        
+
         // Fallback to patTemplate
         $this->sethttpheader();
         print $this->prthtmlhead($this->config['BBSTITLE'] . ' Error');
@@ -148,7 +145,7 @@ class Webapp
      * @param   String  $customstyle  Custom style sheets in the style tag
      * @return  String  HTML data
      */
-    public function prthtmlhead($title = "", $customhead = "", $customstyle = "")
+    public function prthtmlhead($title = '', $customhead = '', $customstyle = '')
     {
         $this->template->clearTemplate('header');
         $this->template->addVars('header', [
@@ -170,7 +167,7 @@ class Webapp
     {
         if ($this->config['SHOW_PRCTIME'] and $this->session['START_TIME']) {
             $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
-            $duration = sprintf("%0.6f", $duration);
+            $duration = sprintf('%0.6f', $duration);
             $this->template->setAttribute('duration', 'visibility', 'visible');
             $this->template->addVar('duration', 'DURATION', $duration);
         }
@@ -186,7 +183,7 @@ class Webapp
      * @param string $customhead Custom head content
      * @param string $customstyle Custom style content
      */
-    public function renderPage($title, $contentCallback, $customhead = "", $customstyle = "")
+    public function renderPage($title, $contentCallback, $customhead = '', $customstyle = '')
     {
         print $this->prthtmlhead($title, $customhead, $customstyle);
         $contentCallback();
@@ -243,8 +240,8 @@ class Webapp
         }
         $message['WDATE'] = DateHelper::getDateString($message['NDATE'], $this->config['DATEFORMAT']);
         #20181102 Gikoneko: Escape special characters
-        $message['MSG'] = preg_replace("/{/i", "&#123;", (string) $message['MSG'], -1);
-        $message['MSG'] = preg_replace("/}/i", "&#125;", $message['MSG'], -1);
+        $message['MSG'] = preg_replace('/{/i', '&#123;', (string) $message['MSG'], -1);
+        $message['MSG'] = preg_replace('/}/i', '&#125;', $message['MSG'], -1);
 
         #20241016 Heyuri: Deprecated by ytthumb.js, embedding each video in browser slows stuff down a lot
         ##20200524 Gikoneko: youtube embedding
@@ -274,13 +271,13 @@ class Webapp
         } else {
             $message['MSG'] = preg_replace(
                 "/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"#a$1\">$2</a>",
+                '<a href="#a$1">$2</a>',
                 $message['MSG'],
                 1
             );
             $message['MSG'] = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"#a$1\">$2</a>",
+                '<a href="#a$1">$2</a>',
                 $message['MSG'],
                 1
             );
@@ -288,19 +285,19 @@ class Webapp
         if ($mode == 0 or ($mode == 1 and $this->config['OLDLOGBTN'])) {
 
             if (!$this->config['FOLLOWWIN']) {
-                $newwin = " target=\"link\"";
+                $newwin = ' target="link"';
             } else {
                 $newwin = '';
             }
-            $spacer = "&nbsp;&nbsp;&nbsp;";
-            $lnk_class = "class=\"internal\"";
+            $spacer = '&nbsp;&nbsp;&nbsp;';
+            $lnk_class = 'class="internal"';
             # Follow-up post button
             $message['BTNFOLLOW'] = '';
             if ($this->config['BBSMODE_ADMINONLY'] != 1) {
                 $message['BTNFOLLOW'] = "$spacer<a href=\"{$this->config['CGIURL']}"
                     ."?m=f&amp;s={$message['POSTID']}&amp;".$this->session['QUERY'];
                 if ($this->form['w']) {
-                    $message['BTNFOLLOW'] .= "&amp;w=".$this->form['w'];
+                    $message['BTNFOLLOW'] .= '&amp;w='.$this->form['w'];
                 }
                 if ($mode == 1) {
                     $message['BTNFOLLOW'] .= "&amp;ff=$tlog";
@@ -311,9 +308,9 @@ class Webapp
             $message['BTNAUTHOR'] = '';
             if ($message['USER'] != $this->config['ANONY_NAME'] and $this->config['BBSMODE_ADMINONLY'] != 1) {
                 $message['BTNAUTHOR'] = "$spacer<a href=\"{$this->config['CGIURL']}"
-                    ."?m=s&amp;s=". urlencode(preg_replace("/<[^>]*>/", '', (string) $message['USER'])) ."&amp;".$this->session['QUERY'];
+                    .'?m=s&amp;s='. urlencode(preg_replace('/<[^>]*>/', '', (string) $message['USER'])) .'&amp;'.$this->session['QUERY'];
                 if ($this->form['w']) {
-                    $message['BTNAUTHOR'] .= "&amp;w=".$this->form['w'];
+                    $message['BTNAUTHOR'] .= '&amp;w='.$this->form['w'];
                 }
                 if ($mode == 1) {
                     $message['BTNAUTHOR'] .= "&amp;ff=$tlog";
@@ -355,7 +352,7 @@ class Webapp
             $message['USER'] = "<a href=\"mailto:{$message['MAIL']}\">{$message['USER']}</a>";
         }
         # Change quote color
-        $message['MSG'] = preg_replace("/(^|\r)(\&gt;[^\r]*)/", "$1<span class=\"q\">$2</span>", (string) $message['MSG']);
+        $message['MSG'] = preg_replace("/(^|\r)(\&gt;[^\r]*)/", '$1<span class="q">$2</span>', (string) $message['MSG']);
         $message['MSG'] = str_replace("</span>\r<span class=\"q\">", "\r", $message['MSG']);
         # Environment variables
         $message['ENVADDR'] = '';
@@ -373,7 +370,7 @@ class Webapp
             }
             if ($message['ENVADDR'] or $message['ENVUA']) {
                 $this->template->clearTemplate('envlist');
-                $this->template->setAttribute("envlist", "visibility", "visible");
+                $this->template->setAttribute('envlist', 'visibility', 'visible');
                 $this->template->addVars('envlist', [
                     'ENVADDR' => $message['ENVADDR'],
                     'ENVUA' => $message['ENVUA'],
@@ -424,11 +421,11 @@ class Webapp
      * @param   String  $logfilename  Log file name (optional)
      * @return  Array   Log line array
      */
-    public function loadmessage($logfilename = "")
+    public function loadmessage($logfilename = '')
     {
         if ($logfilename) {
             preg_match("/^([\w.]*)$/", $logfilename, $matches);
-            $logfilename = $this->config['OLDLOGFILEDIR']."/".$matches[1];
+            $logfilename = $this->config['OLDLOGFILEDIR'].'/'.$matches[1];
         } else {
             $logfilename = $this->config['LOGFILENAME'];
         }
@@ -457,8 +454,8 @@ class Webapp
         }
         $i = 5;
         while ($i <= 9) {
-            $logsplit[$i] = strtr($logsplit[$i], "\0", ",");
-            $logsplit[$i] = str_replace("&#44;", ",", $logsplit[$i]);
+            $logsplit[$i] = strtr($logsplit[$i], "\0", ',');
+            $logsplit[$i] = str_replace('&#44;', ',', $logsplit[$i]);
             $i++;
         }
         $message = [];
@@ -532,7 +529,7 @@ class Webapp
                 $strflag = $formc;
             }
             if ($strflag) {
-                $flagbin = str_pad(base_convert((string) $strflag, 32, 2), count($flags), "0", STR_PAD_LEFT);
+                $flagbin = str_pad(base_convert((string) $strflag, 32, 2), count($flags), '0', STR_PAD_LEFT);
                 $currentpos = 0;
                 foreach ($flags as $confname) {
                     $this->config[$confname] = substr($flagbin, $currentpos, 1);
@@ -563,7 +560,7 @@ class Webapp
             foreach ($flags as $confname) {
                 $this->config[$confname] ? $flagbin .= '1' : $flagbin .= '0';
             }
-            $flagvalue = str_pad(base_convert($flagbin, 2, 32), 2, "0", STR_PAD_LEFT);
+            $flagvalue = str_pad(base_convert($flagbin, 2, 32), 2, '0', STR_PAD_LEFT);
 
             if ($flgcolorchanged) {
                 $this->form['c'] = $flagvalue . substr((string) $this->form['c'], 2);
@@ -579,12 +576,12 @@ class Webapp
     public function sethttpheader()
     {
         header('Content-Type: text/html; charset=UTF-8');
-        header("X-XSS-Protection: 1; mode=block");
+        header('X-XSS-Protection: 1; mode=block');
         // header('X-FRAME-OPTIONS:DENY');
         // Remove X-Frame-Options (not needed when using CSP)
-        header_remove("X-Frame-Options");
+        header_remove('X-Frame-Options');
         // Allow embedding from anywhere
-        header("Content-Security-Policy: frame-ancestors *;");
+        header('Content-Security-Policy: frame-ancestors *;');
 
     }
 

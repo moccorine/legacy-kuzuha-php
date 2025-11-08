@@ -3,14 +3,8 @@
 namespace Kuzuha;
 
 use App\Config;
-use App\Translator;
 use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
 use App\Utils\StringHelper;
-use App\Utils\SecurityHelper;
-use App\Utils\FileHelper;
-use App\Utils\TripHelper;
-
 
 /*
 
@@ -26,8 +20,8 @@ http://www.hlla.is.tsukuba.ac.jp/~yas/gen/it-2002-10-28/
 
 */
 
-if (!defined("INCLUDED_FROM_BBS")) {
-    header("Location: ../bbs.php?m=tree");
+if (!defined('INCLUDED_FROM_BBS')) {
+    header('Location: ../bbs.php?m=tree');
     exit();
 }
 
@@ -104,7 +98,7 @@ class Treeview extends Bbs
 
         # gzip compressed transfer
         if ($this->config['GZIPU'] && ob_get_level() === 0) {
-            ob_start("ob_gzhandler");
+            ob_start('ob_gzhandler');
         }
 
         # Post operation
@@ -136,7 +130,6 @@ class Treeview extends Bbs
             # Admin mode transition
             elseif ($posterr == 3) {
                 define('BBS_ACTIVATED', true);
-                require_once(PHP_BBSADMIN);
                 $bbsadmin = new Bbsadmin($this);
                 $bbsadmin->main();
             }
@@ -194,9 +187,9 @@ class Treeview extends Bbs
         print $this->prthtmlhead($this->config['BBSTITLE'] . ' Tree view', '', $customstyle);
 
         # Form section
-        $dtitle = "";
-        $dmsg = "";
-        $dlink = "";
+        $dtitle = '';
+        $dmsg = '';
+        $dlink = '';
         if ($retry) {
             $dtitle = @$this->form['t'];
             $dmsg = @$this->form['v'];
@@ -297,18 +290,18 @@ class Treeview extends Bbs
         # Navigation button
         if ($eindex > 0) {
             if ($eindex >= $lastindex) {
-                $this->template->setAttribute("nextpage", "visibility", "hidden");
+                $this->template->setAttribute('nextpage', 'visibility', 'hidden');
             } else {
                 $this->template->addVar('nextpage', 'EINDEX', $eindex);
             }
             if (!$this->config['SHOW_READNEWBTN']) {
-                $this->template->setAttribute("readnew", "visibility", "hidden");
+                $this->template->setAttribute('readnew', 'visibility', 'hidden');
             }
         }
 
         # Administrator post
         if ($this->config['BBSMODE_ADMINONLY'] == 0) {
-            $this->template->setAttribute("adminlogin", "visibility", "hidden");
+            $this->template->setAttribute('adminlogin', 'visibility', 'hidden');
         }
 
         # Lower main section
@@ -334,13 +327,13 @@ class Treeview extends Bbs
         $msgcurrent['WDATE'] = DateHelper::getDateString($msgcurrent['NDATE']);
         print "<span class=\"update\"> [Date updated: {$msgcurrent['WDATE']}]</span>\r";
         $tree = & $this->gentree(array_reverse($thread), $msgcurrent['THREAD']);
-        $tree = str_replace("</span><span class=\"bc\">", "", $tree);
-        $tree = str_replace("</span>　<span class=\"bc\">", "　", $tree);
+        $tree = str_replace('</span><span class="bc">', '', $tree);
+        $tree = str_replace('</span>　<span class="bc">', '　', $tree);
         $tree = '　' . str_replace("\r", "\r　", $tree);
 
         #20181110 Gikoneko: Escape special characters
-        $tree = str_replace("{", "&#123;", $tree);
-        $tree = str_replace("}", "&#125;", $tree);
+        $tree = str_replace('{', '&#123;', $tree);
+        $tree = str_replace('}', '&#125;', $tree);
 
         #20200207 Gikoneko: span style=tag enabled
         #    $tree = preg_replace("/&lt;span style=&quot;(.+?)&quot;&gt;(.+?)&lt;\/span&gt;/","<span style=\"$1\">$2</span>", $tree);
@@ -383,22 +376,22 @@ class Treeview extends Bbs
             if ($treemsg['POSTID'] == $parentid) {
 
                 # Delete reference
-                $treemsg['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", (string) $treemsg['MSG'], 1);
+                $treemsg['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', (string) $treemsg['MSG'], 1);
 
                 # Delete quotes
-                $treemsg['MSG'] = preg_replace("/(^|\r)&gt;[^\r]*/", "", $treemsg['MSG']);
-                $treemsg['MSG'] = preg_replace("/^\r+/", "", $treemsg['MSG']);
+                $treemsg['MSG'] = preg_replace("/(^|\r)&gt;[^\r]*/", '', $treemsg['MSG']);
+                $treemsg['MSG'] = preg_replace("/^\r+/", '', $treemsg['MSG']);
                 $treemsg['MSG'] = rtrim($treemsg['MSG']);
 
                 #20181117 Gikoneko: Personal word filter
-                $treemsg['MSG']  = preg_replace("/(.+)/", "<span class= \"ngline\">$1</span>\r", $treemsg['MSG']);
+                $treemsg['MSG']  = preg_replace('/(.+)/', "<span class= \"ngline\">$1</span>\r", $treemsg['MSG']);
 
                 # Link to the follow-up post page
                 $treeprint .= "<a href=\"{$this->session['DEFURL']}&amp;m=f&amp;s={$parentid}\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
 
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->config['ANONY_NAME']) {
-                    $treeprint .= "User: ".preg_replace("/<[^>]*>/", '', (string) $treemsg['USER'])."\r";
+                    $treeprint .= 'User: '.preg_replace('/<[^>]*>/', '', (string) $treemsg['USER'])."\r";
                 }
 
                 # Display new arrivals
@@ -529,7 +522,7 @@ class Treeview extends Bbs
         #20200210 Gikoneko: unread pointer fix
         $this->template->addGlobalVars([
           'TOPPOSTID' => $this->session['TOPPOSTID'],
-          'MSGDISP' => $this->session['MSGDISP']
+          'MSGDISP' => $this->session['MSGDISP'],
         ]);
         return [$logdata, $bindex + 1, $eindex, $lastindex];
     }

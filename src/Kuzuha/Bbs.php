@@ -5,10 +5,10 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
-use App\Utils\StringHelper;
-use App\Utils\SecurityHelper;
 use App\Utils\FileHelper;
+use App\Utils\NetworkHelper;
+use App\Utils\SecurityHelper;
+use App\Utils\StringHelper;
 
 /**
  * Standard bulletin board class - Bbs
@@ -42,17 +42,17 @@ class Bbs extends Webapp
         # Reflect user settings
         $this->refcustom();
         $this->setusersession();
-        
+
         # If ADMINPOST is empty and not setting password, show password setup page
         if (empty($this->config['ADMINPOST']) && $this->form['m'] != 'ad') {
             $bbsadmin = new Bbsadmin($this);
             $bbsadmin->prtsetpass();
             return;
         }
-        
+
         # gzip compression transfer
         if ($this->config['GZIPU']) {
-            ob_start("ob_gzhandler");
+            ob_start('ob_gzhandler');
         }
         # Post operation
         if ($this->form['m'] == 'p' and trim((string) $this->form['v'])) {
@@ -81,7 +81,6 @@ class Bbs extends Webapp
             # Entering admin mode
             elseif ($posterr == 3) {
                 define('BBS_ACTIVATED', true);
-                require_once(PHP_BBSADMIN);
                 $bbsadmin = new Bbsadmin($this);
                 $bbsadmin->main();
             }
@@ -155,9 +154,9 @@ class Bbs extends Webapp
         # Get display message
         [$logdatadisp, $bindex, $eindex, $lastindex] = $this->getdispmessage();
         # Form section settings
-        $dtitle = "";
-        $dmsg = "";
-        $dlink = "";
+        $dtitle = '';
+        $dmsg = '';
+        $dlink = '';
         if ($retry) {
             $dtitle = $this->form['t'];
             $dmsg = $this->form['v'];
@@ -188,17 +187,17 @@ class Bbs extends Webapp
         # Navigation buttons
         if ($eindex > 0) {
             if ($eindex >= $lastindex) {
-                $this->template->setAttribute("nextpage", "visibility", "hidden");
+                $this->template->setAttribute('nextpage', 'visibility', 'hidden');
             } else {
                 $this->template->addVar('nextpage', 'EINDEX', $eindex);
             }
             if (!$this->config['SHOW_READNEWBTN']) {
-                $this->template->setAttribute("readnew", "visibility", "hidden");
+                $this->template->setAttribute('readnew', 'visibility', 'hidden');
             }
         }
         # Post as administrator
         if ($this->config['BBSMODE_ADMINONLY'] == 0) {
-            $this->template->setAttribute("adminlogin", "visibility", "hidden");
+            $this->template->setAttribute('adminlogin', 'visibility', 'hidden');
         }
         # Lower main section
         $this->template->displayParsedTemplate('main_lower');
@@ -277,7 +276,7 @@ class Bbs extends Webapp
         $this->session['MSGDISP'] = $msgdisp;
         $this->template->addGlobalVars([
             'TOPPOSTID' => $this->session['TOPPOSTID'],
-            'MSGDISP' => $this->session['MSGDISP']
+            'MSGDISP' => $this->session['MSGDISP'],
         ]);
         return [$logdatadisp, $bindex + 1, $eindex, $lastindex];
     }
@@ -317,17 +316,17 @@ class Bbs extends Webapp
             if ($this->config['SHOW_COUNTER']) {
                 $counter = $this->counter();
                 $counter = number_format($counter);
-                $this->template->addVar("counter", 'COUNTER', $counter);
-                $this->template->setAttribute("counter", "visibility", "visible");
+                $this->template->addVar('counter', 'COUNTER', $counter);
+                $this->template->setAttribute('counter', 'visibility', 'visible');
             }
             if ($this->config['CNTFILENAME']) {
                 $mbrcount = $this->mbrcount();
                 $mbrcount = number_format($mbrcount);
-                $this->template->addVar("mbrcount", 'MBRCOUNT', $mbrcount);
-                $this->template->setAttribute("mbrcount", "visibility", "visible");
+                $this->template->addVar('mbrcount', 'MBRCOUNT', $mbrcount);
+                $this->template->setAttribute('mbrcount', 'visibility', 'visible');
             }
             if (!$this->config['SHOW_COUNTER'] and !$this->config['CNTFILENAME']) {
-                $this->template->setAttribute("counterrow", "visibility", "hidden");
+                $this->template->setAttribute('counterrow', 'visibility', 'hidden');
             }
             if ($this->config['BBSMODE_ADMINONLY'] == 0) {
                 if ($this->config['AUTOLINK']) {
@@ -337,30 +336,30 @@ class Bbs extends Webapp
                     $this->template->addVar('formconfig', 'CHK_HIDE', ' checked="checked"');
                 }
             } else {
-                $this->template->setAttribute("formconfig", "visibility", "hidden");
+                $this->template->setAttribute('formconfig', 'visibility', 'hidden');
             }
             # Hide link line
             if ($this->config['LINKOFF']) {
                 $this->template->addVar('extraform', 'CHK_LOFF', ' checked="checked"');
-                $this->template->setAttribute("linkrow", "visibility", "hidden");
+                $this->template->setAttribute('linkrow', 'visibility', 'hidden');
             }
             # Hide help line
             if ($this->config['BBSMODE_ADMINONLY'] != 1) {
                 if (!$this->config['ALLOW_UNDO']) {
-                    $this->template->setAttribute("helpundo", "visibility", "hidden");
+                    $this->template->setAttribute('helpundo', 'visibility', 'hidden');
                 }
             } else {
-                $this->template->setAttribute("helprow", "visibility", "hidden");
+                $this->template->setAttribute('helprow', 'visibility', 'hidden');
             }
             # Navigation buttons line
             if (!$this->config['SHOW_READNEWBTN']) {
-                $this->template->setAttribute("readnewbtn", "visibility", "hidden");
+                $this->template->setAttribute('readnewbtn', 'visibility', 'hidden');
             }
             if (!($this->config['HIDEFORM'] and $this->config['BBSMODE_ADMINONLY'] == 0)) {
-                $this->template->setAttribute("newpostbtn", "visibility", "hidden");
+                $this->template->setAttribute('newpostbtn', 'visibility', 'hidden');
             }
         } else {
-            $this->template->setAttribute("extraform", "visibility", "hidden");
+            $this->template->setAttribute('extraform', 'visibility', 'hidden');
         }
     }
 
@@ -395,21 +394,21 @@ class Bbs extends Webapp
 
         if (!$retry) {
             $formmsg = $message['MSG'];
-            $formmsg = preg_replace("/&gt; &gt;[^\r]+\r/", "", (string) $formmsg);
-            $formmsg = preg_replace("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", "", $formmsg);
-            $formmsg = preg_replace("/<a href=\"[^>]+>([^<]+)<\/a>/i", "$1", $formmsg);
-            $formmsg = preg_replace("/\r*<a href=[^>]+><img [^>]+><\/a>/i", "", $formmsg);
+            $formmsg = preg_replace("/&gt; &gt;[^\r]+\r/", '', (string) $formmsg);
+            $formmsg = preg_replace("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", '', $formmsg);
+            $formmsg = preg_replace("/<a href=\"[^>]+>([^<]+)<\/a>/i", '$1', $formmsg);
+            $formmsg = preg_replace("/\r*<a href=[^>]+><img [^>]+><\/a>/i", '', $formmsg);
             $formmsg = preg_replace("/\r/", "\r> ", $formmsg);
             $formmsg = "> $formmsg\r";
             $formmsg = preg_replace("/\r>\s+\r/", "\r", $formmsg);
             $formmsg = preg_replace("/\r>\s+\r$/", "\r", (string) $formmsg);
         } else {
             $formmsg = $this->form['v'];
-            $formmsg = preg_replace("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", "", (string) $formmsg);
+            $formmsg = preg_replace("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", '', (string) $formmsg);
         }
         $formmsg .= "\r";
 
-        $this->setform("＞" . preg_replace("/<[^>]*>/", '', (string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
+        $this->setform('＞' . preg_replace('/<[^>]*>/', '', (string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
 
         if (!$message['THREAD']) {
             $message['THREAD'] = $message['POSTID'];
@@ -444,9 +443,9 @@ class Bbs extends Webapp
             $this->prterror(Translator::trans('error.incorrect_password'));
         }
         # Form section
-        $dtitle = "";
-        $dmsg = "";
-        $dlink = "";
+        $dtitle = '';
+        $dmsg = '';
+        $dlink = '';
         if ($retry) {
             $dtitle = $this->form['t'];
             $dmsg = $this->form['v'];
@@ -469,7 +468,7 @@ class Bbs extends Webapp
      *
      * @param   Integer $mode       0: Bulletin board / 1: Message log search (with buttons displayed) / 2: Message log search (without buttons displayed) / 3: For message log file output
      */
-    public function prtsearchlist($mode = "")
+    public function prtsearchlist($mode = '')
     {
 
         if (!$this->form['s']) {
@@ -502,7 +501,7 @@ class Bbs extends Webapp
         $fh = null;
         if ($this->form['ff']) {
             if (preg_match("/^[\w.]+$/", (string) $this->form['ff'])) {
-                $fh = @fopen($this->config['OLDLOGFILEDIR'] . $this->form['ff'], "rb");
+                $fh = @fopen($this->config['OLDLOGFILEDIR'] . $this->form['ff'], 'rb');
             }
             if (!$fh) {
                 $this->prterror(Translator::trans('error.file_open_failed', ['filename' => $this->form['ff']]));
@@ -524,7 +523,7 @@ class Bbs extends Webapp
                 }
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and preg_replace("/<[^>]*>/", '', (string) $message['USER']) == $this->form['s']) {
+                if ($mode == 's' and preg_replace('/<[^>]*>/', '', (string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
@@ -543,7 +542,7 @@ class Bbs extends Webapp
             foreach ($logdata as $logline) {
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and preg_replace("/<[^>]*>/", '', (string) $message['USER']) == $this->form['s']) {
+                if ($mode == 's' and preg_replace('/<[^>]*>/', '', (string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
@@ -641,7 +640,7 @@ class Bbs extends Webapp
             $flgchgindex = -1;
             $cindex = 0;
             foreach ($colors as $confname) {
-                if (strlen((string) $this->form[$confname]) == 6 and preg_match("/^[0-9a-fA-F]{6}$/", (string) $this->form[$confname])
+                if (strlen((string) $this->form[$confname]) == 6 and preg_match('/^[0-9a-fA-F]{6}$/', (string) $this->form[$confname])
                     and $this->form[$confname] != $this->config[$confname]) {
                     $this->config[$confname] = $this->form[$confname];
                     $flgchgindex = $cindex;
@@ -657,14 +656,14 @@ class Bbs extends Webapp
 
             $this->form['c'] = substr((string) $this->form['c'], 0, 2) . $cbase64str;
 
-            $redirecturl .= "?c=".$this->form['c'];
+            $redirecturl .= '?c='.$this->form['c'];
             foreach (['w', 'd',] as $key) {
                 if ($this->form[$key] != '') {
                     $redirecturl .= "&{$key}=".$this->form[$key];
                 }
             }
             if ($this->form['nm']) {
-                $redirecturl .= "&m=".$this->form['nm'];
+                $redirecturl .= '&m='.$this->form['nm'];
             }
             if ($this->config['COOKIE']) {
                 $this->setbbscookie();
@@ -692,12 +691,11 @@ class Bbs extends Webapp
                 $this->prterror(Translator::trans('error.post_not_found'));
             }
             $message = $this->getmessage($loglines[0]);
-            $undokey = substr((string) preg_replace("/\W/", "", crypt((string) $message['PROTECT'], (string) $this->config['ADMINPOST'])), -8);
+            $undokey = substr((string) preg_replace("/\W/", '', crypt((string) $message['PROTECT'], (string) $this->config['ADMINPOST'])), -8);
             if ($undokey != $this->session['UNDO_K']) {
                 $this->prterror(Translator::trans('error.deletion_not_permitted'));
             }
             # Erase operation
-            require_once(PHP_BBSADMIN);
             $bbsadmin = new Bbsadmin();
             $bbsadmin->killmessage($this->session['UNDO_P']);
 
@@ -722,7 +720,7 @@ class Bbs extends Webapp
      * @param   Boolean $ismultiple   Multiple search flag
      * @return  Array   Log line array
      */
-    public function searchmessage($varname, $searchvalue, $ismultiple = false, $filename = "")
+    public function searchmessage($varname, $searchvalue, $ismultiple = false, $filename = '')
     {
         $result = [];
         $logdata = $this->loadmessage($filename);
@@ -932,7 +930,7 @@ class Bbs extends Webapp
         if ($this->config['AUTOLINK']) {
             $message['MSG'] = preg_replace(
                 "/((https?|ftp|news):\/\/[-_.,!~*'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)/",
-                "<a href=\"$1\" target=\"link\">$1</a>",
+                '<a href="$1" target="link">$1</a>',
                 $message['MSG']
             );
         }
@@ -974,7 +972,7 @@ class Bbs extends Webapp
         if (!is_array($message)) {
             return $message;
         }
-        $fh = @fopen($this->config['LOGFILENAME'], "rb+");
+        $fh = @fopen($this->config['LOGFILENAME'], 'rb+');
         if (!$fh) {
             $this->prterror(Translator::trans('error.failed_to_read'));
         }
@@ -1048,7 +1046,7 @@ class Bbs extends Webapp
                 str_replace(',', '&#44;', $message['MSG']),
                 $message['REFID'],
             ]);
-            $msgdata = str_replace("\n", "", $msgdata) . "\n";
+            $msgdata = str_replace("\n", '', $msgdata) . "\n";
             if (count($logdata) >= $this->config['LOGSAVE']) {
                 $logdata = array_slice($logdata, 0, $this->config['LOGSAVE'] - 2);
             }
@@ -1078,16 +1076,16 @@ class Bbs extends Webapp
                     $oldlogext = 'html';
                 }
                 if ($this->config['OLDLOGSAVESW']) {
-                    $oldlogfilename = $dir . date("Ym", CURRENT_TIME) . ".$oldlogext";
-                    $oldlogtitle = $this->config['BBSTITLE'] . date(" Y.m", CURRENT_TIME);
+                    $oldlogfilename = $dir . date('Ym', CURRENT_TIME) . ".$oldlogext";
+                    $oldlogtitle = $this->config['BBSTITLE'] . date(' Y.m', CURRENT_TIME);
                 } else {
-                    $oldlogfilename = $dir . date("Ymd", CURRENT_TIME) . ".$oldlogext";
-                    $oldlogtitle = $this->config['BBSTITLE'] . date(" Y.m.d", CURRENT_TIME);
+                    $oldlogfilename = $dir . date('Ymd', CURRENT_TIME) . ".$oldlogext";
+                    $oldlogtitle = $this->config['BBSTITLE'] . date(' Y.m.d', CURRENT_TIME);
                 }
                 if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
                     $this->prterror(Translator::trans('error.log_size_limit'));
                 }
-                $fh = @fopen($oldlogfilename, "ab");
+                $fh = @fopen($oldlogfilename, 'ab');
                 if (!$fh) {
                     $this->prterror(Translator::trans('error.log_output_failed'));
                 }
@@ -1116,7 +1114,7 @@ class Bbs extends Webapp
                 # Delete old log files
                 if (!$this->config['OLDLOGSAVESW'] and $isnewdate) {
                     $limitdate = CURRENT_TIME - $this->config['OLDLOGSAVEDAY'] * 60 * 60 * 24;
-                    $limitdate = date("Ymd", $limitdate);
+                    $limitdate = date('Ymd', $limitdate);
                     $dh = opendir($dir);
                     while ($entry = readdir($dh)) {
                         $matches = [];
@@ -1136,12 +1134,12 @@ class Bbs extends Webapp
                     # In the case of dat, it also writes the message log in HTML format as a temporary file to be saved in the ZIP
                     if ($this->config['OLDLOGFMT']) {
                         if ($this->config['OLDLOGSAVESW']) {
-                            $tmplogfilename = $this->config['ZIPDIR'] . date("Ym", CURRENT_TIME) . ".html";
+                            $tmplogfilename = $this->config['ZIPDIR'] . date('Ym', CURRENT_TIME) . '.html';
                         } else {
-                            $tmplogfilename = $this->config['ZIPDIR'] . date("Ymd", CURRENT_TIME) . ".html";
+                            $tmplogfilename = $this->config['ZIPDIR'] . date('Ymd', CURRENT_TIME) . '.html';
                         }
 
-                        $fhtmp = @fopen($tmplogfilename, "ab");
+                        $fhtmp = @fopen($tmplogfilename, 'ab');
                         if (!$fhtmp) {
                             return;
                         }
@@ -1162,9 +1160,9 @@ class Bbs extends Webapp
                         $tmpdir = $this->config['ZIPDIR'];
                     }
                     if ($this->config['OLDLOGSAVESW']) {
-                        $currentfile = date("Ym", CURRENT_TIME) . ".html";
+                        $currentfile = date('Ym', CURRENT_TIME) . '.html';
                     } else {
-                        $currentfile = date("Ymd", CURRENT_TIME) . ".html";
+                        $currentfile = date('Ymd', CURRENT_TIME) . '.html';
                     }
 
                     $files = [];
@@ -1191,7 +1189,7 @@ class Bbs extends Webapp
                     if (!$checkedfile) {
                         return;
                     }
-                    $zipfilename = preg_replace("/\.\w+$/", ".zip", $checkedfile);
+                    $zipfilename = preg_replace("/\.\w+$/", '.zip', $checkedfile);
 
                     # Create a ZIP file
                     require_once(LIB_PHPZIP);
@@ -1237,9 +1235,9 @@ class Bbs extends Webapp
      */
     public function setbbscookie()
     {
-        $cookiestr = "u=" . urlencode((string) $this->form['u']);
-        $cookiestr .= "&i=" . urlencode((string) $this->form['i']);
-        $cookiestr .= "&c=" . $this->form['c'];
+        $cookiestr = 'u=' . urlencode((string) $this->form['u']);
+        $cookiestr .= '&i=' . urlencode((string) $this->form['i']);
+        $cookiestr .= '&c=' . $this->form['c'];
         setcookie('c', $cookiestr, CURRENT_TIME + 7776000); // expires in 90 days
     }
 
@@ -1248,7 +1246,7 @@ class Bbs extends Webapp
      */
     public function setundocookie($undoid, $pcode)
     {
-        $undokey = substr((string) preg_replace("/\W/", "", crypt((string) $pcode, (string) $this->config['ADMINPOST'])), -8);
+        $undokey = substr((string) preg_replace("/\W/", '', crypt((string) $pcode, (string) $this->config['ADMINPOST'])), -8);
         $cookiestr = "p=$undoid&k=$undokey";
         $this->session['UNDO_P'] = $undoid;
         $this->session['UNDO_K'] = $undokey;
@@ -1275,7 +1273,7 @@ class Bbs extends Webapp
         $count = [];
         for ($i = 0; $i < $countlevel; $i++) {
             $filename = "{$this->config['COUNTFILE']}{$i}.dat";
-            if (is_writable($filename) and $fh = @fopen($filename, "r")) {
+            if (is_writable($filename) and $fh = @fopen($filename, 'r')) {
                 $count[$i] = fgets($fh, 10);
                 fclose($fh);
             } else {
@@ -1286,7 +1284,7 @@ class Bbs extends Webapp
         sort($count, SORT_NUMERIC);
         $mincount = $count[0];
         $maxcount = $count[$countlevel - 1] + 1;
-        if ($fh = @fopen("{$this->config['COUNTFILE']}{$filenumber[$mincount]}.dat", "w")) {
+        if ($fh = @fopen("{$this->config['COUNTFILE']}{$filenumber[$mincount]}.dat", 'w')) {
             fputs($fh, $maxcount);
             fclose($fh);
             return $maxcount;
@@ -1302,7 +1300,7 @@ class Bbs extends Webapp
      * @param   $cntfilename  Record file name
      * @return  String  Number of participants
      */
-    public function mbrcount($cntfilename = "")
+    public function mbrcount($cntfilename = '')
     {
         if (!$cntfilename) {
             $cntfilename = $this->config['CNTFILENAME'];
@@ -1339,7 +1337,7 @@ class Bbs extends Webapp
                 $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
                 $mbrcount++;
             }
-            if ($fh = @fopen($cntfilename, "w")) {
+            if ($fh = @fopen($cntfilename, 'w')) {
                 $cntdatastr = implode('', $newcntdata);
                 flock($fh, 2);
                 fwrite($fh, $cntdatastr);

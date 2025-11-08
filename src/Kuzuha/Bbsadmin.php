@@ -2,34 +2,17 @@
 
 namespace Kuzuha;
 
-use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
-use App\Utils\StringHelper;
-use App\Utils\SecurityHelper;
 use App\Utils\FileHelper;
-use App\Utils\TripHelper;
 
-
-/*
-
-KuzuhaScriptPHP ver0.0.7alpha (13:04 2003/02/18)
-Admin mode module
-
-*/
-
-if (!defined("INCLUDED_FROM_BBS")) {
-    header("Location: ../bbs.php");
+if (!defined('INCLUDED_FROM_BBS')) {
+    header('Location: ../bbs.php');
     exit();
 }
 
-
-
 /**
  * Admin mode module
- *
- *
  *
  * @package strangeworld.cnscript
  * @access  public
@@ -40,7 +23,6 @@ class Bbsadmin extends Webapp
 
     /**
      * Constructor
-     *
      */
     public function __construct()
     {
@@ -54,13 +36,11 @@ class Bbsadmin extends Webapp
         // Template loading removed - using Twig now
     }
 
-
     /**
      * Main process
      */
     public function main()
     {
-
         if (!defined('BBS_ACTIVATED')) {
 
             # Start measuring execution time
@@ -75,7 +55,7 @@ class Bbsadmin extends Webapp
 
             # gzip compressed transfer
             if ($this->config['GZIPU'] && ob_get_level() === 0) {
-                ob_start("ob_gzhandler");
+                ob_start('ob_gzhandler');
             }
         }
 
@@ -123,9 +103,6 @@ class Bbsadmin extends Webapp
     }
 
 
-
-
-
     /**
      * Admin menu page
      *
@@ -134,7 +111,15 @@ class Bbsadmin extends Webapp
     {
         $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
-            'TITLE' => $this->config['BBSTITLE'] . ' Administration menu',
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.menu_title'),
+            'TRANS_ADMIN_MENU' => Translator::trans('admin.menu_title'),
+            'TRANS_WARNING' => Translator::trans('admin.warning'),
+            'TRANS_UNAUTHORIZED_ACCESS' => Translator::trans('admin.unauthorized_access'),
+            'TRANS_DELETE_MESSAGES' => Translator::trans('admin.delete_messages'),
+            'TRANS_VIEW_LOG' => Translator::trans('admin.view_log'),
+            'TRANS_REGENERATE_PASSWORD' => Translator::trans('admin.regenerate_password'),
+            'TRANS_PHP_INFO' => Translator::trans('admin.php_info'),
+            'TRANS_CLOSE' => Translator::trans('admin.close'),
             'V' => trim((string) $this->form['v']),
         ]);
         echo $this->renderTwig('admin/menu.twig', $data);
@@ -158,8 +143,8 @@ class Bbsadmin extends Webapp
         $messages = [];
         foreach ($logdata as $logline) {
             $message = $this->getmessage($logline);
-            $message['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", (string) $message['MSG'], 1);
-            $message['MSG'] = preg_replace("/<[^>]+>/", "", ltrim($message['MSG']));
+            $message['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', (string) $message['MSG'], 1);
+            $message['MSG'] = preg_replace('/<[^>]+>/', '', ltrim($message['MSG']));
             $msgsplit = explode("\r", (string) $message['MSG']);
             $message['MSGDIGEST'] = $msgsplit[0];
             $index = 1;
@@ -168,13 +153,18 @@ class Bbsadmin extends Webapp
                 $index++;
             }
             $message['WDATE'] = DateHelper::getDateString($message['NDATE']);
-            $message['USER_NOTAG'] = preg_replace("/<[^>]*>/", '', (string) $message['USER']);
+            $message['USER_NOTAG'] = preg_replace('/<[^>]*>/', '', (string) $message['USER']);
             $messages[] = $message;
         }
 
         $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
-            'TITLE' => $this->config['BBSTITLE'] . ' Message deletion mode',
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.deletion_mode'),
+            'TRANS_DELETION_MODE' => Translator::trans('admin.deletion_mode'),
+            'TRANS_RETURN' => Translator::trans('admin.return'),
+            'TRANS_PERFORM_DELETION' => Translator::trans('admin.perform_deletion'),
+            'TRANS_DELETION_INSTRUCTION' => Translator::trans('admin.deletion_instruction'),
+            'TRANS_DELETION_HEADER' => Translator::trans('admin.deletion_header'),
             'V' => trim((string) $this->form['v']),
             'messages' => $messages,
         ]);
@@ -201,7 +191,7 @@ class Bbsadmin extends Webapp
             $killids[] = $tmp;
         }
 
-        $fh = @fopen($this->config['LOGFILENAME'], "r+");
+        $fh = @fopen($this->config['LOGFILENAME'], 'r+');
         if (!$fh) {
             $this->prterror('Failed to load message');
         }
@@ -209,7 +199,7 @@ class Bbsadmin extends Webapp
         fseek($fh, 0, 0);
 
         $logdata = [];
-        while (($logline = Func::fgetline($fh)) !== false) {
+        while (($logline = FileHelper::getLine($fh)) !== false) {
             $logdata[] = $logline;
         }
 
@@ -237,7 +227,7 @@ class Bbsadmin extends Webapp
 
         # Image deletion
         foreach ($killlogdata as $eachlogdata) {
-            if (preg_match("/<img [^>]*?src=\"([^\"]+)\"[^>]+>/i", $eachlogdata, $matches) and file_exists($matches[1])) {
+            if (preg_match('/<img [^>]*?src="([^"]+)"[^>]+>/i', $eachlogdata, $matches) and file_exists($matches[1])) {
                 unlink($matches[1]);
             }
         }
@@ -252,11 +242,11 @@ class Bbsadmin extends Webapp
                     $oldlogext = 'html';
                 }
                 if ($this->config['OLDLOGSAVESW']) {
-                    $oldlogfilename = date("Ym", $killntimes[$killid]) . ".$oldlogext";
+                    $oldlogfilename = date('Ym', $killntimes[$killid]) . ".$oldlogext";
                 } else {
-                    $oldlogfilename = date("Ymd", $killntimes[$killid]) . ".$oldlogext";
+                    $oldlogfilename = date('Ymd', $killntimes[$killid]) . ".$oldlogext";
                 }
-                $fh = @fopen($this->config['OLDLOGFILEDIR'] . $oldlogfilename, "r+");
+                $fh = @fopen($this->config['OLDLOGFILEDIR'] . $oldlogfilename, 'r+');
                 if ($fh) {
                     flock($fh, 2);
                     fseek($fh, 0, 0);
@@ -265,8 +255,8 @@ class Bbsadmin extends Webapp
                     $hit = false;
 
                     if ($this->config['OLDLOGFMT']) {
-                        $needle = $killntimes[$killid] . "," . $killid . ",";
-                        while (($logline = Func::fgetline($fh)) !== false) {
+                        $needle = $killntimes[$killid] . ',' . $killid . ',';
+                        while (($logline = FileHelper::getLine($fh)) !== false) {
                             if (!$hit and str_contains($logline, $needle) and str_starts_with($logline, $needle)) {
                                 $hit = true;
                             } else {
@@ -276,7 +266,7 @@ class Bbsadmin extends Webapp
                     } else {
                         $needle = "<div class=\"m\" id=\"m{$killid}\">";
                         $flgbuffer = false;
-                        while (($htmlline = Func::fgetline($fh)) !== false) {
+                        while (($htmlline = FileHelper::getLine($fh)) !== false) {
 
                             # Start of message
                             if (!$hit and str_contains($htmlline, $needle)) {
@@ -284,7 +274,7 @@ class Bbsadmin extends Webapp
                                 $flgbuffer = true;
                             }
                             # End of message
-                            elseif ($flgbuffer and str_contains($htmlline, "<hr")) {
+                            elseif ($flgbuffer and str_contains($htmlline, '<hr')) {
                                 $flgbuffer = false;
                             }
                             # Inside message
@@ -370,25 +360,8 @@ class Bbsadmin extends Webapp
      */
     public function prtlogview($htmlescape = false)
     {
-        if ($htmlescape) {
-            header("Content-type: text/html");
-            $logdata = file($this->config['LOGFILENAME']);
-            print "<html><head><title>{$this->config['LOGFILENAME']}</title></head><body><pre>\n";
-            foreach ($logdata as $logline) {
-                if (!preg_match("/^\w+$/", $logline)) {
-                    #$value_euc = JcodeConvert($logline, 2, 1);
-                    #$value_euc = htmlentities($value_euc, ENT_QUOTES, 'EUC-JP');
-                    #$logline = JcodeConvert($value_euc, 1, 2);
-                    $logline = htmlspecialchars($logline, ENT_QUOTES);
-                }
-                $logline = str_replace("&#44;", ",", $logline);
-                print $logline;
-            }
-            print "\n</pre></body></html>";
-        } else {
-            header("Content-type: text/plain");
-            readfile($this->config['LOGFILENAME']);
-        }
+        header('Content-type: text/plain; charset=UTF-8');
+        readfile($this->config['LOGFILENAME']);
     }
 
 

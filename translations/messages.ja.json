@@ -66,5 +66,18 @@
   "log.replies": "返信数",
   "log.last_updated": "最終更新",
   "log.contents": "内容",
-  "log.message_log_search": "過去ログ検索"
+  "log.message_log_search": "過去ログ検索",
+  "admin.menu_title": "管理メニュー",
+  "admin.warning": "警告",
+  "admin.unauthorized_access": "権限のない者のアクセスは固く禁じられています。違反者は追跡、特定、拘束されます。",
+  "admin.delete_messages": "メッセージ削除",
+  "admin.view_log": "ログファイル閲覧",
+  "admin.regenerate_password": "暗号化パスワード再生成",
+  "admin.php_info": "サーバーPHP設定情報",
+  "admin.close": "閉じる",
+  "admin.deletion_mode": "メッセージ削除モード",
+  "admin.return": "戻る",
+  "admin.perform_deletion": "削除実行",
+  "admin.deletion_instruction": "削除したい投稿のチェックボックスにチェックを入れ、下部の[削除実行]ボタンをクリックしてください。",
+  "admin.deletion_header": "削除 - 表示 - 投稿日時 - 題名 - 投稿者名 - 内容（抜粋）"
 }

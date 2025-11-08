@@ -16,3 +16,7 @@ storage/cache/twig/*
 *~
 .*.swp
 .*.swo
+
+# PHP CS Fixer
+php-cs-fixer
+.php-cs-fixer.cache

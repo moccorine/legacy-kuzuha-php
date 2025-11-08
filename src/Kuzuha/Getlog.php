@@ -4,13 +4,7 @@ namespace Kuzuha;
 
 use App\Config;
 use App\Translator;
-use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
-use App\Utils\StringHelper;
-use App\Utils\SecurityHelper;
 use App\Utils\FileHelper;
-use App\Utils\TripHelper;
-
 
 /*
 
@@ -21,8 +15,8 @@ Message log viewer module
 
 */
 
-if (!defined("INCLUDED_FROM_BBS")) {
-    header("Location: ../bbs.php?m=g");
+if (!defined('INCLUDED_FROM_BBS')) {
+    header('Location: ../bbs.php?m=g');
     exit();
 }
 
@@ -89,7 +83,7 @@ class Getlog extends Webapp
 
         # gzip compressed transfer
         if ($this->config['GZIPU'] && ob_get_level() === 0) {
-            ob_start("ob_gzhandler");
+            ob_start('ob_gzhandler');
         }
 
         # Search process
@@ -169,7 +163,7 @@ class Getlog extends Webapp
             }
         }
 
-        $showZipLink = $this->config['ZIPDIR'] && function_exists("gzcompress");
+        $showZipLink = $this->config['ZIPDIR'] && function_exists('gzcompress');
         $showTopicLink = (bool)$this->config['OLDLOGFMT'];
         $showDlLink = $this->dlchk();
 
@@ -177,7 +171,7 @@ class Getlog extends Webapp
         foreach ($files as $filename) {
             $fstat = stat($dir . $filename);
             $fsize = $fstat[7];
-            $ftime = date("Y/m/d H:i:s", $fstat[9]);
+            $ftime = date('Y/m/d H:i:s', $fstat[9]);
             $ftitle = '';
             $matches = [];
             if (preg_match("/^(\d\d\d\d)(\d\d)(\d\d)\.$oldlogext/", $filename, $matches)) {
@@ -274,50 +268,50 @@ class Getlog extends Webapp
         foreach (['q', 't', 'b', 'ci',] as $formvalue) {
             $conditions[$formvalue] = @$this->form[$formvalue];
         }
-        
+
         // Support both old format (sh, si, eh, ei) and new HTML5 time input (start_time, end_time)
         if (!empty($this->form['start_time'])) {
             // Parse HTML5 time input (HH:MM format)
             list($sh, $si) = explode(':', $this->form['start_time']);
-            $conditions['sh'] = str_pad($sh, 2, "0", STR_PAD_LEFT);
-            $conditions['si'] = str_pad($si, 2, "0", STR_PAD_LEFT);
+            $conditions['sh'] = str_pad($sh, 2, '0', STR_PAD_LEFT);
+            $conditions['si'] = str_pad($si, 2, '0', STR_PAD_LEFT);
             // Only apply filter if not default value (00:00)
             if ($this->form['start_time'] !== '00:00') {
                 $conditions['showall'] = false;
             }
         } else {
-            $conditions['sh'] = str_pad((string) @$this->form['sh'], 2, "0", STR_PAD_LEFT);
-            $conditions['si'] = str_pad((string) @$this->form['si'], 2, "0", STR_PAD_LEFT);
+            $conditions['sh'] = str_pad((string) @$this->form['sh'], 2, '0', STR_PAD_LEFT);
+            $conditions['si'] = str_pad((string) @$this->form['si'], 2, '0', STR_PAD_LEFT);
             if ($conditions['showall'] && (@$this->form['sh'] || @$this->form['si'])) {
                 $conditions['showall'] = false;
             }
         }
-        
+
         if (!empty($this->form['end_time'])) {
             // Parse HTML5 time input (HH:MM format)
             list($eh, $ei) = explode(':', $this->form['end_time']);
-            $conditions['eh'] = str_pad($eh, 2, "0", STR_PAD_LEFT);
-            $conditions['ei'] = str_pad($ei, 2, "0", STR_PAD_LEFT);
+            $conditions['eh'] = str_pad($eh, 2, '0', STR_PAD_LEFT);
+            $conditions['ei'] = str_pad($ei, 2, '0', STR_PAD_LEFT);
             // Only apply filter if not default value (23:59)
             if ($this->form['end_time'] !== '23:59') {
                 $conditions['showall'] = false;
             }
         } else {
-            $conditions['eh'] = str_pad((string) @$this->form['eh'], 2, "0", STR_PAD_LEFT);
-            $conditions['ei'] = str_pad((string) @$this->form['ei'], 2, "0", STR_PAD_LEFT);
+            $conditions['eh'] = str_pad((string) @$this->form['eh'], 2, '0', STR_PAD_LEFT);
+            $conditions['ei'] = str_pad((string) @$this->form['ei'], 2, '0', STR_PAD_LEFT);
             if ($conditions['showall'] && (@$this->form['eh'] || @$this->form['ei'])) {
                 $conditions['showall'] = false;
             }
         }
-        
+
         // Handle day fields for monthly logs
         foreach (['sd', 'ed'] as $formvalue) {
             if ($conditions['showall'] and @$this->form[$formvalue]) {
                 $conditions['showall'] = false;
             }
-            $conditions[$formvalue] = str_pad((string) @$this->form[$formvalue], 2, "0", STR_PAD_LEFT);
+            $conditions[$formvalue] = str_pad((string) @$this->form[$formvalue], 2, '0', STR_PAD_LEFT);
         }
-        
+
         // Set default values for monthly logs if not specified
         if ($this->config['OLDLOGSAVESW']) {
             if (empty($this->form['sd']) || $conditions['sd'] === '00') {
@@ -371,7 +365,7 @@ class Getlog extends Webapp
 
         $this->sethttpheader();
         $customstyle = "  .sq { color: #{$this->config['C_QUERY']}; }\n";
-        
+
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.search_results'),
             'CUSTOMSTYLE' => $customstyle,
@@ -415,10 +409,10 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $dlfilename = str_replace(".dat", ".html", $filename);
+        $dlfilename = str_replace('.dat', '.html', $filename);
 
-        header("Content-Type: application/octet-stream");
-        header("Content-Disposition: attachment; filename=".$dlfilename);
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename='.$dlfilename);
 
         if ($this->config['OLDLOGFMT']) {
             $this->sethttpheader();
@@ -445,7 +439,7 @@ class Getlog extends Webapp
      * Search all files
      *
      */
-    public function prtoldlog($filename, $conditions = "", $isdownload = false)
+    public function prtoldlog($filename, $conditions = '', $isdownload = false)
     {
 
         $dir = $this->config['OLDLOGFILEDIR'];
@@ -467,7 +461,7 @@ class Getlog extends Webapp
         $this->template->clearTemplate('oldlog_lower');
         $this->template->addVar('oldlog_upper', 'FILENAME', $filename);
 
-        $fh = @fopen($dir . $filename, "rb");
+        $fh = @fopen($dir . $filename, 'rb');
         if (!$fh) {
             $this->template->addVar('oldlog_upper', 'success', 'false');
             $this->template->displayParsedTemplate('oldlog_upper');
@@ -514,19 +508,19 @@ class Getlog extends Webapp
                         # Highlight search keywords
                         if ($conditions['q']) {
                             $needle = "\Q{$conditions['q']}\E";
-                            $quoteq = preg_quote((string) $conditions['q'], "/");
+                            $quoteq = preg_quote((string) $conditions['q'], '/');
                             if ($conditions['ci']) {
                                 #$prtmessage = preg_replace("/($quoteq)/i", "<span class=\"sq\">$1</span>", $prtmessage);
                                 #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", $prtmessage)) {
                                 #  $prtmessage = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", "$1", $prtmessage, 1);
                                 #}
-                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", "$1<span class=\"sq\"><mark>$2</mark></span>", $prtmessage);
+                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", '$1<span class="sq"><mark>$2</mark></span>', $prtmessage);
                             } else {
                                 #$prtmessage = str_replace($conditions['q'], "<span class=\"sq\">{$conditions['q']}</span>", $prtmessage);
                                 #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", $prtmessage)) {
                                 #  $prtmessage = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", "$1", $prtmessage, 1);
                                 #}
-                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", "$1<span class=\"sq\"><mark>$2</mark></span>", $prtmessage);
+                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", '$1<span class="sq"><mark>$2</mark></span>', $prtmessage);
                             }
                         }
                         print $prtmessage;
@@ -550,7 +544,7 @@ class Getlog extends Webapp
         else {
             if (!$conditions['showall']) {
                 # Buffers file reads for each message
-                $buffer = "";
+                $buffer = '';
                 $flgbuffer = false;
                 $result = 0;
                 while (($htmlline = FileHelper::getLine($fh)) !== false) {
@@ -560,7 +554,7 @@ class Getlog extends Webapp
                         $flgbuffer = true;
                     }
                     # End message
-                    elseif ($flgbuffer and str_contains($htmlline, "<!--  -->")) {
+                    elseif ($flgbuffer and str_contains($htmlline, '<!--  -->')) {
                         $buffer .= $htmlline;
                         {
                             $result = $this->msgsearchhtml($buffer, $conditions);
@@ -568,19 +562,19 @@ class Getlog extends Webapp
                                 # Search keyword highlighting
                                 if ($conditions['q']) {
                                     $needle = "\Q{$conditions['q']}\E";
-                                    $quoteq = preg_quote((string) $conditions['q'], "/");
+                                    $quoteq = preg_quote((string) $conditions['q'], '/');
                                     if ($conditions['ci']) {
                                         #$buffer = preg_replace("/($quoteq)/i", "<span class=\"sq\">$1</span>", $buffer);
                                         #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", $buffer)) {
                                         #  $buffer = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", "$1", $buffer, 1);
                                         #}
-                                        $buffer = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", "$1<span class=\"sq\"><mark>$2</mark></span>", $buffer);
+                                        $buffer = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", '$1<span class="sq"><mark>$2</mark></span>', $buffer);
                                     } else {
                                         #$buffer = str_replace($conditions['q'], "<span class=\"sq\">{$conditions['q']}</span>", $buffer);
                                         #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", $buffer)) {
                                         #  $buffer = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", "$1", $buffer, 1);
                                         #}
-                                        $buffer = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", "$1<span class=\"sq\"><mark>$2</mark></span>", $buffer);
+                                        $buffer = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", '$1<span class="sq"><mark>$2</mark></span>', $buffer);
                                     }
                                 }
                                 print $buffer;
@@ -589,7 +583,7 @@ class Getlog extends Webapp
                                 break;
                             }
                         }
-                        $buffer = "";
+                        $buffer = '';
                         $flgbuffer = false;
                     }
                     # Middle of message
@@ -694,7 +688,7 @@ class Getlog extends Webapp
             $starttime = $conditions['sd'].$conditions['sh'];
             $endtime = $conditions['ed'].$conditions['eh'];
             if (!@$message['NDATESTR']) {
-                $message['NDATESTR'] = date("dH", $message['NDATE']);
+                $message['NDATESTR'] = date('dH', $message['NDATE']);
             }
         }
         # Daily
@@ -702,7 +696,7 @@ class Getlog extends Webapp
             $starttime = $conditions['sh'].$conditions['si'];
             $endtime = $conditions['eh'].$conditions['ei'];
             if (!@$message['NDATESTR']) {
-                $message['NDATESTR'] = date("Hi", $message['NDATE']);
+                $message['NDATESTR'] = date('Hi', $message['NDATE']);
             }
         }
         if ($message['NDATESTR'] < $starttime or $message['NDATESTR'] > $endtime) {
@@ -781,7 +775,7 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $fh = @fopen($this->config['OLDLOGFILEDIR'] . $filename, "rb");
+        $fh = @fopen($this->config['OLDLOGFILEDIR'] . $filename, 'rb');
         if (!$fh) {
             $this->prterror($filename . ' was unable to be opened.');
         }
@@ -799,8 +793,8 @@ class Getlog extends Webapp
                 $tcount[$message['POSTID']] = 0;
 
                 $msg = ltrim((string) $message['MSG']);
-                $msg = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", $msg, 1);
-                $msg = preg_replace("/<[^>]+>/", "", (string) $msg);
+                $msg = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', $msg, 1);
+                $msg = preg_replace('/<[^>]+>/', '', (string) $msg);
                 $msgsplit = explode("\r", (string) $msg);
                 $msgdigest = $msgsplit[0];
                 $index = 1;
@@ -833,8 +827,8 @@ class Getlog extends Webapp
         $i = 0;
         while ($i < $tidcount) {
             if ($tid[$i]) {
-                $tc = sprintf("%02d", $tcount[$tid[$i]]);
-                $tt = date("m/d H:i:s", $ttime[$tid[$i]]);
+                $tc = sprintf('%02d', $tcount[$tid[$i]]);
+                $tt = date('m/d H:i:s', $ttime[$tid[$i]]);
                 $topics[] = [
                     'TID' => $tid[$i],
                     'TC' => $tc,
@@ -894,7 +888,7 @@ class Getlog extends Webapp
         foreach ($files as $filename) {
             $fstat = stat($dir . $filename);
             $fsize = $fstat[7];
-            $ftime = date("Y/m/d H:i:s", $fstat[9]);
+            $ftime = date('Y/m/d H:i:s', $fstat[9]);
 
             $this->template->setAttribute('archive', 'visibility', 'visible');
             $this->template->addVars('archive', [
@@ -934,7 +928,7 @@ class Getlog extends Webapp
                 $iever = $matches[1];
             }
             $ismac = 0;
-            if (preg_match("/Mac/", $uos, $matches)) {
+            if (preg_match('/Mac/', $uos, $matches)) {
                 $ismac = 1;
             }
             if ((@$ver >= 4 and !@$isie) or (@$ver >= 4 and @$isie and @$iever >= 5 and !@$ismac)) {

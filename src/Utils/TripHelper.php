@@ -12,7 +12,7 @@ class TripHelper
      */
     public static function generate(string $key): string
     {
-        $key = mb_convert_encoding($key, "SJIS", "UTF-8");
+        $key = mb_convert_encoding($key, 'SJIS', 'UTF-8');
 
         # Trip
         $trip = '';
@@ -32,14 +32,14 @@ class TripHelper
                     $trip = str_replace('+', '.', $trip);
                 }
             } else {
-                $salt = substr($match[2]."H.", 1, 2);
-                $salt = preg_replace("/[^\.-z]/", ".", $salt);
-                $salt = strtr($salt, ":;<=>?@[\\]^_`", "ABCDEFGabcdef");
+                $salt = substr($match[2].'H.', 1, 2);
+                $salt = preg_replace("/[^\.-z]/", '.', $salt);
+                $salt = strtr($salt, ':;<=>?@[\\]^_`', 'ABCDEFGabcdef');
                 $trip = substr(crypt($match[2], $salt), -10);
             }
-            $trip = "◆".$trip;
+            $trip = '◆'.$trip;
         } else {
-            $trip = str_replace("◆", "◇", $key);
+            $trip = str_replace('◆', '◇', $key);
         }
         return $trip;
     }

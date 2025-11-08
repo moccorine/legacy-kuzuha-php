@@ -10,7 +10,9 @@
   },
   "scripts": {
     "format": "prettier --write resources/views",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format-php": "docker-compose exec -T web php php-cs-fixer fix",
+    "format-all": "npm run format && npm run format-php"
   },
   "repository": {
     "type": "git",

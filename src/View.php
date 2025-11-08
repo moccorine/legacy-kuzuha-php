@@ -14,7 +14,7 @@ class View
     {
         $templateDir = getcwd() . '/resources/views';
         $cacheDir = getcwd() . '/storage/cache/twig';
-        
+
         $loader = new FilesystemLoader($templateDir);
         $this->twig = new Environment($loader, [
             'cache' => $cacheDir,

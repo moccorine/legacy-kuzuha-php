@@ -66,5 +66,18 @@
   "log.replies": "Replies",
   "log.last_updated": "Last updated",
   "log.contents": "Contents",
-  "log.message_log_search": "Message log search"
+  "log.message_log_search": "Message log search",
+  "admin.menu_title": "Administration menu",
+  "admin.warning": "WARNING",
+  "admin.unauthorized_access": "ACCESS BY UNAUTHORIZED PERSONNEL IS STRICTLY PROHIBITED. PERPETRATORS WILL BE TRACKED, LOCATED, AND DETAINED.",
+  "admin.delete_messages": "Delete messages",
+  "admin.view_log": "View log file",
+  "admin.regenerate_password": "Regenerate encrypted password",
+  "admin.php_info": "Server PHP configuration information",
+  "admin.close": "Close",
+  "admin.deletion_mode": "Message deletion mode",
+  "admin.return": "Return",
+  "admin.perform_deletion": "Perform deletion",
+  "admin.deletion_instruction": "Please check the checkboxes of the posts you wish to delete, then click the [Perform deletion] button at the bottom.",
+  "admin.deletion_header": "Delete - View - Date posted - Subject - Username - Contents (truncated)"
 }

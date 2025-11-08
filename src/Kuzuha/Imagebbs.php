@@ -3,14 +3,6 @@
 namespace Kuzuha;
 
 use App\Config;
-use App\Translator;
-use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
-use App\Utils\StringHelper;
-use App\Utils\SecurityHelper;
-use App\Utils\FileHelper;
-use App\Utils\TripHelper;
-
 
 /*
 
@@ -24,8 +16,8 @@ BBS with image upload function module
 
 */
 
-if (!defined("INCLUDED_FROM_BBS")) {
-    header("Location: ../bbs.php");
+if (!defined('INCLUDED_FROM_BBS')) {
+    header('Location: ../bbs.php');
     exit();
 }
 
@@ -182,7 +174,7 @@ class Imagebbs extends Bbs
             }
 
             # Locking the image upload process
-            $fh = @fopen($this->config['UPLOADIDFILE'], "rb+");
+            $fh = @fopen($this->config['UPLOADIDFILE'], 'rb+');
             if (!$fh) {
                 $this->prterror('Failed to load the uploaded image file.');
             }
@@ -221,14 +213,14 @@ class Imagebbs extends Bbs
             }
 
             $fileid++;
-            $filename = $this->config['UPLOADDIR'] . str_pad($fileid, 5, "0", STR_PAD_LEFT) . '_' . date("YmdHis", CURRENT_TIME) . $fileext;
+            $filename = $this->config['UPLOADDIR'] . str_pad($fileid, 5, '0', STR_PAD_LEFT) . '_' . date('YmdHis', CURRENT_TIME) . $fileext;
 
             copy($_FILES['file']['tmp_name'], $filename);
             unlink($_FILES['file']['tmp_name']);
 
             $message['FILEID'] = $fileid;
             $message['FILENAME'] = $filename;
-            $message['FILEMSG'] = '画像'.str_pad($fileid, 5, "0", STR_PAD_LEFT)." $filetype {$imageinfo[0]}*{$imageinfo[1]} ".floor(filesize($filename) / 1024)."KB";
+            $message['FILEMSG'] = '画像'.str_pad($fileid, 5, '0', STR_PAD_LEFT)." $filetype {$imageinfo[0]}*{$imageinfo[1]} ".floor(filesize($filename) / 1024).'KB';
             $message['FILETAG'] = "<a href=\"{$filename}\" target=\"link\">"
             . "<img src=\"{$filename}\" width=\"{$imageinfo[0]}\" height=\"{$imageinfo[1]}\" border=\"0\" alt=\"{$message['FILEMSG']}\" /></a>";
 
