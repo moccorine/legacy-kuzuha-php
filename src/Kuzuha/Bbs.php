@@ -1517,50 +1517,15 @@ class Bbs extends Webapp
         if (!$cntfilename) {
             $cntfilename = $this->config['CNTFILENAME'];
         }
-        if ($cntfilename) {
-            $mbrcount = 0;
-            $remoteaddr = '0.0.0.0';
-            if ($_SERVER['REMOTE_ADDR']) {
-                $remoteaddr = $_SERVER['REMOTE_ADDR'];
-            }
-            $ukey = hexdec(substr(md5((string) $remoteaddr), 0, 8));
-            $newcntdata = [];
-            if (is_writable($cntfilename)) {
-                $cntdata = file($cntfilename);
-                $cadd = 0;
-                foreach ($cntdata as $cntvalue) {
-                    if (strrpos($cntvalue, ',') !== false) {
-                        [$cuser, $ctime, ] = @explode(',', trim($cntvalue));
-                        if ($cuser == $ukey) {
-                            $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
-                            $cadd = 1;
-                            $mbrcount++;
-                        } elseif (($ctime + $this->config['CNTLIMIT']) >= CURRENT_TIME) {
-                            $newcntdata[] = "$cuser,$ctime\n";
-                            $mbrcount++;
-                        }
-                    }
-                }
-                if (!$cadd) {
-                    $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
-                    $mbrcount++;
-                }
-            } else {
-                $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
-                $mbrcount++;
-            }
-            if ($fh = @fopen($cntfilename, 'w')) {
-                $cntdatastr = implode('', $newcntdata);
-                flock($fh, 2);
-                fwrite($fh, $cntdatastr);
-                flock($fh, 3);
-                fclose($fh);
-            } else {
-                return ('Participant file output error');
-            }
-            return $mbrcount;
-        } else {
-            return;
+        
+        if (!$cntfilename) {
+            return 0;
         }
+        
+        return \App\Utils\ParticipantCounter::count(
+            $cntfilename,
+            $this->config['CNTLIMIT'],
+            CURRENT_TIME
+        );
     }
 }
