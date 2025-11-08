@@ -88,7 +88,10 @@ class Imagebbs extends Bbs
      */
     public function __construct()
     {
-        $GLOBALS['CONF'] = array_merge($GLOBALS['CONF'], $GLOBALS['CONF_IMAGEBBS']);
+        $config = \App\Config::getInstance();
+        foreach ($GLOBALS['CONF_IMAGEBBS'] as $key => $value) {
+            $config->set($key, $value);
+        }
         parent::__construct();
     }
 

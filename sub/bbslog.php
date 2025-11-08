@@ -50,7 +50,10 @@ class Getlog extends Webapp
      */
     public function __construct()
     {
-        $GLOBALS['CONF'] = array_merge($GLOBALS['CONF'], $GLOBALS['CONF_GETLOG']);
+        $config = \App\Config::getInstance();
+        foreach ($GLOBALS['CONF_GETLOG'] as $key => $value) {
+            $config->set($key, $value);
+        }
         parent::__construct();
         $this->t->readTemplatesFromFile($this->c['TEMPLATE_LOG']);
     }

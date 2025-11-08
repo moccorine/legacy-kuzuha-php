@@ -2,12 +2,14 @@
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use App\Config;
 
 // Main bulletin board
 $app->get('/', function (Request $request, Response $response) {
     ob_start();
     
-    if ($GLOBALS['CONF']['BBSMODE_IMAGE'] == 1) {
+    $config = Config::getInstance();
+    if ($config->get('BBSMODE_IMAGE') == 1) {
         require_once PHP_IMAGEBBS;
         $imagebbs = new Imagebbs();
         $imagebbs->main();
@@ -25,7 +27,8 @@ $app->get('/', function (Request $request, Response $response) {
 $app->post('/', function (Request $request, Response $response) {
     ob_start();
     
-    if ($GLOBALS['CONF']['BBSMODE_IMAGE'] == 1) {
+    $config = Config::getInstance();
+    if ($config->get('BBSMODE_IMAGE') == 1) {
         require_once PHP_IMAGEBBS;
         $imagebbs = new Imagebbs();
         $imagebbs->main();
@@ -72,13 +75,14 @@ $app->post('/admin', function (Request $request, Response $response) {
     $parsedBody = $request->getParsedBody();
     $_POST = $parsedBody ?? [];
     
-    if ($GLOBALS['CONF']['ADMINPOST'] && $GLOBALS['CONF']['ADMINKEY'] 
-        && $_POST['v'] == $GLOBALS['CONF']['ADMINKEY']
-        && crypt((string) $_POST['u'], (string) $GLOBALS['CONF']['ADMINPOST']) == $GLOBALS['CONF']['ADMINPOST']) {
+    $config = Config::getInstance();
+    if ($config->get('ADMINPOST') && $config->get('ADMINKEY') 
+        && $_POST['v'] == $config->get('ADMINKEY')
+        && crypt((string) $_POST['u'], (string) $config->get('ADMINPOST')) == $config->get('ADMINPOST')) {
         require_once PHP_BBSADMIN;
         $bbsadmin = new Bbsadmin();
         $bbsadmin->main();
-    } elseif ($GLOBALS['CONF']['BBSMODE_IMAGE'] == 1) {
+    } elseif ($config->get('BBSMODE_IMAGE') == 1) {
         require_once PHP_IMAGEBBS;
         $imagebbs = new Imagebbs();
         $imagebbs->main();

@@ -3,3 +3,4 @@ bbs.log
 vendor/
 composer.lock
 .php-cs-fixer.cache
+.env

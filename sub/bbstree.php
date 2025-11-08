@@ -61,7 +61,10 @@ class Treeview extends Bbs
      */
     public function __construct()
     {
-        $GLOBALS['CONF'] = array_merge($GLOBALS['CONF'], $GLOBALS['CONF_TREEVIEW']);
+        $config = \App\Config::getInstance();
+        foreach ($GLOBALS['CONF_TREEVIEW'] as $key => $value) {
+            $config->set($key, $value);
+        }
         parent::__construct();
         $this->t->readTemplatesFromFile($this->c['TEMPLATE_TREEVIEW']);
     }

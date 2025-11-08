@@ -109,9 +109,9 @@ define('CURRENT_TIME', time() - $CONF['DIFFTIME'] * 60 * 60 + $CONF['DIFFSEC']);
 function script_run()
 {
 
-    $CONF = &$GLOBALS['CONF'];
+    $config = \App\Config::getInstance();
     # Password setting page (bbsadmin.php)
-    if ($CONF['ADMINPOST'] == '') {
+    if ($config->get('ADMINPOST') == '') {
         require_once(PHP_BBSADMIN);
         $bbsadmin = new Bbsadmin();
         $bbsadmin->procForm();
@@ -132,12 +132,12 @@ function script_run()
     }
     # Admin mode (sub/bbsadmin.php)
     elseif ($_POST['m'] == 'ad') {
-        if ($CONF['ADMINPOST'] and $CONF['ADMINKEY'] and $_POST['v'] == $CONF['ADMINKEY']
-            and crypt((string) $_POST['u'], (string) $CONF['ADMINPOST']) == $CONF['ADMINPOST']) {
+        if ($config->get('ADMINPOST') and $config->get('ADMINKEY') and $_POST['v'] == $config->get('ADMINKEY')
+            and crypt((string) $_POST['u'], (string) $config->get('ADMINPOST')) == $config->get('ADMINPOST')) {
             require_once(PHP_BBSADMIN);
             $bbsadmin = new Bbsadmin();
             $bbsadmin->main();
-        } elseif ($CONF['BBSMODE_IMAGE'] == 1) {
+        } elseif ($config->get('BBSMODE_IMAGE') == 1) {
             require_once(PHP_IMAGEBBS);
             $imagebbs = new Imagebbs();
             $imagebbs->main();
@@ -153,7 +153,7 @@ function script_run()
         $treeview->main();
     }
     # Image bulletin board (sub/bbsimage.php)
-    elseif ($CONF['BBSMODE_IMAGE'] == 1) {
+    elseif ($config->get('BBSMODE_IMAGE') == 1) {
         require_once(PHP_IMAGEBBS);
         $imagebbs = new Imagebbs();
         $imagebbs->main();
@@ -188,7 +188,7 @@ class Webapp
      */
     public function __construct()
     {
-        $this->c = &$GLOBALS['CONF'];
+        $this->c = \App\Config::getInstance()->all();
         $this->t = new patTemplate();
         $this->t->readTemplatesFromFile($this->c['TEMPLATE']);
     }
@@ -2220,7 +2220,8 @@ class Func
         }
 
         $basecode =  dechex($timestamp + $ukey);
-        $cryptcode = crypt($basecode . substr((string) $GLOBALS['CONF']['ADMINPOST'], -4), substr((string) $GLOBALS['CONF']['ADMINPOST'], -4) . $basecode);
+        $adminPost = \App\Config::getInstance()->get('ADMINPOST');
+        $cryptcode = crypt($basecode . substr((string) $adminPost, -4), substr((string) $adminPost, -4) . $basecode);
         $cryptcode = substr((string) preg_replace("/\W/", "", $cryptcode), -4);
         $pcode = dechex($timestamp) . $cryptcode;
         return $pcode;
@@ -2254,7 +2255,8 @@ class Func
 
         $timestamp = hexdec($timestamphex);
         $basecode = dechex($timestamp + $ukey);
-        $verifycode = crypt($basecode . substr((string) $GLOBALS['CONF']['ADMINPOST'], -4), substr((string) $GLOBALS['CONF']['ADMINPOST'], -4) . $basecode);
+        $adminPost = \App\Config::getInstance()->get('ADMINPOST');
+        $verifycode = crypt($basecode . substr((string) $adminPost, -4), substr((string) $adminPost, -4) . $basecode);
         $verifycode = substr((string) preg_replace("/\W/", "", $verifycode), -4);
         if ($cryptcode != $verifycode) {
             return;

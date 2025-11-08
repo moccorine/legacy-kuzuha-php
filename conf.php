@@ -1,5 +1,11 @@
 <?php
 
+// Helper function to get env value with fallback
+function env($key, $default = null)
+{
+    return $_ENV[$key] ?? $default;
+}
+
   # Items marked "*" need to be changed or confirmed
 
 /* Common settings */
@@ -7,7 +13,7 @@ $CONF = [
 
   #------------------------- URLs, etc. -------------------------
 
-  'CGIURL' => './bbs.php',      # * URL for the bulletin board script (Relative paths are acceptable)
+  'CGIURL' => '/',      # * URL for the bulletin board script (Relative paths are acceptable)
   'REFCHECKURL' => '',      # URL for the bulletin board script (Describes the full URL for referer checking. If empty, it will not be checked)
   'BBSHOST' => '',      # Host address where the script will be installed (For caller checking. If empty, it will not be checked)
 
@@ -25,16 +31,16 @@ $CONF = [
 
   #------------------------- Bulletin board name, etc. -------------------------
 
-  'BBSTITLE' => 'StrangeWorld@PleaseChange',           # * Bulletin board name
+  'BBSTITLE' => env('APP_NAME', 'StrangeWorld@PleaseChange'),           # * Bulletin board name
   ## TL note: Ayashii World titles usually take the form of "AyashiiWorld@[web host name]
   'INFOPAGE' => '/',   # * URL for the Public Relations Office (home/information page)
 
   #------------------------- Administrator settings -------------------------
 
-  'ADMINNAME' => 'Administrator',                               # * Administrator name
-  'ADMINMAIL' => 'mail@example.com',                # * Administrator email address
-  'ADMINPOST' => '',   # * Administor password (Encrypted password. Please leave this empty at first)
-  'ADMINKEY' => '',         # * The keyword for entering administrator mode (regular alphanumeric characters are recommended. If empty, administrator mode will be unavailable)
+  'ADMINNAME' => env('ADMIN_NAME', 'Administrator'),                               # * Administrator name
+  'ADMINMAIL' => env('ADMIN_EMAIL', 'mail@example.com'),                # * Administrator email address
+  'ADMINPOST' => env('ADMIN_PASSWORD', ''),   # * Administor password (Encrypted password. Please leave this empty at first)
+  'ADMINKEY' => env('ADMIN_KEY', ''),         # * The keyword for entering administrator mode (regular alphanumeric characters are recommended. If empty, administrator mode will be unavailable)
 
   ## TL note: To enter admin mode after the bulletin board is up and running, put the adminkey (and only the adminkey) into the name and contents fields of the post form, then hit send.
   ## Putting the adminkey (and only the adminkey) into the name field alone will display the admin capcode on your post.
@@ -342,4 +348,3 @@ $CONF = [
 
   'SHOW_PRCTIME' => 1,  # Show processing time
 ];
-?>
