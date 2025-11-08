@@ -429,7 +429,8 @@ class Treeview extends Bbs
 
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->config['ANONY_NAME']) {
-                    $treeprint .= 'User: '.preg_replace('/<[^>]*>/', '', (string) $treemsg['USER'])."\r";
+                    $userLabel = Translator::trans('tree.user');
+                    $treeprint .= $userLabel . ': '.preg_replace('/<[^>]*>/', '', (string) $treemsg['USER'])."\r";
                 }
 
                 # Display new arrivals
