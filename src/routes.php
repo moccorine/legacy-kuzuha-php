@@ -8,6 +8,9 @@ use App\Config;
 $app->get('/', function (Request $request, Response $response) {
     ob_start();
     
+    // Set $_GET for legacy code
+    $_GET = $request->getQueryParams();
+    
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Imagebbs();

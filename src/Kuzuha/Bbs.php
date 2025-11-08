@@ -88,6 +88,18 @@ class Bbs extends Webapp
         elseif ($this->f['m'] == 'f') {
             $this->prtfollow();
         }
+        # Message log search
+        elseif ($this->f['m'] == 'g') {
+            $getlog = new \Kuzuha\Getlog();
+            $getlog->main();
+            return;
+        }
+        # Tree view
+        elseif ($this->f['m'] == 'tree') {
+            $treeview = new \Kuzuha\Treeview();
+            $treeview->main();
+            return;
+        }
         # Post search
         elseif ($this->f['m'] == 't' or $this->f['m'] == 's') {
             $this->prtsearchlist();
