@@ -134,7 +134,6 @@ class Getlog extends Webapp
      */
     public function prtloglist()
     {
-
         $dir = $this->config['OLDLOGFILEDIR'];
 
         if ($this->config['OLDLOGFMT']) {
@@ -161,6 +160,7 @@ class Getlog extends Webapp
 
         # Check for files with the latest update time as standard
         $maxftime = 0;
+        $checkedfile = '';
         foreach ($files as $filename) {
             $fstat = stat($dir . $filename);
             if ($fstat[9] > $maxftime) {
@@ -169,17 +169,11 @@ class Getlog extends Webapp
             }
         }
 
-        if ($this->config['ZIPDIR'] and function_exists("gzcompress")) {
-            $this->template->setAttribute("ziplink", "visibility", "visible");
-        }
+        $showZipLink = $this->config['ZIPDIR'] && function_exists("gzcompress");
+        $showTopicLink = (bool)$this->config['OLDLOGFMT'];
+        $showDlLink = $this->dlchk();
 
-        if (!$this->config['OLDLOGFMT']) {
-            $this->template->setAttribute("topiclink", "visibility", "hidden");
-        }
-        if (!$this->dlchk()) {
-            $this->template->setAttribute("dllink", "visibility", "hidden");
-        }
-
+        $fileList = [];
         foreach ($files as $filename) {
             $fstat = stat($dir . $filename);
             $fsize = $fstat[7];
@@ -194,10 +188,7 @@ class Getlog extends Webapp
                 $ftitle = $filename;
             }
 
-            $checked = '';
-            if ($filename == $checkedfile) {
-                $checked = ' checked="checked"';
-            }
+            $checked = ($filename == $checkedfile) ? ' checked="checked"' : '';
             $checkbox = '';
             if (@$this->config['MULTIPLESEARCH']) {
                 $checkbox = "<input type=\"checkbox\" name=\"f[]\" value=\"$filename\"$checked />";
@@ -205,40 +196,61 @@ class Getlog extends Webapp
                 $checkbox = "<input type=\"radio\" name=\"f\" value=\"$filename\"$checked />";
             }
 
-            $this->template->clearTemplate('topiclink');
-            $this->template->clearTemplate('dllink');
-            $this->template->addVar('topiclink', 'FILENAME', $filename);
-            $this->template->addVar('dllink', 'FILENAME', $filename);
-            $this->template->addVars('filelist', [
+            $fileList[] = [
                 'FCHECK' => $checkbox,
                 'FILENAME' => $filename,
                 'FTITLE' => $ftitle,
                 'FTIME' => $ftime,
                 'FSIZE' => $fsize,
-            ]);
-            $this->template->parseTemplate('filelist', 'a');
+            ];
         }
 
-        $this->template->addVar('dateform', 'OLDLOGSAVESW', $this->config['OLDLOGSAVESW']);
-        if ($this->config['BBSMODE_IMAGE'] == 1) {
-            if ($this->config['SHOWIMG']) {
-                $this->template->addVar('sicheck', 'CHK_SI', ' checked="checked"');
-            }
-            $this->template->setAttribute('sicheck', 'visibility', 'visible');
-        }
-        if (!$this->config['OLDLOGFMT'] or !$this->config['OLDLOGBTN']) {
-            $this->template->setAttribute("check_bt", "visibility", "hidden");
-        }
-        if ($this->config['GZIPU']) {
-            $this->template->addVar('loglist', 'CHK_G', ' checked="checked"');
-        }
+        $chkSi = ($this->config['SHOWIMG']) ? ' checked="checked"' : '';
+        $chkG = ($this->config['GZIPU']) ? ' checked="checked"' : '';
+        $showImageCheck = ($this->config['BBSMODE_IMAGE'] == 1);
+        $showButtonCheck = ($this->config['OLDLOGFMT'] && $this->config['OLDLOGBTN']);
 
-        # Output
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log search');
-        $this->template->displayParsedTemplate('loglist');
-        print $this->prthtmlfoot();
-
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'),
+            'files' => $fileList,
+            'SHOW_ZIP_LINK' => $showZipLink,
+            'SHOW_TOPIC_LINK' => $showTopicLink,
+            'SHOW_DL_LINK' => $showDlLink,
+            'MULTIPLE_SEARCH' => (bool)@$this->config['MULTIPLESEARCH'],
+            'CHK_SI' => $chkSi,
+            'CHK_G' => $chkG,
+            'SHOW_IMAGE_CHECK' => $showImageCheck,
+            'SHOW_BUTTON_CHECK' => $showButtonCheck,
+            'TRANS_MESSAGE_LOGS' => Translator::trans('log.message_logs'),
+            'TRANS_RETURN' => Translator::trans('log.return'),
+            'TRANS_LIST_OF_LOGS' => Translator::trans('log.list_of_logs'),
+            'TRANS_ZIP_ARCHIVES' => Translator::trans('log.zip_archives'),
+            'TRANS_TOPIC_LIST' => Translator::trans('log.topic_list'),
+            'TRANS_DOWNLOAD' => Translator::trans('log.download'),
+            'TRANS_SELECT_DESELECT_ALL' => Translator::trans('log.select_deselect_all'),
+            'TRANS_JAVASCRIPT_REQUIRED' => Translator::trans('log.javascript_required'),
+            'TRANS_SEARCH_LOGS' => Translator::trans('log.search_logs'),
+            'TRANS_SPECIFY_KEYWORDS' => Translator::trans('log.specify_keywords'),
+            'TRANS_SEARCH' => Translator::trans('log.search'),
+            'TRANS_SPECIFY_TIME_RANGE' => Translator::trans('log.specify_time_range'),
+            'TRANS_FROM' => Translator::trans('log.from'),
+            'TRANS_TO' => Translator::trans('log.to'),
+            'TRANS_BOOLEAN_OPERATOR' => Translator::trans('log.boolean_operator'),
+            'TRANS_AND_SEARCH' => Translator::trans('log.and_search'),
+            'TRANS_OR_SEARCH' => Translator::trans('log.or_search'),
+            'TRANS_SEARCH_TARGET' => Translator::trans('log.search_target'),
+            'TRANS_ALL_TEXT' => Translator::trans('log.all_text'),
+            'TRANS_USERNAMES' => Translator::trans('log.usernames'),
+            'TRANS_TITLES' => Translator::trans('log.titles'),
+            'TRANS_OTHER' => Translator::trans('log.other'),
+            'TRANS_CASE_INSENSITIVE' => Translator::trans('log.case_insensitive'),
+            'TRANS_SHOW_IMAGES' => Translator::trans('log.show_images'),
+            'TRANS_SHOW_POST_BUTTONS' => Translator::trans('log.show_post_buttons'),
+            'TRANS_GZIP_COMPRESSION' => Translator::trans('log.gzip_compression'),
+            'TRANS_BULLETIN_BOARD' => Translator::trans('admin.bulletin_board'),
+        ]);
+        echo $this->renderTwig('log/list.twig', $data);
     }
 
 
@@ -262,7 +274,38 @@ class Getlog extends Webapp
         foreach (['q', 't', 'b', 'ci',] as $formvalue) {
             $conditions[$formvalue] = @$this->form[$formvalue];
         }
-        foreach (['sd', 'sh', 'si', 'ed', 'eh', 'ei',] as $formvalue) {
+        
+        // Support both old format (sh, si, eh, ei) and new HTML5 time input (start_time, end_time)
+        if (!empty($this->form['start_time'])) {
+            // Parse HTML5 time input (HH:MM format)
+            list($sh, $si) = explode(':', $this->form['start_time']);
+            $conditions['sh'] = str_pad($sh, 2, "0", STR_PAD_LEFT);
+            $conditions['si'] = str_pad($si, 2, "0", STR_PAD_LEFT);
+            $conditions['showall'] = false;
+        } else {
+            $conditions['sh'] = str_pad((string) @$this->form['sh'], 2, "0", STR_PAD_LEFT);
+            $conditions['si'] = str_pad((string) @$this->form['si'], 2, "0", STR_PAD_LEFT);
+            if ($conditions['showall'] && (@$this->form['sh'] || @$this->form['si'])) {
+                $conditions['showall'] = false;
+            }
+        }
+        
+        if (!empty($this->form['end_time'])) {
+            // Parse HTML5 time input (HH:MM format)
+            list($eh, $ei) = explode(':', $this->form['end_time']);
+            $conditions['eh'] = str_pad($eh, 2, "0", STR_PAD_LEFT);
+            $conditions['ei'] = str_pad($ei, 2, "0", STR_PAD_LEFT);
+            $conditions['showall'] = false;
+        } else {
+            $conditions['eh'] = str_pad((string) @$this->form['eh'], 2, "0", STR_PAD_LEFT);
+            $conditions['ei'] = str_pad((string) @$this->form['ei'], 2, "0", STR_PAD_LEFT);
+            if ($conditions['showall'] && (@$this->form['eh'] || @$this->form['ei'])) {
+                $conditions['showall'] = false;
+            }
+        }
+        
+        // Handle day fields for monthly logs
+        foreach (['sd', 'ed'] as $formvalue) {
             if ($conditions['showall'] and @$this->form[$formvalue]) {
                 $conditions['showall'] = false;
             }
