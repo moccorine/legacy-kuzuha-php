@@ -150,5 +150,8 @@
   "main.post_as_admin": "管理者として投稿",
   "log.archive_title": "過去ログアーカイブ",
   "log.bulletin_board": "掲示板",
-  "log.archive_header": "ダウンロード - 日付 - 時刻 - サイズ"
+  "log.archive_header": "ダウンロード - 日付 - 時刻 - サイズ",
+  "main": {
+    "page_generation_time": "ページ生成時間: %duration% 秒"
+  }
 }

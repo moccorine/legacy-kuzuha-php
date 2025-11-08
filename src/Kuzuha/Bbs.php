@@ -219,10 +219,14 @@ class Bbs extends Webapp
         # Post as administrator
         $showAdminLogin = ($this->config['BBSMODE_ADMINONLY'] != 0);
 
-        # Get copyright HTML
-        ob_start();
-        $this->template->displayParsedTemplate('copyright');
-        $copyrightHtml = ob_get_clean();
+        # Duration
+        $duration = null;
+        $transPageGenerationTime = '';
+        if ($this->config['SHOW_PRCTIME'] && $this->session['START_TIME']) {
+            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
+            $duration = sprintf('%0.6f', $duration);
+            $transPageGenerationTime = Translator::trans('main.page_generation_time', ['%duration%' => $duration]);
+        }
 
         # Lower main section
         $data = array_merge($this->config, $this->session, [
@@ -231,7 +235,8 @@ class Bbs extends Webapp
             'EINDEX' => $eindex ?? '',
             'SHOW_READNEW' => $showReadNew,
             'SHOW_ADMINLOGIN' => $showAdminLogin,
-            'COPYRIGHT' => $copyrightHtml,
+            'DURATION' => $duration,
+            'TRANS_PAGE_GENERATION_TIME' => $transPageGenerationTime,
             'TRANS_NEXT_PAGE' => Translator::trans('main.next_page'),
             'TRANS_RELOAD' => Translator::trans('main.reload'),
             'TRANS_UNREAD' => Translator::trans('main.unread'),
@@ -239,8 +244,6 @@ class Bbs extends Webapp
             'TRANS_POST_AS_ADMIN' => Translator::trans('main.post_as_admin'),
         ]);
         echo $this->renderTwig('main/lower.twig', $data);
-
-        print $this->prthtmlfoot();
     }
 
     /**

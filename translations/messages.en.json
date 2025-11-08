@@ -150,5 +150,8 @@
   "main.post_as_admin": "Post as administrator",
   "log.archive_title": "Message log archive",
   "log.bulletin_board": "Bulletin board",
-  "log.archive_header": "Download - Date - Time - Size"
+  "log.archive_header": "Download - Date - Time - Size",
+  "main": {
+    "page_generation_time": "Page generation time: %duration% seconds"
+  }
 }

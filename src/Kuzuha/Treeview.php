@@ -323,11 +323,6 @@ class Treeview extends Bbs
         # Administrator post
         $showAdminLogin = ($this->config['BBSMODE_ADMINONLY'] != 0);
 
-        # Get copyright HTML
-        ob_start();
-        $this->template->displayParsedTemplate('copyright');
-        $copyrightHtml = ob_get_clean();
-
         # Lower main section
         $data = array_merge($this->config, $this->session, [
             'MSGMORE' => $msgmore,
@@ -335,7 +330,6 @@ class Treeview extends Bbs
             'EINDEX' => $eindex ?? '',
             'SHOW_READNEW' => $showReadnew ?? false,
             'SHOW_ADMINLOGIN' => $showAdminLogin,
-            'COPYRIGHT' => $copyrightHtml,
             'TRANS_NEXT_PAGE' => Translator::trans('tree.next_page'),
             'TRANS_RELOAD' => Translator::trans('tree.reload'),
             'TRANS_UNREAD' => Translator::trans('tree.unread'),
