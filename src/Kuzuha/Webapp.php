@@ -27,13 +27,6 @@ class Webapp
         $this->template->readTemplatesFromFile($this->config['TEMPLATE']);
     }
 
-    /**
-     * Destructor
-     */
-    public function destroy()
-    {
-    }
-
     /*20210625 Neko/2chtrip http://www.mits-jp.com/2ch/ */
 
     public function procForm()
@@ -129,7 +122,6 @@ class Webapp
         }
         $this->template->displayParsedTemplate('error');
         print $this->prthtmlfoot();
-        $this->destroy();
         exit();
     }
 
