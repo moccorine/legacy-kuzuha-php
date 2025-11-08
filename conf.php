@@ -195,7 +195,7 @@ $CONF = [
 
   # File name for real-time participant counting
   #  (Leave it empty if you don't want to use the real-time participant counting function)
-  'CNTFILENAME' => './bbs.cnt',
+  'CNTFILENAME' => './storage/app/bbs.cnt',
 
   # Real-time participant count interval (seconds)
   # (Participants who have exceeded this length of time since their last page view will be excluded from the tally)

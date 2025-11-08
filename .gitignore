@@ -1,4 +1,3 @@
-bbs.cnt
 vendor/
 composer.lock
 .php-cs-fixer.cache
@@ -6,4 +5,5 @@ composer.lock
 .phpunit.result.cache
 archives/*.dat
 storage/app/bbs.log
+storage/app/bbs.cnt
 storage/logs/*.log
