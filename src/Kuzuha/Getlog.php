@@ -439,7 +439,7 @@ class Getlog extends Webapp
         if ($this->c['OLDLOGFMT']) {
             if (!@$conditions['showall']) {
                 $result = 0;
-                while (($logline = Func::fgetline($fh)) !== false) {
+                while (($logline = \App\Utils\FileHelper::getLine($fh)) !== false) {
                     $message = $this->getmessage($logline);
                     $result = $this->msgsearch($message, $conditions);
                     # Search hit
@@ -474,7 +474,7 @@ class Getlog extends Webapp
             }
             # Show all
             else {
-                while (($logline = Func::fgetline($fh)) !== false) {
+                while (($logline = \App\Utils\FileHelper::getLine($fh)) !== false) {
                     $messagestr = $this->prtmessage($this->getmessage($logline), $msgmode, $filename);
                     print $messagestr;
                 }
@@ -487,7 +487,7 @@ class Getlog extends Webapp
                 $buffer = "";
                 $flgbuffer = false;
                 $result = 0;
-                while (($htmlline = Func::fgetline($fh)) !== false) {
+                while (($htmlline = \App\Utils\FileHelper::getLine($fh)) !== false) {
                     # Start message
                     if (!$flgbuffer and preg_match("/<div [^>]*id=\"m\d+\"[^>]*>/", $htmlline)) {
                         $buffer = $htmlline;
@@ -535,7 +535,7 @@ class Getlog extends Webapp
                     }
                 }
             } else {
-                while (($htmlline = Func::fgetline($fh)) !== false) {
+                while (($htmlline = \App\Utils\FileHelper::getLine($fh)) !== false) {
                     print $htmlline;
                 }
             }
@@ -727,7 +727,7 @@ class Getlog extends Webapp
         $ttitle = [];
         $ttime = [];
         $tindex = 0;
-        while (($logline = Func::fgetline($fh)) !== false) {
+        while (($logline = \App\Utils\FileHelper::getLine($fh)) !== false) {
             $message = $this->getmessage($logline);
             if (!$message['THREAD'] or $message['THREAD'] == $message['POSTID'] or !@$ttitle[$message['THREAD']]) {
                 $tid[$tindex] = $message['POSTID'];
