@@ -225,15 +225,14 @@
     <br />
     <div>
       {% if SHOW_COUNTER %}
-        {{ TRANS_PAGE_VIEWS }}: {{ COUNTER }} ({{ TRANS_BULLETPROOF_LEVEL }}:
-        {{ COUNTLEVEL }})
-      {% endif %} {% if SHOW_MBRCOUNT %}
+        {{ TRANS_PAGE_VIEWS }}（{{ COUNTDATE }}以降）: {{ COUNTER }} ({{
+          TRANS_BULLETPROOF_LEVEL
+        }}: {{ COUNTLEVEL }})　 {% endif %} {% if SHOW_MBRCOUNT %}
         {{ TRANS_CURRENT_PARTICIPANTS }}: {{ MBRCOUNT }} {{ TRANS_USERS }} ({{
-          TRANS_WITHIN
-        }}
-        {{ CNTLIMIT }} {{ TRANS_SECONDS }})
-      {% endif %} {{ TRANS_MAX_POSTS }}:
-      {{ LOGSAVE }} {{ TRANS_POSTS }}
+          CNTLIMIT
+        }}{{ TRANS_SECONDS }})　 {% endif %} {{ TRANS_MAX_POSTS }}: {{ LOGSAVE
+      }}
+      {{ TRANS_POSTS }}
     </div>
   {% endif %}
 
