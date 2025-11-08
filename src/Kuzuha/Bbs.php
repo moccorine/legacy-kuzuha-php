@@ -333,7 +333,7 @@ class Bbs extends Webapp
     /**
      * Prepare form data for Twig rendering
      */
-    private function getFormData($dtitle, $dmsg, $dlink, $mode = '')
+    protected function getFormData($dtitle, $dmsg, $dlink, $mode = '')
     {
         # Protect code generation
         $pcode = SecurityHelper::generateProtectCode();
@@ -632,19 +632,14 @@ class Bbs extends Webapp
         // Get message HTML using Twig
         $messageHtml = $this->prtmessage($message, $mode, $filename);
 
-        // Set form variables for follow
-        if ($this->config['AUTOLINK']) {
-            $this->template->addVar('form', 'CHK_A', ' checked="checked"');
-        }
-        $this->template->addVar('form', 'FOLLOWID', $message['POSTID']);
-        $this->template->addVar('form', 'FOLLOWID', $this->form['s']);
-        $this->template->addVar('form', 'SEARCHID', $this->form['s']);
-        $this->template->addVar('form', 'FF', $this->form['ff']);
-
-        // Get form HTML
-        ob_start();
-        $this->template->displayParsedTemplate('form');
-        $formHtml = ob_get_clean();
+        // Get form HTML using Twig
+        $formData = $this->getFormData('＞' . preg_replace('/<[^>]*>/', '', (string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
+        $formHtml = $this->renderTwig('components/form.twig', $formData);
+        
+        // Add follow-specific hidden inputs
+        $formHtml .= '<input type="hidden" name="f" value="' . htmlspecialchars($this->form['s']) . '" />';
+        $formHtml .= '<input type="hidden" name="ff" value="' . htmlspecialchars($this->form['ff']) . '" />';
+        $formHtml .= '<input type="hidden" name="s" value="' . htmlspecialchars($this->form['s']) . '" />';
 
         $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
@@ -678,16 +673,10 @@ class Bbs extends Webapp
             $dmsg = $this->form['v'];
             $dlink = $this->form['l'];
         }
-        $this->setform($dtitle, $dmsg, $dlink);
-
-        if ($this->config['AUTOLINK']) {
-            $this->template->addVar('form', 'CHK_A', ' checked="checked"');
-        }
-
-        // Get form HTML
-        ob_start();
-        $this->template->displayParsedTemplate('form');
-        $formHtml = ob_get_clean();
+        
+        // Get form HTML using Twig
+        $formData = $this->getFormData($dtitle, $dmsg, $dlink);
+        $formHtml = $this->renderTwig('components/form.twig', $formData);
 
         $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [

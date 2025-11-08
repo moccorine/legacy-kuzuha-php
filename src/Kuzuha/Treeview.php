@@ -196,12 +196,10 @@ class Treeview extends Bbs
             $dlink = @$this->form['l'];
         }
         $forminput = '<input type="hidden" name="m" value="tree" /><input type="hidden" name="treem" value="p" />';
-        $this->setform($dtitle, $dmsg, $dlink, $forminput);
-
-        # Get form HTML
-        ob_start();
-        $this->template->displayParsedTemplate('form');
-        $formHtml = ob_get_clean();
+        
+        # Get form HTML using Twig
+        $formData = $this->getFormData($dtitle, $dmsg, $dlink, $forminput);
+        $formHtml = $this->renderTwig('components/form.twig', $formData);
 
         # Upper main section
         $data = array_merge($this->config, $this->session, [
