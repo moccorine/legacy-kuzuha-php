@@ -3,6 +3,7 @@
 namespace Kuzuha;
 
 use App\Config;
+use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\StringHelper;
 
@@ -236,7 +237,7 @@ class Webapp
     {
 
         if (count($message) < 10) {
-            return;
+            return $message;
         }
         $message['WDATE'] = DateHelper::getDateString($message['NDATE'], $this->config['DATEFORMAT']);
         #20181102 Gikoneko: Escape special characters
@@ -391,6 +392,8 @@ class Webapp
         # Message display content definition
         $this->template->clearTemplate('message');
         $this->template->addVars('message', $message);
+        
+        return $message;
     }
 
     /**
@@ -407,9 +410,15 @@ class Webapp
      */
     public function prtmessage($message, $mode = 0, $tlog = '')
     {
-        $this->setmessage($message, $mode, $tlog);
-        $prtmessage = $this->template->getParsedTemplate('message');
-        return $prtmessage;
+        $message = $this->setmessage($message, $mode, $tlog);
+        
+        $showEnv = !empty($message['ENVADDR']) || !empty($message['ENVUA']);
+        
+        return $this->renderTwig('components/message.twig', array_merge($message, [
+            'SHOW_ENV' => $showEnv,
+            'TRANS_USER' => Translator::trans('message.user'),
+            'TRANS_POST_DATE' => Translator::trans('message.post_date'),
+        ]));
     }
 
     /**

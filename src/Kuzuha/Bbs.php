@@ -197,12 +197,12 @@ class Bbs extends Webapp
         if ($this->session['MSGDISP'] < 0) {
             $msgmore = '';
         } elseif ($eindex > 0) {
-            $msgmore = "Shown above are posts {$bindex} through {$eindex}, in order of newest to oldest. ";
+            $msgmore = Translator::trans('main.shown_posts', ['%bindex%' => $bindex, '%eindex%' => $eindex]);
         } else {
-            $msgmore = 'There are no unread messages. ';
+            $msgmore = Translator::trans('main.no_unread_messages');
         }
         if ($eindex >= $lastindex) {
-            $msgmore .= 'There are no posts below this point.';
+            $msgmore .= Translator::trans('main.no_posts_below');
         }
 
         # Navigation buttons

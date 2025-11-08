@@ -1,0 +1,23 @@
+<span class="ngline">
+  <div class="m" id="m{{ POSTID }}">
+    <span class="nw">
+      <span class="mnum">{{ POSTID }}.</span>
+      <span class="ms">{{ TITLE }}</span>&nbsp;&nbsp;
+      <span class="mu">{{ TRANS_USER }}:</span>
+      <span class="mun">{{ USER }}</span>&nbsp;&nbsp;
+      <span class="md">
+        {{ TRANS_POST_DATE }}: {{ WDATE }}<a id="a{{ POSTID }}">&nbsp;</a
+        ><span class="nb">{{ BTN|raw }}</span>
+      </span>
+    </span>
+    <div class="contents">
+      <pre class="msgnormal">{{- MSG|raw -}}</pre>
+    </div>
+    {% if SHOW_ENV %}
+      <div class="env">
+        {{ ENVADDR|raw }}{{ ENVBR|raw }}{{ ENVUA|raw }}
+      </div>
+    {% endif %}
+  </div>
+</span>
+<hr />

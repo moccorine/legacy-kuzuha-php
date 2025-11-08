@@ -152,6 +152,13 @@
   "log.bulletin_board": "Bulletin board",
   "log.archive_header": "Download - Date - Time - Size",
   "main": {
-    "page_generation_time": "Page generation time: %duration% seconds"
+    "page_generation_time": "Page generation time: %duration% seconds",
+    "shown_posts": "Shown above are posts %bindex% through %eindex%, in order of newest to oldest. ",
+    "no_unread_messages": "There are no unread messages. ",
+    "no_posts_below": "There are no posts below this point."
+  },
+  "message": {
+    "user": "User",
+    "post_date": "Post date"
   }
 }
