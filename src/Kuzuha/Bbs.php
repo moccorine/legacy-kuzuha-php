@@ -95,25 +95,7 @@ class Bbs extends Webapp
         elseif ($this->form['m'] == 'f') {
             $this->prtfollow();
         }
-        # Message log search
-        elseif ($this->form['m'] == 'g') {
-            $getlog = new \Kuzuha\Getlog();
-            $getlog->main();
-            return;
-        }
-        # Tree view
-        elseif ($this->form['m'] == 'tree') {
-            $treeview = new \Kuzuha\Treeview();
-            $treeview->main();
-            return;
-        }
-        # Admin mode
-        elseif ($this->form['m'] == 'ad') {
-            $bbsadmin = new Bbsadmin($this);
-            $bbsadmin->main();
-            return;
-        }
-        # Post search
+        # Post search (thread view)
         elseif ($this->form['m'] == 't' or $this->form['m'] == 's') {
             $this->prtsearchlist();
         }
