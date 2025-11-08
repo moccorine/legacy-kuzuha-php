@@ -6,5 +6,9 @@
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.89",
         "rector/rector": "^2.2"
+    },
+    "require": {
+        "slim/slim": "4.*",
+        "slim/psr7": "^1.8"
     }
 }
