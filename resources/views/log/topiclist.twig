@@ -23,23 +23,9 @@
     }} - {{ TRANS_CONTENTS }}
   </div>
   <hr />
-  <pre>
-    {%- for topic in topics %}
-      <a href="{{ DEFURL|raw }}&amp;m=t&amp;ff={{ FILENAME }}&amp;s={{
-        topic.TID
-        }}"
-        target="link">
-        {{ TXTTHREAD }}
-      </a>
-      <a href="{{ DEFURL|raw }}&amp;m=tree&amp;ff={{ FILENAME }}&amp;s={{
-        topic.TID
-        }}"
-        target="link">
-        {{ TXTTREE }}
-      </a>
-      {{ topic.TC }} <i>[{{ topic.TT }}]</i> {{ topic.TTITLE }}
-    {% endfor -%}
-  </pre>
+  <pre>{%- for topic in topics %}
+<a href="{{ DEFURL|raw }}&amp;m=t&amp;ff={{ FILENAME }}&amp;s={{ topic.TID }}" target="link">{{ TXTTHREAD }}</a> <a href="{{ DEFURL|raw }}&amp;m=tree&amp;ff={{ FILENAME }}&amp;s={{ topic.TID }}" target="link">{{ TXTTREE }}</a> {{ topic.TC }} <i>[{{ topic.TT }}]</i> {{ topic.TTITLE }}
+{% endfor -%}</pre>
   <hr />
   <a href="{{ DEFURL|raw }}&m=g">{{ TRANS_MESSAGE_LOG_SEARCH }}</a> <a href="{{
     DEFURL
