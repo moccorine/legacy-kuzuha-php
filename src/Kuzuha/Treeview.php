@@ -514,7 +514,7 @@ class Treeview extends Bbs
 
         # Display results
         $msgdisp = StringHelper::fixNumberString(@$this->form['d']);
-        if ($msgdisp === false) {
+        if ($msgdisp === '' || $msgdisp === false) {
             $msgdisp = $this->config['TREEDISP'];
         } elseif ($msgdisp < 0) {
             $msgdisp = -1;

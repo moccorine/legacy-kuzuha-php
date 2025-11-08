@@ -63,7 +63,7 @@ class Webapp
         $this->session['U'] = $this->form['u'];
         $this->session['I'] = $this->form['i'];
         $this->session['C'] = $this->form['c'];
-        $this->session['MSGDISP'] = ($this->form['d'] == -1) ? $this->config['MSGDISP'] : $this->form['d'];
+        $this->session['MSGDISP'] = (isset($this->form['d']) && $this->form['d'] != -1) ? $this->form['d'] : $this->config['MSGDISP'];
         $this->session['TOPPOSTID'] = $this->form['p'];
         # Get settings information cookies
         if ($this->config['COOKIE'] and $_COOKIE['c']
