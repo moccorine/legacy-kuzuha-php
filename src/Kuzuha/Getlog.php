@@ -281,7 +281,10 @@ class Getlog extends Webapp
             list($sh, $si) = explode(':', $this->form['start_time']);
             $conditions['sh'] = str_pad($sh, 2, "0", STR_PAD_LEFT);
             $conditions['si'] = str_pad($si, 2, "0", STR_PAD_LEFT);
-            $conditions['showall'] = false;
+            // Only apply filter if not default value (00:00)
+            if ($this->form['start_time'] !== '00:00') {
+                $conditions['showall'] = false;
+            }
         } else {
             $conditions['sh'] = str_pad((string) @$this->form['sh'], 2, "0", STR_PAD_LEFT);
             $conditions['si'] = str_pad((string) @$this->form['si'], 2, "0", STR_PAD_LEFT);
@@ -295,7 +298,10 @@ class Getlog extends Webapp
             list($eh, $ei) = explode(':', $this->form['end_time']);
             $conditions['eh'] = str_pad($eh, 2, "0", STR_PAD_LEFT);
             $conditions['ei'] = str_pad($ei, 2, "0", STR_PAD_LEFT);
-            $conditions['showall'] = false;
+            // Only apply filter if not default value (23:59)
+            if ($this->form['end_time'] !== '23:59') {
+                $conditions['showall'] = false;
+            }
         } else {
             $conditions['eh'] = str_pad((string) @$this->form['eh'], 2, "0", STR_PAD_LEFT);
             $conditions['ei'] = str_pad((string) @$this->form['ei'], 2, "0", STR_PAD_LEFT);
