@@ -173,6 +173,8 @@ class Bbs extends Webapp
         # Upper main section
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'],
+            'CUSTOMSTYLE' => '',
+            'CUSTOMHEAD' => '',
             'FORM' => $formHtml,
             'TRANS_PR_OFFICE' => Translator::trans('main.pr_office'),
             'TRANS_PR_OFFICE_TITLE' => Translator::trans('main.pr_office_title'),
