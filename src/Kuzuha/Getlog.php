@@ -61,7 +61,6 @@ class Getlog extends Webapp
             $config->set($key, $value);
         }
         parent::__construct();
-        $this->template->readTemplatesFromFile($this->config['TEMPLATE_LOG']);
     }
 
 

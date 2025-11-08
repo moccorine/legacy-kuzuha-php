@@ -12,7 +12,6 @@ class Webapp
     public $config; /* Settings information */
     public $form; /* Form input */
     public $session = []; /* Session-specific information such as the user's host */
-    public $template; /* HTML template object */
 
     /**
      * Constructor
@@ -21,8 +20,6 @@ class Webapp
     public function __construct()
     {
         $this->config = Config::getInstance()->all();
-        $this->template = new \patTemplate();
-        $this->template->readTemplatesFromFile($this->config['TEMPLATE']);
     }
 
     /*20210625 Neko/2chtrip http://www.mits-jp.com/2ch/ */
@@ -101,7 +98,6 @@ class Webapp
                 unset($tmp[$key]);
             }
         }
-        $this->template->addGlobalVars($tmp);
     }
 
     /**
@@ -112,105 +108,24 @@ class Webapp
      */
     public function prterror($err_message)
     {
-        // Try Twig first, fallback to patTemplate
-        if (class_exists('\App\View')) {
-            $this->sethttpheader();
-            $data = array_merge($this->config, $this->session, [
-                'TITLE' => $this->config['BBSTITLE'] . ' Error',
-                'ERR_MESSAGE' => $err_message,
-                'CUSTOMSTYLE' => '',
-                'CUSTOMHEAD' => '',
-                'TRANS_RETURN' => Translator::trans('error.return'),
-                'TRANS_RETURN_TITLE' => Translator::trans('error.return_title'),
-            ]);
-            echo \App\View::getInstance()->render('error.twig', $data);
-            exit();
-        }
-
-        // Fallback to patTemplate
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Error');
-        $this->template->addVar('error', 'ERR_MESSAGE', $err_message);
-        if (isset($this->session['DEFURL'])) {
-            $this->template->setAttribute('backnavi', 'visibility', 'visible');
-        }
-        $this->template->displayParsedTemplate('error');
-        print $this->prthtmlfoot();
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' Error',
+            'ERR_MESSAGE' => $err_message,
+            'CUSTOMSTYLE' => '',
+            'CUSTOMHEAD' => '',
+            'TRANS_RETURN' => Translator::trans('error.return'),
+            'TRANS_RETURN_TITLE' => Translator::trans('error.return_title'),
+        ]);
+        echo \App\View::getInstance()->render('error.twig', $data);
         exit();
     }
 
     /**
-     * Display HTML header section
+     * Render Twig template
      *
      * @access  public
      * @param   String  $title        HTML title
-     * @param   String  $customhead   Custom header in the head tag
-     * @param   String  $customstyle  Custom style sheets in the style tag
-     * @return  String  HTML data
-     */
-    public function prthtmlhead($title = '', $customhead = '', $customstyle = '')
-    {
-        $this->template->clearTemplate('header');
-        $this->template->addVars('header', [
-            'TITLE' => $title,
-            'CUSTOMHEAD' => $customhead,
-            'CUSTOMSTYLE' => $customstyle,
-        ]);
-        $htmlstr = $this->template->getParsedTemplate('header');
-        return $htmlstr;
-    }
-
-    /**
-     * Display HTML footer section
-     *
-     * @access  public
-     * @return  String  HTML data
-     */
-    public function prthtmlfoot()
-    {
-        if ($this->config['SHOW_PRCTIME'] and $this->session['START_TIME']) {
-            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
-            $duration = sprintf('%0.6f', $duration);
-            $this->template->setAttribute('duration', 'visibility', 'visible');
-            $this->template->addVar('duration', 'DURATION', $duration);
-        }
-        $htmlstr = $this->template->getParsedTemplate('footer');
-        return $htmlstr;
-    }
-
-    /**
-     * Render complete page with header and footer
-     *
-     * @param string $title Page title
-     * @param callable $contentCallback Callback to render page content
-     * @param string $customhead Custom head content
-     * @param string $customstyle Custom style content
-     */
-    public function renderPage($title, $contentCallback, $customhead = '', $customstyle = '')
-    {
-        print $this->prthtmlhead($title, $customhead, $customstyle);
-        $contentCallback();
-        print $this->prthtmlfoot();
-    }
-
-    /**
-     * Render Twig template
-     */
-    public function renderTwig($template, $data = [])
-    {
-        if (class_exists('\\App\\View')) {
-            return \App\View::getInstance()->render($template, $data);
-        }
-        // Fallback to patTemplate
-        return '';
-    }
-
-    /**
-     * Copyright notice
-     */
-    public function prtcopyright()
-    {
-        $copyright = $this->template->getParsedTemplate('copyright');
         return $copyright;
     }
 
@@ -376,15 +291,6 @@ class Webapp
             if ($this->config['IPPRINT'] and $this->config['UAPRINT']) {
                 $message['ENVBR'] = '<br>';
             }
-            if ($message['ENVADDR'] or $message['ENVUA']) {
-                $this->template->clearTemplate('envlist');
-                $this->template->setAttribute('envlist', 'visibility', 'visible');
-                $this->template->addVars('envlist', [
-                    'ENVADDR' => $message['ENVADDR'],
-                    'ENVUA' => $message['ENVUA'],
-                    'ENVBR' => $message['ENVBR'],
-                ]);
-            }
         }
         # Whether or not to display images on the image BBS
         if (!$this->config['SHOWIMG']) {
@@ -397,8 +303,6 @@ class Webapp
             }
         }
         # Message display content definition
-        $this->template->clearTemplate('message');
-        $this->template->addVars('message', $message);
         
         return $message;
     }
@@ -584,6 +488,14 @@ class Webapp
                 $this->form['c'] = $flagvalue;
             }
         }
+    }
+
+    /**
+     * Render Twig template
+     */
+    public function renderTwig($template, $data = [])
+    {
+        return \App\View::getInstance()->render($template, $data);
     }
 
     /**

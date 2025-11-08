@@ -77,9 +77,6 @@ if (\App\Utils\NetworkHelper::hostnameMatch($config->get('HOSTNAME_BANNED'), $co
 define('CURRENT_TIME', time() - $config->get('DIFFTIME') * 60 * 60 + $config->get('DIFFSEC'));
 define('INCLUDED_FROM_BBS', true);
 
-// Load patTemplate library
-require_once __DIR__ . '/../lib/patTemplate.php';
-
 $app = AppFactory::create();
 
 // Load routes

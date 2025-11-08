@@ -31,7 +31,6 @@ class Bbsadmin extends Webapp
             $this->bbs = func_get_arg(0);
             $this->config = &$this->bbs->config;
             $this->form = &$this->bbs->form;
-            $this->template = &$this->bbs->template;
         }
         // Template loading removed - using Twig now
     }

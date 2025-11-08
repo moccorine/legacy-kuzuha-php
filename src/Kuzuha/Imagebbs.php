@@ -118,30 +118,6 @@ class Imagebbs extends Bbs
 
 
 
-    /**
-     * Display form section
-     *
-     * @access  public
-     * @param   String  $dtitle     Initial value of the title form
-     * @param   String  $dmsg       Initial value of the contents form
-     * @param   String  $dlink      Initial value of the link form
-     * @return  String  Form HTML data
-     */
-    #[\Override]
-    public function setform($dtitle, $dmsg, $dlink, $mode = '')
-    {
-        if ($this->config['SHOWIMG']) {
-            $this->template->addVar('sicheck', 'CHK_SI', ' checked="checked"');
-        }
-        $this->template->addVar('postform', 'MAX_FILE_SIZE', $this->config['MAX_IMAGESIZE'] * 1024);
-        $this->template->addVar('postform', 'mode', 'image');
-        $this->template->setAttribute('sicheck', 'visibility', 'visible');
-        return parent::setform($dtitle, $dmsg, $dlink, $mode);
-    }
-
-
-
-
 
     /**
      * Get message from form input

@@ -319,10 +319,6 @@ class Bbs extends Webapp
         }
         $this->session['TOPPOSTID'] = $toppostid;
         $this->session['MSGDISP'] = $msgdisp;
-        $this->template->addGlobalVars([
-            'TOPPOSTID' => $this->session['TOPPOSTID'],
-            'MSGDISP' => $this->session['MSGDISP'],
-        ]);
         return [$logdatadisp, $bindex + 1, $eindex, $lastindex];
     }
 
@@ -558,88 +554,8 @@ class Bbs extends Webapp
                 $escaped = htmlspecialchars($kaomoji, ENT_QUOTES, 'UTF-8');
                 $html .= "<input type=\"button\" class=\"kaomoji\" onClick=\"insertThisInThere('{$escaped}','contents1')\" value=\"{$escaped}\" />\n\t\t";
             }
-            $html .= "<br />\n";
         }
-        
         return $html;
-    }
-
-    public function setform($dtitle, $dmsg, $dlink, $mode = '')
-    {
-        # Protect code generation
-        $pcode = SecurityHelper::generateProtectCode();
-        if (!$mode) {
-            $mode = '<input type="hidden" name="m" value="p" />';
-        }
-        
-        # Generate kaomoji buttons HTML
-        $kaomojiButtons = $this->generateKaomojiButtons();
-        
-        $this->template->addVars('form', [
-            'MODE' => $mode,
-            'PCODE' => $pcode,
-        ]);
-        # Hide post form
-        if ($this->config['HIDEFORM'] and $this->form['m'] != 'f' and !$this->form['write']) {
-            $this->template->addVar('postform', 'mode', 'hide');
-        } else {
-            $this->template->addVars('postform', [
-                'DTITLE' => $dtitle,
-                'DMSG' => $dmsg,
-                'DLINK' => $dlink,
-            ]);
-        }
-        # Settings and links lines
-        if ($this->form['m'] != 'f' and !isset($this->form['f']) and !$this->form['write']) {
-            # Counter
-            if ($this->config['SHOW_COUNTER']) {
-                $counter = $this->counter();
-                $counter = number_format($counter);
-                $this->template->addVar('counter', 'COUNTER', $counter);
-                $this->template->setAttribute('counter', 'visibility', 'visible');
-            }
-            if ($this->config['CNTFILENAME']) {
-                $mbrcount = $this->mbrcount();
-                $mbrcount = number_format($mbrcount);
-                $this->template->addVar('mbrcount', 'MBRCOUNT', $mbrcount);
-                $this->template->setAttribute('mbrcount', 'visibility', 'visible');
-            }
-            if (!$this->config['SHOW_COUNTER'] and !$this->config['CNTFILENAME']) {
-                $this->template->setAttribute('counterrow', 'visibility', 'hidden');
-            }
-            if ($this->config['BBSMODE_ADMINONLY'] == 0) {
-                if ($this->config['AUTOLINK']) {
-                    $this->template->addVar('formconfig', 'CHK_A', ' checked="checked"');
-                }
-                if ($this->config['HIDEFORM']) {
-                    $this->template->addVar('formconfig', 'CHK_HIDE', ' checked="checked"');
-                }
-            } else {
-                $this->template->setAttribute('formconfig', 'visibility', 'hidden');
-            }
-            # Hide link line
-            if ($this->config['LINKOFF']) {
-                $this->template->addVar('extraform', 'CHK_LOFF', ' checked="checked"');
-                $this->template->setAttribute('linkrow', 'visibility', 'hidden');
-            }
-            # Hide help line
-            if ($this->config['BBSMODE_ADMINONLY'] != 1) {
-                if (!$this->config['ALLOW_UNDO']) {
-                    $this->template->setAttribute('helpundo', 'visibility', 'hidden');
-                }
-            } else {
-                $this->template->setAttribute('helprow', 'visibility', 'hidden');
-            }
-            # Navigation buttons line
-            if (!$this->config['SHOW_READNEWBTN']) {
-                $this->template->setAttribute('readnewbtn', 'visibility', 'hidden');
-            }
-            if (!($this->config['HIDEFORM'] and $this->config['BBSMODE_ADMINONLY'] == 0)) {
-                $this->template->setAttribute('newpostbtn', 'visibility', 'hidden');
-            }
-        } else {
-            $this->template->setAttribute('extraform', 'visibility', 'hidden');
-        }
     }
 
     /**

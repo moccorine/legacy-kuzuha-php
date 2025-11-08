@@ -73,7 +73,6 @@ class Treeview extends Bbs
             $config->set($key, $value);
         }
         parent::__construct();
-        $this->template->readTemplatesFromFile($this->config['TEMPLATE_TREEVIEW']);
     }
 
 
@@ -300,15 +299,12 @@ class Treeview extends Bbs
         if (count($logdata) == 0) {
             $msgmore .= 'There are no threads below this point.';
         }
-        $this->template->addVar('treeview_lower', 'MSGMORE', $msgmore);
 
 
         # Navigation button
         if ($eindex > 0) {
             if ($eindex >= $lastindex) {
-                $this->template->setAttribute('nextpage', 'visibility', 'hidden');
             } else {
-                $this->template->addVar('nextpage', 'EINDEX', $eindex);
             }
             if (!$this->config['SHOW_READNEWBTN']) {
                 $showReadnew = false;
@@ -558,11 +554,6 @@ class Treeview extends Bbs
         $this->session['TOPPOSTID'] = $toppostid;
         $this->session['MSGDISP'] = $msgdisp;
 
-        #20200210 Gikoneko: unread pointer fix
-        $this->template->addGlobalVars([
-          'TOPPOSTID' => $this->session['TOPPOSTID'],
-          'MSGDISP' => $this->session['MSGDISP'],
-        ]);
         return [$logdata, $bindex + 1, $eindex, $lastindex];
     }
 
