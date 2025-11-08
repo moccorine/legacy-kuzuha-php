@@ -230,11 +230,9 @@ class Bbs extends Webapp
 
         # Duration
         $duration = null;
-        $transPageGenerationTime = '';
         if ($this->config['SHOW_PRCTIME'] && $this->session['START_TIME']) {
             $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
             $duration = sprintf('%0.6f', $duration);
-            $transPageGenerationTime = Translator::trans('main.page_generation_time', ['%duration%' => $duration]);
         }
 
         # Lower main section
@@ -245,7 +243,8 @@ class Bbs extends Webapp
             'SHOW_READNEW' => $showReadNew,
             'SHOW_ADMINLOGIN' => $showAdminLogin,
             'DURATION' => $duration,
-            'TRANS_PAGE_GENERATION_TIME' => $transPageGenerationTime,
+            'TRANS_PAGE_GENERATION_TIME' => Translator::trans('main.page_generation_time'),
+            'TRANS_SECONDS' => Translator::trans('main.seconds'),
             'TRANS_NEXT_PAGE' => Translator::trans('main.next_page'),
             'TRANS_RELOAD' => Translator::trans('main.reload'),
             'TRANS_UNREAD' => Translator::trans('main.unread'),

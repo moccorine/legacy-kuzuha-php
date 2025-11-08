@@ -78,10 +78,16 @@
   </form>
 {% endif %}
 <footer>
-  <p>
-    <span class="msgmore">{{ TRANS_PAGE_GENERATION_TIME }}</span>
-    <a href="#top" title="Top">▲</a>
-  </p>
+  {% if DURATION %}
+    <p>
+      <span class="msgmore">{{ TRANS_PAGE_GENERATION_TIME }}: {{ DURATION }} {{ TRANS_SECONDS }}</span>
+      <a href="#top" title="{{ TRANS_TOP }}">▲</a>
+    </p>
+  {% else %}
+    <p>
+      <a href="#top" title="{{ TRANS_TOP }}">▲</a>
+    </p>
+  {% endif %}
   <hr />
   <p class="copyright">
     <a href="https://github.com/Heyuri/ksphp-plus-en" target="_blank">
