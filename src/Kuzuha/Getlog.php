@@ -353,7 +353,6 @@ class Getlog extends Webapp
      */
     public function prtsearchresult()
     {
-
         $formf = [];
         if (is_array($this->form['f'])) {
             $formf = $this->form['f'];
@@ -372,8 +371,14 @@ class Getlog extends Webapp
 
         $this->sethttpheader();
         $customstyle = "  .sq { color: #{$this->config['C_QUERY']}; }\n";
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log search results', '', $customstyle);
-        $this->template->displayParsedTemplate('searchresult');
+        
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.search_results'),
+            'CUSTOMSTYLE' => $customstyle,
+            'TRANS_SEARCH_RESULTS' => Translator::trans('log.search_results'),
+            'TRANS_RETURN' => Translator::trans('log.return'),
+        ]);
+        echo $this->renderTwig('log/searchresult.twig', $data);
 
         foreach ($files as $filename) {
             $conditions = $this->getconditions($filename);
@@ -609,17 +614,16 @@ class Getlog extends Webapp
             if (!$conditions['showall']) {
                 #$resultmsg = "{$filename}：&nbsp;{$timerangestr}&nbsp;";
                 if (@$conditions['q'] != '') {
-                    $value = $conditions['q'];
-                    #$value_euc = JcodeConvert($value, 2, 1);
-                    #$value_euc = htmlentities($value_euc, ENT_QUOTES, 'EUC-JP');
-                    #$value = JcodeConvert($value_euc, 1, 2);
-                    $value = htmlentities((string) $value, ENT_QUOTES);
-                    $resultmsg .= 'For "' . $value . '" there were ';
-                }
-                if ($resultcount > 0) {
-                    $resultmsg .= $resultcount . ' results found.';
+                    $value = htmlentities((string) $conditions['q'], ENT_QUOTES);
+                    if ($resultcount > 0) {
+                        $resultmsg .= Translator::trans('log.results_found', ['query' => $value, 'count' => $resultcount]);
+                    } else {
+                        $resultmsg .= Translator::trans('log.no_results', ['query' => $value]);
+                    }
                 } else {
-                    $resultmsg .= 'no results found.';
+                    if ($resultcount > 0) {
+                        $resultmsg .= $resultcount . ' results found.';
+                    }
                 }
                 #print $resultmsg;
                 $this->template->addVar('oldlog_lower', 'RESULTMSG', $resultmsg);

@@ -55,5 +55,9 @@
   "log.case_insensitive": "大文字小文字を区別しない",
   "log.show_images": "画像を表示",
   "log.show_post_buttons": "投稿ボタンを表示",
-  "log.gzip_compression": "gzip圧縮で転送"
+  "log.gzip_compression": "gzip圧縮で転送",
+  "log.search_results": "過去ログ検索結果",
+  "log.unable_to_open": "{filename}を開けませんでした。",
+  "log.results_found": "\"{query}\"の検索結果は{count}件でした。",
+  "log.no_results": "\"{query}\"の検索結果は見つかりませんでした。"
 }

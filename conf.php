@@ -260,7 +260,7 @@ $CONF = [
   # How to save message logs
   #   0 : Daily
   #   1 : Monthly
-  'OLDLOGSAVESW' => 1,
+  'OLDLOGSAVESW' => 0,
 
   # Number of days to keep message logs
   #  (Only available if message logs are saved daily)

@@ -55,5 +55,9 @@
   "log.case_insensitive": "Search both uppercase and lowercase",
   "log.show_images": "Show images",
   "log.show_post_buttons": "Show post buttons",
-  "log.gzip_compression": "Transfer using gzip compression"
+  "log.gzip_compression": "Transfer using gzip compression",
+  "log.search_results": "Message log search results",
+  "log.unable_to_open": "Unable to open {filename}.",
+  "log.results_found": "For \"{query}\" there were {count} results found.",
+  "log.no_results": "For \"{query}\" there were no results found."
 }

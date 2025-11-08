@@ -1,0 +1,22 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <a id="top"></a>
+  <table>
+    <tr>
+      <td>
+        <span class="pagetitle">
+          <a href="{{ CGIURL }}" style="text-decoration: none;">
+            {{ BBSTITLE }}
+          </a>
+        </span>
+        - {{ TRANS_SEARCH_RESULTS }}
+        <a href="{{ DEFURL }}&m=g">←{{ TRANS_RETURN }}</a>
+        <a href="#bottom">▼</a>
+        <span class="ngset"></span>
+      </td>
+    </tr>
+  </table>
+  <hr />
+  {# Search results will be inserted here by prtoldlog() #}
+{% endblock %}
