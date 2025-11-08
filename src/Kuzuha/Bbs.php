@@ -171,11 +171,6 @@ class Bbs extends Webapp
         $statsData = $this->getStatsData();
         $statsHtml = $this->renderTwig('components/stats.twig', $statsData);
 
-        # Hide patTemplate stats sections (using Twig component instead)
-        $this->template->setAttribute('counterrow', 'visibility', 'hidden');
-        $this->template->setAttribute('linkrow', 'visibility', 'hidden');
-        $this->template->setAttribute('helprow', 'visibility', 'hidden');
-
         # HTML header partial output
         $this->sethttpheader();
 
@@ -692,8 +687,6 @@ class Bbs extends Webapp
         }
         $formmsg .= "\r";
 
-        $this->setform('＞' . preg_replace('/<[^>]*>/', '', (string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
-
         if (!$message['THREAD']) {
             $message['THREAD'] = $message['POSTID'];
         }
@@ -714,11 +707,6 @@ class Bbs extends Webapp
         $formHtml = str_replace('</form>', $hiddenInputs . '</form>', $formHtml);
 
         $this->sethttpheader();
-        
-        // Hide stats sections on follow page
-        $this->template->setAttribute('counterrow', 'visibility', 'hidden');
-        $this->template->setAttribute('linkrow', 'visibility', 'hidden');
-        $this->template->setAttribute('helprow', 'visibility', 'hidden');
         
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('follow.followup_post'),

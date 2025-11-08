@@ -589,8 +589,15 @@ class Treeview extends Bbs
 __XHTML__;
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'), '', $customstyle);
-        print "<hr>\n";
+        
+        // Output HTML header using Twig base template structure
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'),
+            'CUSTOMSTYLE' => $customstyle,
+            'CUSTOMHEAD' => '',
+        ]);
+        echo $this->renderTwig('layout/base_header.twig', $data);
+        echo "<hr>\n";
 
         $result = $this->msgsearchlist('t');
         if (@$this->form['ff']) {
