@@ -74,13 +74,13 @@ define('PHP_IMAGEBBS', './sub/bbsimage.php');
  * HTML template library
  * @const LIB_TEMPLATE
  */
-define('LIB_TEMPLATE', './sub/patTemplate.php');
+define('LIB_TEMPLATE', './lib/patTemplate.php');
 
 /**
  * ZIP file creation library
  * @const LIB_PHPZIP
  */
-define('LIB_PHPZIP', './sub/phpzip.inc.php');
+define('LIB_PHPZIP', './lib/phpzip.inc.php');
 
 /**
  * Constant for file include detection

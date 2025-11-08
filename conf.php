@@ -18,10 +18,10 @@ $CONF = array(
   'ZIPDIR' => '',       # ZIP archive directory for past log files (Please put a / at the end. If empty, or if gzcompress is unavailable, ZIP archives will not be created)
 
   # ----HTML template file names----
-  'TEMPLATE' => './sub/template.html',
-  'TEMPLATE_ADMIN' => './sub/tmpladmin.html',
-  'TEMPLATE_LOG' => './sub/tmpllog.html',
-  'TEMPLATE_TREEVIEW' => './sub/tmpltree.html',
+  'TEMPLATE' => './template/template.html',
+  'TEMPLATE_ADMIN' => './template/tmpladmin.html',
+  'TEMPLATE_LOG' => './template/tmpllog.html',
+  'TEMPLATE_TREEVIEW' => './template/tmpltree.html',
 
   #------------------------- Bulletin board name, etc. -------------------------
 
