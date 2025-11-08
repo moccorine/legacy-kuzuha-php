@@ -1,0 +1,31 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <header>
+    <span class="pagetitle">{{ BBSTITLE }}</span>
+    - {{ TRANS_PASSWORD_SETTINGS_PAGE }}
+  </header>
+  <form method="post" action="{{ CGIURL }}">
+    <div class="bbsmsg">
+      {{ TRANS_PASSWORD_GENERATED|raw }}
+    </div>
+    <br /><br />
+    <table border="2" cellspacing="4">
+      <tr>
+        <td align="center">
+          {{ TRANS_ADMIN_PASSWORD }}
+        </td>
+        <td align="center">
+          <input size="{{ INPUTSIZE }}"
+            type="text"
+            name="cp"
+            value="{{ CRYPTPASS }}"
+            readonly="readonly"
+            class="text" />
+        </td>
+      </tr>
+    </table>
+    <br /><br />
+    <a href="{{ CGIURL }}">{{ TRANS_BULLETIN_BOARD }}</a>
+  </form>
+{% endblock %}

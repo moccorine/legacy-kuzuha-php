@@ -1,0 +1,35 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <a id="top"></a>
+  <table>
+    <tr>
+      <td>
+        <span class="pagetitle">
+          <a href="{{ CGIURL }}" style="text-decoration: none;">
+            {{ BBSTITLE }}
+          </a>
+        </span>
+        <a href="#bottom">▼</a>
+      </td>
+    </tr>
+  </table>
+  <h1>
+    {{ TRANS_TOPIC_LIST }} [{{ FILENAME }}]
+  </h1>
+  <div class="medium">
+    {{ TRANS_THREAD_VIEW }} - {{ TRANS_TREE_VIEW }} - {{ TRANS_REPLIES }} - {{
+      TRANS_LAST_UPDATED
+    }} - {{ TRANS_CONTENTS }}
+  </div>
+  <hr />
+  <pre>{%- for topic in topics %}
+<a href="{{ DEFURL|raw }}&amp;m=t&amp;ff={{ FILENAME }}&amp;s={{ topic.TID }}" target="link">{{ TXTTHREAD }}</a> <a href="{{ DEFURL|raw }}&amp;m=tree&amp;ff={{ FILENAME }}&amp;s={{ topic.TID }}" target="link">{{ TXTTREE }}</a> {{ topic.TC }} <i>[{{ topic.TT }}]</i> {{ topic.TTITLE|raw }}
+{% endfor -%}</pre>
+  <hr />
+  <a href="{{ DEFURL|raw }}&m=g">{{ TRANS_MESSAGE_LOG_SEARCH }}</a> <a href="{{
+    DEFURL
+    }}">
+    {{ TRANS_BULLETIN_BOARD }}
+  </a><br />
+{% endblock %}

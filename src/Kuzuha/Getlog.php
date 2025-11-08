@@ -4,13 +4,7 @@ namespace Kuzuha;
 
 use App\Config;
 use App\Translator;
-use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
-use App\Utils\StringHelper;
-use App\Utils\SecurityHelper;
 use App\Utils\FileHelper;
-use App\Utils\TripHelper;
-
 
 /*
 
@@ -21,8 +15,8 @@ Message log viewer module
 
 */
 
-if (!defined("INCLUDED_FROM_BBS")) {
-    header("Location: ../bbs.php?m=g");
+if (!defined('INCLUDED_FROM_BBS')) {
+    header('Location: ../bbs.php?m=g');
     exit();
 }
 
@@ -67,7 +61,6 @@ class Getlog extends Webapp
             $config->set($key, $value);
         }
         parent::__construct();
-        $this->template->readTemplatesFromFile($this->config['TEMPLATE_LOG']);
     }
 
 
@@ -88,8 +81,8 @@ class Getlog extends Webapp
         $this->setusersession();
 
         # gzip compressed transfer
-        if ($this->config['GZIPU']) {
-            ob_start("ob_gzhandler");
+        if ($this->config['GZIPU'] && ob_get_level() === 0) {
+            ob_start('ob_gzhandler');
         }
 
         # Search process
@@ -134,7 +127,6 @@ class Getlog extends Webapp
      */
     public function prtloglist()
     {
-
         $dir = $this->config['OLDLOGFILEDIR'];
 
         if ($this->config['OLDLOGFMT']) {
@@ -161,6 +153,7 @@ class Getlog extends Webapp
 
         # Check for files with the latest update time as standard
         $maxftime = 0;
+        $checkedfile = '';
         foreach ($files as $filename) {
             $fstat = stat($dir . $filename);
             if ($fstat[9] > $maxftime) {
@@ -169,21 +162,15 @@ class Getlog extends Webapp
             }
         }
 
-        if ($this->config['ZIPDIR'] and function_exists("gzcompress")) {
-            $this->template->setAttribute("ziplink", "visibility", "visible");
-        }
+        $showZipLink = $this->config['ZIPDIR'] && function_exists('gzcompress');
+        $showTopicLink = (bool)$this->config['OLDLOGFMT'];
+        $showDlLink = $this->dlchk();
 
-        if (!$this->config['OLDLOGFMT']) {
-            $this->template->setAttribute("topiclink", "visibility", "hidden");
-        }
-        if (!$this->dlchk()) {
-            $this->template->setAttribute("dllink", "visibility", "hidden");
-        }
-
+        $fileList = [];
         foreach ($files as $filename) {
             $fstat = stat($dir . $filename);
             $fsize = $fstat[7];
-            $ftime = date("Y/m/d H:i:s", $fstat[9]);
+            $ftime = date('Y/m/d H:i:s', $fstat[9]);
             $ftitle = '';
             $matches = [];
             if (preg_match("/^(\d\d\d\d)(\d\d)(\d\d)\.$oldlogext/", $filename, $matches)) {
@@ -194,10 +181,7 @@ class Getlog extends Webapp
                 $ftitle = $filename;
             }
 
-            $checked = '';
-            if ($filename == $checkedfile) {
-                $checked = ' checked="checked"';
-            }
+            $checked = ($filename == $checkedfile) ? ' checked="checked"' : '';
             $checkbox = '';
             if (@$this->config['MULTIPLESEARCH']) {
                 $checkbox = "<input type=\"checkbox\" name=\"f[]\" value=\"$filename\"$checked />";
@@ -205,40 +189,61 @@ class Getlog extends Webapp
                 $checkbox = "<input type=\"radio\" name=\"f\" value=\"$filename\"$checked />";
             }
 
-            $this->template->clearTemplate('topiclink');
-            $this->template->clearTemplate('dllink');
-            $this->template->addVar('topiclink', 'FILENAME', $filename);
-            $this->template->addVar('dllink', 'FILENAME', $filename);
-            $this->template->addVars('filelist', [
+            $fileList[] = [
                 'FCHECK' => $checkbox,
                 'FILENAME' => $filename,
                 'FTITLE' => $ftitle,
                 'FTIME' => $ftime,
                 'FSIZE' => $fsize,
-            ]);
-            $this->template->parseTemplate('filelist', 'a');
+            ];
         }
 
-        $this->template->addVar('dateform', 'OLDLOGSAVESW', $this->config['OLDLOGSAVESW']);
-        if ($this->config['BBSMODE_IMAGE'] == 1) {
-            if ($this->config['SHOWIMG']) {
-                $this->template->addVar('sicheck', 'CHK_SI', ' checked="checked"');
-            }
-            $this->template->setAttribute('sicheck', 'visibility', 'visible');
-        }
-        if (!$this->config['OLDLOGFMT'] or !$this->config['OLDLOGBTN']) {
-            $this->template->setAttribute("check_bt", "visibility", "hidden");
-        }
-        if ($this->config['GZIPU']) {
-            $this->template->addVar('loglist', 'CHK_G', ' checked="checked"');
-        }
+        $chkSi = ($this->config['SHOWIMG']) ? ' checked="checked"' : '';
+        $chkG = ($this->config['GZIPU']) ? ' checked="checked"' : '';
+        $showImageCheck = ($this->config['BBSMODE_IMAGE'] == 1);
+        $showButtonCheck = ($this->config['OLDLOGFMT'] && $this->config['OLDLOGBTN']);
 
-        # Output
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log search');
-        $this->template->displayParsedTemplate('loglist');
-        print $this->prthtmlfoot();
-
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'),
+            'files' => $fileList,
+            'SHOW_ZIP_LINK' => $showZipLink,
+            'SHOW_TOPIC_LINK' => $showTopicLink,
+            'SHOW_DL_LINK' => $showDlLink,
+            'MULTIPLE_SEARCH' => (bool)@$this->config['MULTIPLESEARCH'],
+            'CHK_SI' => $chkSi,
+            'CHK_G' => $chkG,
+            'SHOW_IMAGE_CHECK' => $showImageCheck,
+            'SHOW_BUTTON_CHECK' => $showButtonCheck,
+            'TRANS_MESSAGE_LOGS' => Translator::trans('log.message_logs'),
+            'TRANS_RETURN' => Translator::trans('log.return'),
+            'TRANS_LIST_OF_LOGS' => Translator::trans('log.list_of_logs'),
+            'TRANS_ZIP_ARCHIVES' => Translator::trans('log.zip_archives'),
+            'TRANS_TOPIC_LIST' => Translator::trans('log.topic_list'),
+            'TRANS_DOWNLOAD' => Translator::trans('log.download'),
+            'TRANS_SELECT_DESELECT_ALL' => Translator::trans('log.select_deselect_all'),
+            'TRANS_JAVASCRIPT_REQUIRED' => Translator::trans('log.javascript_required'),
+            'TRANS_SEARCH_LOGS' => Translator::trans('log.search_logs'),
+            'TRANS_SPECIFY_KEYWORDS' => Translator::trans('log.specify_keywords'),
+            'TRANS_SEARCH' => Translator::trans('log.search'),
+            'TRANS_SPECIFY_TIME_RANGE' => Translator::trans('log.specify_time_range'),
+            'TRANS_FROM' => Translator::trans('log.from'),
+            'TRANS_TO' => Translator::trans('log.to'),
+            'TRANS_BOOLEAN_OPERATOR' => Translator::trans('log.boolean_operator'),
+            'TRANS_AND_SEARCH' => Translator::trans('log.and_search'),
+            'TRANS_OR_SEARCH' => Translator::trans('log.or_search'),
+            'TRANS_SEARCH_TARGET' => Translator::trans('log.search_target'),
+            'TRANS_ALL_TEXT' => Translator::trans('log.all_text'),
+            'TRANS_USERNAMES' => Translator::trans('log.usernames'),
+            'TRANS_TITLES' => Translator::trans('log.titles'),
+            'TRANS_OTHER' => Translator::trans('log.other'),
+            'TRANS_CASE_INSENSITIVE' => Translator::trans('log.case_insensitive'),
+            'TRANS_SHOW_IMAGES' => Translator::trans('log.show_images'),
+            'TRANS_SHOW_POST_BUTTONS' => Translator::trans('log.show_post_buttons'),
+            'TRANS_GZIP_COMPRESSION' => Translator::trans('log.gzip_compression'),
+            'TRANS_BULLETIN_BOARD' => Translator::trans('admin.bulletin_board'),
+        ]);
+        echo $this->renderTwig('log/list.twig', $data);
     }
 
 
@@ -262,11 +267,58 @@ class Getlog extends Webapp
         foreach (['q', 't', 'b', 'ci',] as $formvalue) {
             $conditions[$formvalue] = @$this->form[$formvalue];
         }
-        foreach (['sd', 'sh', 'si', 'ed', 'eh', 'ei',] as $formvalue) {
+
+        // Support both old format (sh, si, eh, ei) and new HTML5 time input (start_time, end_time)
+        if (!empty($this->form['start_time'])) {
+            // Parse HTML5 time input (HH:MM format)
+            list($sh, $si) = explode(':', $this->form['start_time']);
+            $conditions['sh'] = str_pad($sh, 2, '0', STR_PAD_LEFT);
+            $conditions['si'] = str_pad($si, 2, '0', STR_PAD_LEFT);
+            // Only apply filter if not default value (00:00)
+            if ($this->form['start_time'] !== '00:00') {
+                $conditions['showall'] = false;
+            }
+        } else {
+            $conditions['sh'] = str_pad((string) @$this->form['sh'], 2, '0', STR_PAD_LEFT);
+            $conditions['si'] = str_pad((string) @$this->form['si'], 2, '0', STR_PAD_LEFT);
+            if ($conditions['showall'] && (@$this->form['sh'] || @$this->form['si'])) {
+                $conditions['showall'] = false;
+            }
+        }
+
+        if (!empty($this->form['end_time'])) {
+            // Parse HTML5 time input (HH:MM format)
+            list($eh, $ei) = explode(':', $this->form['end_time']);
+            $conditions['eh'] = str_pad($eh, 2, '0', STR_PAD_LEFT);
+            $conditions['ei'] = str_pad($ei, 2, '0', STR_PAD_LEFT);
+            // Only apply filter if not default value (23:59)
+            if ($this->form['end_time'] !== '23:59') {
+                $conditions['showall'] = false;
+            }
+        } else {
+            $conditions['eh'] = str_pad((string) @$this->form['eh'], 2, '0', STR_PAD_LEFT);
+            $conditions['ei'] = str_pad((string) @$this->form['ei'], 2, '0', STR_PAD_LEFT);
+            if ($conditions['showall'] && (@$this->form['eh'] || @$this->form['ei'])) {
+                $conditions['showall'] = false;
+            }
+        }
+
+        // Handle day fields for monthly logs
+        foreach (['sd', 'ed'] as $formvalue) {
             if ($conditions['showall'] and @$this->form[$formvalue]) {
                 $conditions['showall'] = false;
             }
-            $conditions[$formvalue] = str_pad((string) @$this->form[$formvalue], 2, "0", STR_PAD_LEFT);
+            $conditions[$formvalue] = str_pad((string) @$this->form[$formvalue], 2, '0', STR_PAD_LEFT);
+        }
+
+        // Set default values for monthly logs if not specified
+        if ($this->config['OLDLOGSAVESW']) {
+            if (empty($this->form['sd']) || $conditions['sd'] === '00') {
+                $conditions['sd'] = '01';
+            }
+            if (empty($this->form['ed']) || $conditions['ed'] === '00') {
+                $conditions['ed'] = '31';
+            }
         }
 
         if ($conditions['q']) {
@@ -294,7 +346,6 @@ class Getlog extends Webapp
      */
     public function prtsearchresult()
     {
-
         $formf = [];
         if (is_array($this->form['f'])) {
             $formf = $this->form['f'];
@@ -313,8 +364,14 @@ class Getlog extends Webapp
 
         $this->sethttpheader();
         $customstyle = "  .sq { color: #{$this->config['C_QUERY']}; }\n";
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log search results', '', $customstyle);
-        $this->template->displayParsedTemplate('searchresult');
+
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.search_results'),
+            'CUSTOMSTYLE' => $customstyle,
+            'TRANS_SEARCH_RESULTS' => Translator::trans('log.search_results'),
+            'TRANS_RETURN' => Translator::trans('log.return'),
+        ]);
+        echo $this->renderTwig('log/searchresult.twig', $data);
 
         foreach ($files as $filename) {
             $conditions = $this->getconditions($filename);
@@ -351,15 +408,20 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $dlfilename = str_replace(".dat", ".html", $filename);
+        $dlfilename = str_replace('.dat', '.html', $filename);
 
-        header("Content-Type: application/octet-stream");
-        header("Content-Disposition: attachment; filename=".$dlfilename);
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename='.$dlfilename);
 
         if ($this->config['OLDLOGFMT']) {
             $this->sethttpheader();
-            print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log');
-            $this->template->displayParsedTemplate('htmldownload');
+            print $this->prthtmlhead($this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'));
+            $data = array_merge($this->config, $this->session, [
+                'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'),
+                'TRANS_MESSAGE_LOGS' => Translator::trans('log.message_logs'),
+                'TRANS_RETURN' => Translator::trans('log.return'),
+            ]);
+            echo $this->renderTwig('log/htmldownload.twig', $data);
         }
 
         $conditions = $this->getconditions($filename);
@@ -381,7 +443,7 @@ class Getlog extends Webapp
      * Search all files
      *
      */
-    public function prtoldlog($filename, $conditions = "", $isdownload = false)
+    public function prtoldlog($filename, $conditions = '', $isdownload = false)
     {
 
         $dir = $this->config['OLDLOGFILEDIR'];
@@ -399,14 +461,14 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $this->template->clearTemplate('oldlog_upper');
-        $this->template->clearTemplate('oldlog_lower');
-        $this->template->addVar('oldlog_upper', 'FILENAME', $filename);
-
-        $fh = @fopen($dir . $filename, "rb");
+        $fh = @fopen($dir . $filename, 'rb');
         if (!$fh) {
-            $this->template->addVar('oldlog_upper', 'success', 'false');
-            $this->template->displayParsedTemplate('oldlog_upper');
+            $data = array_merge($this->config, $this->session, [
+                'FILENAME' => $filename,
+                'SUCCESS' => false,
+                'TRANS_UNABLE_TO_OPEN' => Translator::trans('log.unable_to_open'),
+            ]);
+            echo $this->renderTwig('log/oldlog_header.twig', $data);
             return 2;
         }
         flock($fh, 1);
@@ -415,17 +477,22 @@ class Getlog extends Webapp
         if (!(!$this->config['OLDLOGFMT'] and !$conditions)) {
             if (!@$conditions['showall']) {
                 if (@$conditions['savesw']) {
+                    // Monthly logs: show day range only if not default (1-31)
                     if ($conditions['sd'] > 1 or $conditions['sh'] > 0 or $conditions['ed'] < 31 or $conditions['eh'] < 24) {
-                        $timerangestr .= "Day {$conditions['sd']} Hour {$conditions['sd']} - Day {$conditions['ed']} Hour {$conditions['ed']}　";
+                        $timerangestr .= "Day {$conditions['sd']} Hour {$conditions['sh']} - Day {$conditions['ed']} Hour {$conditions['eh']}　";
                     }
                 } else {
-                    if ($conditions['sh'] > 0 or $conditions['si'] > 0 or $conditions['eh'] < 24 or $conditions['ei'] > 0) {
+                    // Daily logs: show time range only if not default (00:00-23:59 or 24:00)
+                    if ($conditions['sh'] > 0 or $conditions['si'] > 0 or $conditions['eh'] < 23 or ($conditions['eh'] == 23 and $conditions['ei'] < 59)) {
                         $timerangestr .= "Hour {$conditions['sh']} Minute {$conditions['si']} - Hour {$conditions['eh']} Minute {$conditions['ei']}　";
                     }
                 }
             }
-            $this->template->addVar('oldlog_upper', 'TIMERANGE', $timerangestr);
-            $this->template->displayParsedTemplate('oldlog_upper');
+            $data = array_merge($this->config, $this->session, [
+                'FILENAME' => $filename,
+                'TIMERANGE' => $timerangestr,
+            ]);
+            echo $this->renderTwig('log/oldlog_header.twig', $data);
         }
 
 
@@ -448,19 +515,19 @@ class Getlog extends Webapp
                         # Highlight search keywords
                         if ($conditions['q']) {
                             $needle = "\Q{$conditions['q']}\E";
-                            $quoteq = preg_quote((string) $conditions['q'], "/");
+                            $quoteq = preg_quote((string) $conditions['q'], '/');
                             if ($conditions['ci']) {
                                 #$prtmessage = preg_replace("/($quoteq)/i", "<span class=\"sq\">$1</span>", $prtmessage);
                                 #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", $prtmessage)) {
                                 #  $prtmessage = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", "$1", $prtmessage, 1);
                                 #}
-                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", "$1<span class=\"sq\"><mark>$2</mark></span>", $prtmessage);
+                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", '$1<span class="sq"><mark>$2</mark></span>', $prtmessage);
                             } else {
                                 #$prtmessage = str_replace($conditions['q'], "<span class=\"sq\">{$conditions['q']}</span>", $prtmessage);
                                 #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", $prtmessage)) {
                                 #  $prtmessage = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", "$1", $prtmessage, 1);
                                 #}
-                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", "$1<span class=\"sq\"><mark>$2</mark></span>", $prtmessage);
+                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", '$1<span class="sq"><mark>$2</mark></span>', $prtmessage);
                             }
                         }
                         print $prtmessage;
@@ -484,7 +551,7 @@ class Getlog extends Webapp
         else {
             if (!$conditions['showall']) {
                 # Buffers file reads for each message
-                $buffer = "";
+                $buffer = '';
                 $flgbuffer = false;
                 $result = 0;
                 while (($htmlline = FileHelper::getLine($fh)) !== false) {
@@ -494,7 +561,7 @@ class Getlog extends Webapp
                         $flgbuffer = true;
                     }
                     # End message
-                    elseif ($flgbuffer and str_contains($htmlline, "<!--  -->")) {
+                    elseif ($flgbuffer and str_contains($htmlline, '<!--  -->')) {
                         $buffer .= $htmlline;
                         {
                             $result = $this->msgsearchhtml($buffer, $conditions);
@@ -502,19 +569,19 @@ class Getlog extends Webapp
                                 # Search keyword highlighting
                                 if ($conditions['q']) {
                                     $needle = "\Q{$conditions['q']}\E";
-                                    $quoteq = preg_quote((string) $conditions['q'], "/");
+                                    $quoteq = preg_quote((string) $conditions['q'], '/');
                                     if ($conditions['ci']) {
                                         #$buffer = preg_replace("/($quoteq)/i", "<span class=\"sq\">$1</span>", $buffer);
                                         #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", $buffer)) {
                                         #  $buffer = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", "$1", $buffer, 1);
                                         #}
-                                        $buffer = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", "$1<span class=\"sq\"><mark>$2</mark></span>", $buffer);
+                                        $buffer = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", '$1<span class="sq"><mark>$2</mark></span>', $buffer);
                                     } else {
                                         #$buffer = str_replace($conditions['q'], "<span class=\"sq\">{$conditions['q']}</span>", $buffer);
                                         #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", $buffer)) {
                                         #  $buffer = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", "$1", $buffer, 1);
                                         #}
-                                        $buffer = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", "$1<span class=\"sq\"><mark>$2</mark></span>", $buffer);
+                                        $buffer = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", '$1<span class="sq"><mark>$2</mark></span>', $buffer);
                                     }
                                 }
                                 print $buffer;
@@ -523,7 +590,7 @@ class Getlog extends Webapp
                                 break;
                             }
                         }
-                        $buffer = "";
+                        $buffer = '';
                         $flgbuffer = false;
                     }
                     # Middle of message
@@ -548,21 +615,21 @@ class Getlog extends Webapp
             if (!$conditions['showall']) {
                 #$resultmsg = "{$filename}：&nbsp;{$timerangestr}&nbsp;";
                 if (@$conditions['q'] != '') {
-                    $value = $conditions['q'];
-                    #$value_euc = JcodeConvert($value, 2, 1);
-                    #$value_euc = htmlentities($value_euc, ENT_QUOTES, 'EUC-JP');
-                    #$value = JcodeConvert($value_euc, 1, 2);
-                    $value = htmlentities((string) $value, ENT_QUOTES);
-                    $resultmsg .= 'For "' . $value . '" there were ';
-                }
-                if ($resultcount > 0) {
-                    $resultmsg .= $resultcount . ' results found.';
+                    $value = htmlentities((string) $conditions['q'], ENT_QUOTES);
+                    if ($resultcount > 0) {
+                        $resultmsg .= Translator::trans('log.results_found', ['query' => $value, 'count' => $resultcount]);
+                    } else {
+                        $resultmsg .= Translator::trans('log.no_results', ['query' => $value]);
+                    }
                 } else {
-                    $resultmsg .= 'no results found.';
+                    if ($resultcount > 0) {
+                        $resultmsg .= $resultcount . ' results found.';
+                    }
                 }
-                #print $resultmsg;
-                $this->template->addVar('oldlog_lower', 'RESULTMSG', $resultmsg);
-                $this->template->displayParsedTemplate('oldlog_lower');
+                $data = array_merge($this->config, $this->session, [
+                    'RESULTMSG' => $resultmsg,
+                ]);
+                echo $this->renderTwig('log/oldlog_footer.twig', $data);
             }
         }
 
@@ -629,7 +696,7 @@ class Getlog extends Webapp
             $starttime = $conditions['sd'].$conditions['sh'];
             $endtime = $conditions['ed'].$conditions['eh'];
             if (!@$message['NDATESTR']) {
-                $message['NDATESTR'] = date("dH", $message['NDATE']);
+                $message['NDATESTR'] = date('dH', $message['NDATE']);
             }
         }
         # Daily
@@ -637,7 +704,7 @@ class Getlog extends Webapp
             $starttime = $conditions['sh'].$conditions['si'];
             $endtime = $conditions['eh'].$conditions['ei'];
             if (!@$message['NDATESTR']) {
-                $message['NDATESTR'] = date("Hi", $message['NDATE']);
+                $message['NDATESTR'] = date('Hi', $message['NDATE']);
             }
         }
         if ($message['NDATESTR'] < $starttime or $message['NDATESTR'] > $endtime) {
@@ -716,7 +783,7 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $fh = @fopen($this->config['OLDLOGFILEDIR'] . $filename, "rb");
+        $fh = @fopen($this->config['OLDLOGFILEDIR'] . $filename, 'rb');
         if (!$fh) {
             $this->prterror($filename . ' was unable to be opened.');
         }
@@ -734,8 +801,8 @@ class Getlog extends Webapp
                 $tcount[$message['POSTID']] = 0;
 
                 $msg = ltrim((string) $message['MSG']);
-                $msg = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", $msg, 1);
-                $msg = preg_replace("/<[^>]+>/", "", (string) $msg);
+                $msg = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', $msg, 1);
+                $msg = preg_replace('/<[^>]+>/', '', (string) $msg);
                 $msgsplit = explode("\r", (string) $msg);
                 $msgdigest = $msgsplit[0];
                 $index = 1;
@@ -763,30 +830,38 @@ class Getlog extends Webapp
         flock($fh, 3);
         fclose($fh);
 
-        $this->template->addVar('topiclist', 'FILENAME', $filename);
-
+        $topics = [];
         $tidcount = count($tid);
         $i = 0;
         while ($i < $tidcount) {
             if ($tid[$i]) {
-                $tc = sprintf("%02d", $tcount[$tid[$i]]);
-                $tt = date("m/d H:i:s", $ttime[$tid[$i]]);
-                $this->template->addVars('topic', [
+                $tc = sprintf('%02d', $tcount[$tid[$i]]);
+                $tt = date('m/d H:i:s', $ttime[$tid[$i]]);
+                $topics[] = [
                     'TID' => $tid[$i],
                     'TC' => $tc,
                     'TT' => $tt,
-                    'TTITLE' => $ttitle[$tid[$i]],
-                    'FILENAME' => $filename,
-                ]);
-                $this->template->parseTemplate('topic', 'a');
+                    'TTITLE' => html_entity_decode($ttitle[$tid[$i]], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                ];
             }
             $i++;
         }
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Topic list ' . $filename);
-        $this->template->displayParsedTemplate('topiclist');
-        print $this->prthtmlfoot();
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.topic_list_title') . ' ' . $filename,
+            'FILENAME' => $filename,
+            'topics' => $topics,
+            'TRANS_TOPIC_LIST' => Translator::trans('log.topic_list_title'),
+            'TRANS_THREAD_VIEW' => Translator::trans('log.thread_view'),
+            'TRANS_TREE_VIEW' => Translator::trans('log.tree_view'),
+            'TRANS_REPLIES' => Translator::trans('log.replies'),
+            'TRANS_LAST_UPDATED' => Translator::trans('log.last_updated'),
+            'TRANS_CONTENTS' => Translator::trans('log.contents'),
+            'TRANS_MESSAGE_LOG_SEARCH' => Translator::trans('log.message_log_search'),
+            'TRANS_BULLETIN_BOARD' => Translator::trans('admin.bulletin_board'),
+        ]);
+        echo $this->renderTwig('log/topiclist.twig', $data);
 
     }
 
@@ -807,35 +882,36 @@ class Getlog extends Webapp
         if (!$dh) {
             $this->prterror('This directory could not be opened.');
         }
-        $files = [];
+        $archives = [];
         while ($entry = readdir($dh)) {
             if (is_file($dir . $entry) and preg_match("/\.(zip|lzh|rar|gz|tar\.gz)$/i", $entry)) {
-                $files[] = $entry;
+                $fstat = stat($dir . $entry);
+                $archives[] = [
+                    'DIR' => $dir,
+                    'FILENAME' => $entry,
+                    'FTIME' => date('Y/m/d H:i:s', $fstat[9]),
+                    'FSIZE' => $fstat[7],
+                ];
             }
         }
         closedir($dh);
 
         # Sort by natural file name order
-        natsort($files);
-
-        foreach ($files as $filename) {
-            $fstat = stat($dir . $filename);
-            $fsize = $fstat[7];
-            $ftime = date("Y/m/d H:i:s", $fstat[9]);
-
-            $this->template->setAttribute('archive', 'visibility', 'visible');
-            $this->template->addVars('archive', [
-                'DIR' => $dir,
-                'FILENAME' => $filename,
-                'FTIME' => $ftime,
-                'FSIZE' => $fsize,
-            ]);
-            $this->template->parseTemplate('archive', 'a');
-        }
+        usort($archives, function ($a, $b) {
+            return strnatcmp($a['FILENAME'], $b['FILENAME']);
+        });
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log archive');
-        $this->template->displayParsedTemplate('archivelist');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' ' . Translator::trans('log.archive_title'));
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.archive_title'),
+            'ARCHIVES' => $archives,
+            'TRANS_MESSAGE_LOG_SEARCH' => Translator::trans('log.message_log_search'),
+            'TRANS_BULLETIN_BOARD' => Translator::trans('log.bulletin_board'),
+            'TRANS_ZIP_ARCHIVES' => Translator::trans('log.zip_archives'),
+            'TRANS_ARCHIVE_HEADER' => Translator::trans('log.archive_header'),
+        ]);
+        echo $this->renderTwig('log/archivelist.twig', $data);
         print $this->prthtmlfoot();
 
     }
@@ -861,7 +937,7 @@ class Getlog extends Webapp
                 $iever = $matches[1];
             }
             $ismac = 0;
-            if (preg_match("/Mac/", $uos, $matches)) {
+            if (preg_match('/Mac/', $uos, $matches)) {
                 $ismac = 1;
             }
             if ((@$ver >= 4 and !@$isie) or (@$ver >= 4 and @$isie and @$iever >= 5 and !@$ismac)) {

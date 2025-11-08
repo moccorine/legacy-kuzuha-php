@@ -1,0 +1,9 @@
+{% if SUCCESS is defined and SUCCESS == false %}
+  <span class="bbsmsg">{{ TRANS_UNABLE_TO_OPEN }} {{ FILENAME }}</span>
+{% else %}
+  <br />
+  <h2>
+    {{ FILENAME }} {{ TIMERANGE }}
+  </h2>
+  <hr />
+{% endif %}

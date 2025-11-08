@@ -1,0 +1,106 @@
+<p class="msgmore">
+  {{ MSGMORE }}
+</p>
+<table border="0">
+  <tr>
+    {% if SHOW_NEXTPAGE %}
+      <td>
+        <form method="post" action="{{ CGIURL }}">
+          <input type="hidden" name="u" value="{{ U }}" />
+          <input type="hidden" name="i" value="{{ I }}" />
+          <input type="hidden" name="d" value="{{ MSGDISP }}" />
+          <input type="hidden" name="c" value="{{ C }}" />
+          <input type="hidden" name="p" value="{{ TOPPOSTID }}" />
+          <input type="hidden" name="b" value="{{ EINDEX }}" />
+          <input type="submit"
+            name="reload"
+            value="{{ TRANS_NEXT_PAGE }}"
+            class="btn"
+            title="Alt(+Shift)+N" />
+        </form>
+      </td>
+    {% endif %}
+    <td>
+      <form method="post" action="{{ CGIURL }}">
+        <input type="hidden" name="u" value="{{ U }}" />
+        <input type="hidden" name="i" value="{{ I }}" />
+        <input type="hidden" name="d" value="{{ MSGDISP }}" />
+        <input type="hidden" name="c" value="{{ C }}" />
+        <input type="hidden" name="p" value="{{ TOPPOSTID }}" />
+        <input type="submit"
+          name="reload"
+          value="{{ TRANS_RELOAD }}"
+          class="btn" />
+      </form>
+    </td>
+    {% if SHOW_READNEW %}
+      <td>
+        <form method="post" action="{{ CGIURL }}">
+          <input type="hidden" name="u" value="{{ U }}" />
+          <input type="hidden" name="i" value="{{ I }}" />
+          <input type="hidden" name="d" value="{{ MSGDISP }}" />
+          <input type="hidden" name="c" value="{{ C }}" />
+          <input type="hidden" name="p" value="{{ TOPPOSTID }}" />
+          <input type="submit"
+            name="readnew"
+            value="{{ TRANS_UNREAD }}"
+            class="btn"
+            title="Alt(+Shift)+M" />
+        </form>
+      </td>
+      <td>
+        <input type="button"
+          onclick="location.href='#top'"
+          accesskey="T"
+          value="▲"
+          class="btn"
+          title="{{ TRANS_TOP }} Alt(+Shift)+T" />
+      </td>
+    {% endif %}
+  </tr>
+</table>
+{% if SHOW_ADMINLOGIN %}
+  <hr />
+  <form method="post" action="{{ CGIURL }}">
+    <input type="hidden" name="m" value="p" />
+    <input type="hidden" name="d" value="{{ MSGDISP }}" />
+    <input type="hidden" name="c" value="{{ C }}" />
+    <input type="hidden" name="p" value="{{ TOPPOSTID }}" />
+    <input type="hidden" name="g" value="{{ GZIPU }}" />
+    <input type="hidden" name="hide" value="{{ HIDEFORM }}" />
+    <input type="hidden" name="loff" value="{{ LINKOFF }}" />
+    <input type="hidden" name="sim" value="{{ SHOWIMG }}" />
+    <input size="8" type="password" name="u" maxlength="30" value="{{ U }}" />
+    <input type="submit"
+      name="write"
+      value="{{ TRANS_POST_AS_ADMIN }}"
+      class="btn" />
+  </form>
+{% endif %}
+<footer>
+  {% if DURATION %}
+    <p>
+      <span class="msgmore">{{ TRANS_PAGE_GENERATION_TIME }}: {{ DURATION }} {{ TRANS_SECONDS }}</span>
+      <a href="#top" title="{{ TRANS_TOP }}">▲</a>
+    </p>
+  {% else %}
+    <p>
+      <a href="#top" title="{{ TRANS_TOP }}">▲</a>
+    </p>
+  {% endif %}
+  <hr />
+  <p class="copyright">
+    <a href="https://github.com/Heyuri/ksphp-plus-en" target="_blank">
+      KuzuhaScriptPHP+EN
+    </a>
+    {{ VERSION|raw }} + vanish.js
+  </p>
+</footer>
+<script type="text/javascript" src="/js/vanish.js"></script>
+<script type="text/javascript">
+  (function() { $.autopager( { load: function(current, next) {
+  vanisher.init(); } }); });
+</script>
+<a id="bottom"></a>
+</body>
+</html>

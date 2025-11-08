@@ -26,7 +26,7 @@ class StringHelper
     {
         if (!preg_match("/^\w+$/", $value)) {
             $value = strtr($value, array_flip(get_html_translation_table(HTML_ENTITIES)));
-            $value = preg_replace_callback("/&#([0-9]+);/m", fn($matches) => chr($matches[1]), $value);
+            $value = preg_replace_callback('/&#([0-9]+);/m', fn ($matches) => chr($matches[1]), $value);
         }
         return $value;
     }
@@ -55,14 +55,14 @@ class StringHelper
      */
     public static function escapeUrl(string $src_url): string
     {
-        $src_url = preg_replace("/script:/i", "script", (string) $src_url);
+        $src_url = preg_replace('/script:/i', 'script', (string) $src_url);
         $src_url = urlencode($src_url);
-        $src_url = str_replace("%2F", "/", $src_url);
-        $src_url = str_replace("%3A", ":", $src_url);
-        $src_url = str_replace("%3F", "?", $src_url);
-        $src_url = str_replace("%3D", "=", $src_url);
-        $src_url = str_replace("%26", "&", $src_url);
-        $src_url = str_replace("%23", "#", $src_url);
+        $src_url = str_replace('%2F', '/', $src_url);
+        $src_url = str_replace('%3A', ':', $src_url);
+        $src_url = str_replace('%3F', '?', $src_url);
+        $src_url = str_replace('%3D', '=', $src_url);
+        $src_url = str_replace('%26', '&', $src_url);
+        $src_url = str_replace('%23', '#', $src_url);
         return $src_url;
     }
 
@@ -74,9 +74,9 @@ class StringHelper
      */
     public static function threeByteHexToBase64(string $hex): string
     {
-        $bin = pack("H*", $hex);
+        $bin = pack('H*', $hex);
         $b64 = base64_encode($bin);
-        $b64 = str_replace("=", "", $b64);
+        $b64 = str_replace('=', '', $b64);
         return $b64;
     }
 
@@ -102,7 +102,7 @@ class StringHelper
     public static function checkValue(string $value): string
     {
         $value = trim($value);
-        $value = str_replace("\0", "", $value);
+        $value = str_replace("\0", '', $value);
         return $value;
     }
 
@@ -118,9 +118,9 @@ class StringHelper
             return $value;
         }
         while (preg_match("/(<a href=[^>]+>)<img ([^>]+)>(<\/a>)/i", $value, $matches)) {
-            if (preg_match("/alt=\"([^\"]+)\"/", $matches[2], $submatches)) {
+            if (preg_match('/alt="([^"]+)"/', $matches[2], $submatches)) {
                 $altvalue = $submatches[1];
-            } elseif (preg_match("/src=\"([^\"]+)\"/", $matches[2], $submatches)) {
+            } elseif (preg_match('/src="([^"]+)"/', $matches[2], $submatches)) {
                 $altvalue = substr($submatches[1], strrpos($submatches[1], '/'));
             }
             $value = str_replace($matches[0], " [{$matches[1]}{$altvalue}{$matches[3]}] ", $value);

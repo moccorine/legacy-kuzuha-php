@@ -1,0 +1,12 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <hr />
+  {{ MESSAGES|raw }}
+  <span class="bbsmsg">
+    {{ SUCCESS }} {{ TRANS_POSTS_FOUND }}
+    <a href="{{ DEFURL|raw }}" title="{{ TRANS_RETURN }}">
+      ←{{ TRANS_RETURN }}
+    </a>
+  </span>
+{% endblock %}

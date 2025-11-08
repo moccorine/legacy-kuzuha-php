@@ -3,18 +3,15 @@
 namespace Kuzuha;
 
 use App\Config;
+use App\Translator;
 use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
 use App\Utils\StringHelper;
-use App\Utils\FileHelper;
-use App\Utils\TripHelper;
 
 class Webapp
 {
     public $config; /* Settings information */
     public $form; /* Form input */
     public $session = []; /* Session-specific information such as the user's host */
-    public $template; /* HTML template object */
 
     /**
      * Constructor
@@ -23,8 +20,6 @@ class Webapp
     public function __construct()
     {
         $this->config = Config::getInstance()->all();
-        $this->template = new \patTemplate();
-        $this->template->readTemplatesFromFile($this->config['TEMPLATE']);
     }
 
     /*20210625 Neko/2chtrip http://www.mits-jp.com/2ch/ */
@@ -65,11 +60,11 @@ class Webapp
         $this->session['U'] = $this->form['u'];
         $this->session['I'] = $this->form['i'];
         $this->session['C'] = $this->form['c'];
-        $this->session['MSGDISP'] = ($this->form['d'] == -1) ? $this->config['MSGDISP'] : $this->form['d'];
+        $this->session['MSGDISP'] = (isset($this->form['d']) && $this->form['d'] != -1) ? $this->form['d'] : $this->config['MSGDISP'];
         $this->session['TOPPOSTID'] = $this->form['p'];
         # Get settings information cookies
         if ($this->config['COOKIE'] and $_COOKIE['c']
-            and preg_match("/u=([^&]*)&i=([^&]*)&c=([^&]*)/", (string) $_COOKIE['c'], $matches)) {
+            and preg_match('/u=([^&]*)&i=([^&]*)&c=([^&]*)/', (string) $_COOKIE['c'], $matches)) {
             if (!isset($this->form['u'])) {
                 $this->session['U'] = urldecode($matches[1]);
             }
@@ -82,17 +77,17 @@ class Webapp
         }
         # Get cookie for the UNDO button
         if ($this->config['COOKIE'] and $this->config['ALLOW_UNDO'] and $_COOKIE['undo']
-            and preg_match("/p=([^&]*)&k=([^&]*)/", (string) $_COOKIE['undo'], $matches)) {
+            and preg_match('/p=([^&]*)&k=([^&]*)/', (string) $_COOKIE['undo'], $matches)) {
             $this->session['UNDO_P'] = $matches[1];
             $this->session['UNDO_K'] = $matches[2];
         }
         # Default query
-        $this->session['QUERY'] = "c=".$this->session['C'];
+        $this->session['QUERY'] = 'c='.$this->session['C'];
         if ($this->session['MSGDISP']) {
-            $this->session['QUERY'] .= "&amp;d=".$this->session['MSGDISP'];
+            $this->session['QUERY'] .= '&amp;d='.$this->session['MSGDISP'];
         }
         if ($this->session['TOPPOSTID']) {
-            $this->session['QUERY'] .= "&amp;p=".$this->session['TOPPOSTID'];
+            $this->session['QUERY'] .= '&amp;p='.$this->session['TOPPOSTID'];
         }
         # Default URL
         $this->session['DEFURL'] = $this->config['CGIURL'] . '?' . $this->session['QUERY'];
@@ -103,7 +98,6 @@ class Webapp
                 unset($tmp[$key]);
             }
         }
-        $this->template->addGlobalVars($tmp);
     }
 
     /**
@@ -115,76 +109,23 @@ class Webapp
     public function prterror($err_message)
     {
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Error');
-        $this->template->addVar('error', 'ERR_MESSAGE', $err_message);
-        if (isset($this->session['DEFURL'])) {
-            $this->template->setAttribute('backnavi', 'visibility', 'visible');
-        }
-        $this->template->displayParsedTemplate('error');
-        print $this->prthtmlfoot();
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' Error',
+            'ERR_MESSAGE' => $err_message,
+            'CUSTOMSTYLE' => '',
+            'CUSTOMHEAD' => '',
+            'TRANS_RETURN' => Translator::trans('error.return'),
+            'TRANS_RETURN_TITLE' => Translator::trans('error.return_title'),
+        ]);
+        echo \App\View::getInstance()->render('error.twig', $data);
         exit();
     }
 
     /**
-     * Display HTML header section
+     * Render Twig template
      *
      * @access  public
      * @param   String  $title        HTML title
-     * @param   String  $customhead   Custom header in the head tag
-     * @param   String  $customstyle  Custom style sheets in the style tag
-     * @return  String  HTML data
-     */
-    public function prthtmlhead($title = "", $customhead = "", $customstyle = "")
-    {
-        $this->template->clearTemplate('header');
-        $this->template->addVars('header', [
-            'TITLE' => $title,
-            'CUSTOMHEAD' => $customhead,
-            'CUSTOMSTYLE' => $customstyle,
-        ]);
-        $htmlstr = $this->template->getParsedTemplate('header');
-        return $htmlstr;
-    }
-
-    /**
-     * Display HTML footer section
-     *
-     * @access  public
-     * @return  String  HTML data
-     */
-    public function prthtmlfoot()
-    {
-        if ($this->config['SHOW_PRCTIME'] and $this->session['START_TIME']) {
-            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
-            $duration = sprintf("%0.6f", $duration);
-            $this->template->setAttribute('duration', 'visibility', 'visible');
-            $this->template->addVar('duration', 'DURATION', $duration);
-        }
-        $htmlstr = $this->template->getParsedTemplate('footer');
-        return $htmlstr;
-    }
-
-    /**
-     * Render complete page with header and footer
-     *
-     * @param string $title Page title
-     * @param callable $contentCallback Callback to render page content
-     * @param string $customhead Custom head content
-     * @param string $customstyle Custom style content
-     */
-    public function renderPage($title, $contentCallback, $customhead = "", $customstyle = "")
-    {
-        print $this->prthtmlhead($title, $customhead, $customstyle);
-        $contentCallback();
-        print $this->prthtmlfoot();
-    }
-
-    /**
-     * Copyright notice
-     */
-    public function prtcopyright()
-    {
-        $copyright = $this->template->getParsedTemplate('copyright');
         return $copyright;
     }
 
@@ -201,8 +142,13 @@ class Webapp
             $this->config['BBSTITLE'] . ' - URL redirection',
             "<meta http-equiv=\"refresh\" content=\"1;url={$redirecturl}\">\n"
         );
-        $this->template->addVar('redirect', 'REDIRECTURL', $redirecturl);
-        $this->template->displayParsedTemplate('redirect');
+        
+        echo $this->renderTwig('redirect.twig', [
+            'REDIRECTURL' => $redirecturl,
+            'TRANS_REDIRECTING' => Translator::trans('redirect.redirecting'),
+            'TRANS_TO' => Translator::trans('redirect.to'),
+        ]);
+        
         print $this->prthtmlfoot();
     }
 
@@ -213,12 +159,12 @@ class Webapp
     {
 
         if (count($message) < 10) {
-            return;
+            return $message;
         }
         $message['WDATE'] = DateHelper::getDateString($message['NDATE'], $this->config['DATEFORMAT']);
         #20181102 Gikoneko: Escape special characters
-        $message['MSG'] = preg_replace("/{/i", "&#123;", (string) $message['MSG'], -1);
-        $message['MSG'] = preg_replace("/}/i", "&#125;", $message['MSG'], -1);
+        $message['MSG'] = preg_replace('/{/i', '&#123;', (string) $message['MSG'], -1);
+        $message['MSG'] = preg_replace('/}/i', '&#125;', $message['MSG'], -1);
 
         #20241016 Heyuri: Deprecated by ytthumb.js, embedding each video in browser slows stuff down a lot
         ##20200524 Gikoneko: youtube embedding
@@ -248,13 +194,13 @@ class Webapp
         } else {
             $message['MSG'] = preg_replace(
                 "/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"#a$1\">$2</a>",
+                '<a href="#a$1">$2</a>',
                 $message['MSG'],
                 1
             );
             $message['MSG'] = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"#a$1\">$2</a>",
+                '<a href="#a$1">$2</a>',
                 $message['MSG'],
                 1
             );
@@ -262,19 +208,19 @@ class Webapp
         if ($mode == 0 or ($mode == 1 and $this->config['OLDLOGBTN'])) {
 
             if (!$this->config['FOLLOWWIN']) {
-                $newwin = " target=\"link\"";
+                $newwin = ' target="link"';
             } else {
                 $newwin = '';
             }
-            $spacer = "&nbsp;&nbsp;&nbsp;";
-            $lnk_class = "class=\"internal\"";
+            $spacer = '&nbsp;&nbsp;&nbsp;';
+            $lnk_class = 'class="internal"';
             # Follow-up post button
             $message['BTNFOLLOW'] = '';
             if ($this->config['BBSMODE_ADMINONLY'] != 1) {
                 $message['BTNFOLLOW'] = "$spacer<a href=\"{$this->config['CGIURL']}"
                     ."?m=f&amp;s={$message['POSTID']}&amp;".$this->session['QUERY'];
                 if ($this->form['w']) {
-                    $message['BTNFOLLOW'] .= "&amp;w=".$this->form['w'];
+                    $message['BTNFOLLOW'] .= '&amp;w='.$this->form['w'];
                 }
                 if ($mode == 1) {
                     $message['BTNFOLLOW'] .= "&amp;ff=$tlog";
@@ -285,9 +231,9 @@ class Webapp
             $message['BTNAUTHOR'] = '';
             if ($message['USER'] != $this->config['ANONY_NAME'] and $this->config['BBSMODE_ADMINONLY'] != 1) {
                 $message['BTNAUTHOR'] = "$spacer<a href=\"{$this->config['CGIURL']}"
-                    ."?m=s&amp;s=". urlencode(preg_replace("/<[^>]*>/", '', (string) $message['USER'])) ."&amp;".$this->session['QUERY'];
+                    .'?m=s&amp;s='. urlencode(preg_replace('/<[^>]*>/', '', (string) $message['USER'])) .'&amp;'.$this->session['QUERY'];
                 if ($this->form['w']) {
-                    $message['BTNAUTHOR'] .= "&amp;w=".$this->form['w'];
+                    $message['BTNAUTHOR'] .= '&amp;w='.$this->form['w'];
                 }
                 if ($mode == 1) {
                     $message['BTNAUTHOR'] .= "&amp;ff=$tlog";
@@ -329,7 +275,7 @@ class Webapp
             $message['USER'] = "<a href=\"mailto:{$message['MAIL']}\">{$message['USER']}</a>";
         }
         # Change quote color
-        $message['MSG'] = preg_replace("/(^|\r)(\&gt;[^\r]*)/", "$1<span class=\"q\">$2</span>", (string) $message['MSG']);
+        $message['MSG'] = preg_replace("/(^|\r)(\&gt;[^\r]*)/", '$1<span class="q">$2</span>', (string) $message['MSG']);
         $message['MSG'] = str_replace("</span>\r<span class=\"q\">", "\r", $message['MSG']);
         # Environment variables
         $message['ENVADDR'] = '';
@@ -345,15 +291,6 @@ class Webapp
             if ($this->config['IPPRINT'] and $this->config['UAPRINT']) {
                 $message['ENVBR'] = '<br>';
             }
-            if ($message['ENVADDR'] or $message['ENVUA']) {
-                $this->template->clearTemplate('envlist');
-                $this->template->setAttribute("envlist", "visibility", "visible");
-                $this->template->addVars('envlist', [
-                    'ENVADDR' => $message['ENVADDR'],
-                    'ENVUA' => $message['ENVUA'],
-                    'ENVBR' => $message['ENVBR'],
-                ]);
-            }
         }
         # Whether or not to display images on the image BBS
         if (!$this->config['SHOWIMG']) {
@@ -366,8 +303,8 @@ class Webapp
             }
         }
         # Message display content definition
-        $this->template->clearTemplate('message');
-        $this->template->addVars('message', $message);
+        
+        return $message;
     }
 
     /**
@@ -384,9 +321,15 @@ class Webapp
      */
     public function prtmessage($message, $mode = 0, $tlog = '')
     {
-        $this->setmessage($message, $mode, $tlog);
-        $prtmessage = $this->template->getParsedTemplate('message');
-        return $prtmessage;
+        $message = $this->setmessage($message, $mode, $tlog);
+        
+        $showEnv = !empty($message['ENVADDR']) || !empty($message['ENVUA']);
+        
+        return $this->renderTwig('components/message.twig', array_merge($message, [
+            'SHOW_ENV' => $showEnv,
+            'TRANS_USER' => Translator::trans('message.user'),
+            'TRANS_POST_DATE' => Translator::trans('message.post_date'),
+        ]));
     }
 
     /**
@@ -398,11 +341,11 @@ class Webapp
      * @param   String  $logfilename  Log file name (optional)
      * @return  Array   Log line array
      */
-    public function loadmessage($logfilename = "")
+    public function loadmessage($logfilename = '')
     {
         if ($logfilename) {
             preg_match("/^([\w.]*)$/", $logfilename, $matches);
-            $logfilename = $this->config['OLDLOGFILEDIR']."/".$matches[1];
+            $logfilename = $this->config['OLDLOGFILEDIR'].'/'.$matches[1];
         } else {
             $logfilename = $this->config['LOGFILENAME'];
         }
@@ -431,8 +374,8 @@ class Webapp
         }
         $i = 5;
         while ($i <= 9) {
-            $logsplit[$i] = strtr($logsplit[$i], "\0", ",");
-            $logsplit[$i] = str_replace("&#44;", ",", $logsplit[$i]);
+            $logsplit[$i] = strtr($logsplit[$i], "\0", ',');
+            $logsplit[$i] = str_replace('&#44;', ',', $logsplit[$i]);
             $i++;
         }
         $message = [];
@@ -484,7 +427,7 @@ class Webapp
             'SHOWIMG',
         ];
         # Update from settings string
-        if ($this->form['c']) {
+        if (isset($this->form['c']) && $this->form['c']) {
             $strflag = '';
             $formc = $this->form['c'];
             if (strlen((string) $formc) > 5) {
@@ -506,7 +449,7 @@ class Webapp
                 $strflag = $formc;
             }
             if ($strflag) {
-                $flagbin = str_pad(base_convert((string) $strflag, 32, 2), count($flags), "0", STR_PAD_LEFT);
+                $flagbin = str_pad(base_convert((string) $strflag, 32, 2), count($flags), '0', STR_PAD_LEFT);
                 $currentpos = 0;
                 foreach ($flags as $confname) {
                     $this->config[$confname] = substr($flagbin, $currentpos, 1);
@@ -515,11 +458,11 @@ class Webapp
             }
         }
         # Update settings information
-        if ($this->form['m'] == 'p' or $this->form['m'] == 'c' or $this->form['m'] == 'g') {
-            $this->form['a'] ? $this->config['AUTOLINK'] = 1 : $this->config['AUTOLINK'] = 0;
-            $this->form['g'] ? $this->config['GZIPU'] = 1 : $this->config['GZIPU'] = 0;
-            $this->form['loff'] ? $this->config['LINKOFF'] = 1 : $this->config['LINKOFF'] = 0;
-            $this->form['hide'] ? $this->config['HIDEFORM'] = 1 : $this->config['HIDEFORM'] = 0;
+        if (isset($this->form['m']) && ($this->form['m'] == 'p' or $this->form['m'] == 'c' or $this->form['m'] == 'g')) {
+            $this->config['AUTOLINK'] = !empty($this->form['a']) ? 1 : 0;
+            $this->config['GZIPU'] = !empty($this->form['g']) ? 1 : 0;
+            $this->config['LINKOFF'] = !empty($this->form['loff']) ? 1 : 0;
+            $this->config['HIDEFORM'] = !empty($this->form['hide']) ? 1 : 0;
             $this->form['sim'] ? $this->config['SHOWIMG'] = 1 : $this->config['SHOWIMG'] = 0;
             if ($this->form['m'] == 'c') {
                 $this->form['fw'] ? $this->config['FOLLOWWIN'] = 1 : $this->config['FOLLOWWIN'] = 0;
@@ -537,7 +480,7 @@ class Webapp
             foreach ($flags as $confname) {
                 $this->config[$confname] ? $flagbin .= '1' : $flagbin .= '0';
             }
-            $flagvalue = str_pad(base_convert($flagbin, 2, 32), 2, "0", STR_PAD_LEFT);
+            $flagvalue = str_pad(base_convert($flagbin, 2, 32), 2, '0', STR_PAD_LEFT);
 
             if ($flgcolorchanged) {
                 $this->form['c'] = $flagvalue . substr((string) $this->form['c'], 2);
@@ -548,17 +491,25 @@ class Webapp
     }
 
     /**
+     * Render Twig template
+     */
+    public function renderTwig($template, $data = [])
+    {
+        return \App\View::getInstance()->render($template, $data);
+    }
+
+    /**
      * HTTP header settings
      */
     public function sethttpheader()
     {
         header('Content-Type: text/html; charset=UTF-8');
-        header("X-XSS-Protection: 1; mode=block");
+        header('X-XSS-Protection: 1; mode=block');
         // header('X-FRAME-OPTIONS:DENY');
         // Remove X-Frame-Options (not needed when using CSP)
-        header_remove("X-Frame-Options");
+        header_remove('X-Frame-Options');
         // Allow embedding from anywhere
-        header("Content-Security-Policy: frame-ancestors *;");
+        header('Content-Security-Policy: frame-ancestors *;');
 
     }
 

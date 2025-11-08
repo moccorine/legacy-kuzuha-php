@@ -1,0 +1,19 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <hr />
+  {{ MESSAGE|raw }}
+  <table>
+    <tr>
+      <td>
+        <span class="bbsmsg">
+          {{ TRANS_FOLLOWUP_POST }}
+          <a href="{{ DEFURL|raw }}" title="{{ TRANS_RETURN }}">
+            ←{{ TRANS_RETURN }}
+          </a>
+        </span>
+      </td>
+    </tr>
+  </table>
+  {{ FORM|raw }}
+{% endblock %}

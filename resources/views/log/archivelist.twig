@@ -1,0 +1,41 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <a id="top"></a>
+  <header>
+    <span class="pagetitle">
+      <a href="{{ CGIURL }}" style="text-decoration: none;">{{ BBSTITLE }}</a>
+    </span>
+    <a href="{{ DEFURL|raw }}&m=g">←{{ TRANS_MESSAGE_LOG_SEARCH }}</a>
+    <a href="{{ DEFURL|raw }}">{{ TRANS_BULLETIN_BOARD }}</a>
+    <a href="#bottom">▼</a>
+  </header>
+  <h1>
+    {{ TRANS_ZIP_ARCHIVES }}
+  </h1>
+  <span class="medium">{{ TRANS_ARCHIVE_HEADER }}</span>
+  <hr />
+  <table border="0" cellpadding="3">
+    {% for archive in ARCHIVES %}
+      <tr>
+        <td>
+          <a href="{{ archive.DIR }}{{ archive.FILENAME }}">
+            {{ archive.FILENAME }}
+          </a>
+        </td>
+        <td align="right">
+          <span class="medium"><i>{{ archive.FTIME }}</i></span>
+        </td>
+        <td align="right">
+          <span class="medium"><i>{{ archive.FSIZE }} bytes</i></span>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+  <hr />
+  <a href="{{ DEFURL|raw }}&m=g">←{{ TRANS_MESSAGE_LOG_SEARCH }}</a> <a href="{{
+    DEFURL
+    }}">
+    {{ TRANS_BULLETIN_BOARD }}
+  </a><br />
+{% endblock %}

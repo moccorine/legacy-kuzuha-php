@@ -20,7 +20,7 @@ $CONF = [
   #------------------------- Files and directories -------------------------
 
   'LOGFILENAME' => './storage/app/bbs.log',   # Log file name
-  'OLDLOGFILEDIR' => './archives/',    # Name of the directory for storing logs (Please put a / at the end. If empty, logs will not be saved)
+  'OLDLOGFILEDIR' => env('OLD_LOG_DIR', './storage/app/archives/'),    # Name of the directory for storing logs (Please put a / at the end. If empty, logs will not be saved)
   'ZIPDIR' => '',       # ZIP archive directory for past log files (Please put a / at the end. If empty, or if gzcompress is unavailable, ZIP archives will not be created)
 
   # ----HTML template file names----
@@ -260,7 +260,7 @@ $CONF = [
   # How to save message logs
   #   0 : Daily
   #   1 : Monthly
-  'OLDLOGSAVESW' => 1,
+  'OLDLOGSAVESW' => 0,
 
   # Number of days to keep message logs
   #  (Only available if message logs are saved daily)

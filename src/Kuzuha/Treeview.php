@@ -5,12 +5,7 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
-use App\Utils\NetworkHelper;
 use App\Utils\StringHelper;
-use App\Utils\SecurityHelper;
-use App\Utils\FileHelper;
-use App\Utils\TripHelper;
-
 
 /*
 
@@ -26,8 +21,8 @@ http://www.hlla.is.tsukuba.ac.jp/~yas/gen/it-2002-10-28/
 
 */
 
-if (!defined("INCLUDED_FROM_BBS")) {
-    header("Location: ../bbs.php?m=tree");
+if (!defined('INCLUDED_FROM_BBS')) {
+    header('Location: ../bbs.php?m=tree');
     exit();
 }
 
@@ -78,7 +73,6 @@ class Treeview extends Bbs
             $config->set($key, $value);
         }
         parent::__construct();
-        $this->template->readTemplatesFromFile($this->config['TEMPLATE_TREEVIEW']);
     }
 
 
@@ -103,8 +97,8 @@ class Treeview extends Bbs
         $this->setusersession();
 
         # gzip compressed transfer
-        if ($this->config['GZIPU']) {
-            ob_start("ob_gzhandler");
+        if ($this->config['GZIPU'] && ob_get_level() === 0) {
+            ob_start('ob_gzhandler');
         }
 
         # Post operation
@@ -136,7 +130,6 @@ class Treeview extends Bbs
             # Admin mode transition
             elseif ($posterr == 3) {
                 define('BBS_ACTIVATED', true);
-                require_once(PHP_BBSADMIN);
                 $bbsadmin = new Bbsadmin($this);
                 $bbsadmin->main();
             }
@@ -187,26 +180,43 @@ class Treeview extends Bbs
             $isreadnew = true;
         }
 
-        $customstyle = $this->template->getParsedTemplate('tree_customstyle');
+        $customstyle = $this->renderTwig('components/tree_customstyle.twig', $this->config);
 
         # HTML header partial output
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Tree view', '', $customstyle);
 
         # Form section
-        $dtitle = "";
-        $dmsg = "";
-        $dlink = "";
+        $dtitle = '';
+        $dmsg = '';
+        $dlink = '';
         if ($retry) {
             $dtitle = @$this->form['t'];
             $dmsg = @$this->form['v'];
             $dlink = @$this->form['l'];
         }
         $forminput = '<input type="hidden" name="m" value="tree" /><input type="hidden" name="treem" value="p" />';
-        $this->setform($dtitle, $dmsg, $dlink, $forminput);
+        
+        # Get form HTML using Twig
+        $formData = $this->getFormData($dtitle, $dmsg, $dlink, $forminput);
+        $formHtml = $this->renderTwig('components/form.twig', $formData);
 
         # Upper main section
-        $this->template->displayParsedTemplate('treeview_upper');
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'),
+            'CUSTOMSTYLE' => $customstyle,
+            'CUSTOMHEAD' => '',
+            'FORM' => $formHtml,
+            'TRANS_TREE_VIEW' => Translator::trans('tree.tree_view'),
+            'TRANS_PR_OFFICE' => Translator::trans('tree.pr_office'),
+            'TRANS_EMAIL_ADMIN' => Translator::trans('tree.email_admin'),
+            'TRANS_CONTACT' => Translator::trans('tree.contact'),
+            'TRANS_MESSAGE_LOGS' => Translator::trans('tree.message_logs'),
+            'TRANS_MESSAGE_LOGS_TITLE' => Translator::trans('tree.message_logs_title'),
+            'TRANS_STANDARD_VIEW' => Translator::trans('tree.standard_view'),
+            'TRANS_STANDARD_VIEW_TITLE' => Translator::trans('tree.standard_view_title'),
+            'TRANS_BOTTOM' => Translator::trans('tree.bottom'),
+        ]);
+        echo $this->renderTwig('tree/upper.twig', $data);
 
         $threadindex = 0;
 
@@ -248,11 +258,9 @@ class Treeview extends Bbs
                 if (!$hit) {
                     continue;
                 }
-            } elseif ($this->session['MSGDISP'] < 0) {
-                break;
             }
             # Beginning index
-            elseif ($threadindex < $bindex - 1) {
+            if ($this->session['MSGDISP'] >= 0 && $threadindex < $bindex - 1) {
                 $threadindex++;
                 continue;
             }
@@ -291,30 +299,48 @@ class Treeview extends Bbs
         if (count($logdata) == 0) {
             $msgmore .= 'There are no threads below this point.';
         }
-        $this->template->addVar('treeview_lower', 'MSGMORE', $msgmore);
 
 
         # Navigation button
         if ($eindex > 0) {
             if ($eindex >= $lastindex) {
-                $this->template->setAttribute("nextpage", "visibility", "hidden");
             } else {
-                $this->template->addVar('nextpage', 'EINDEX', $eindex);
             }
             if (!$this->config['SHOW_READNEWBTN']) {
-                $this->template->setAttribute("readnew", "visibility", "hidden");
+                $showReadnew = false;
+            } else {
+                $showReadnew = true;
             }
         }
 
         # Administrator post
-        if ($this->config['BBSMODE_ADMINONLY'] == 0) {
-            $this->template->setAttribute("adminlogin", "visibility", "hidden");
+        $showAdminLogin = ($this->config['BBSMODE_ADMINONLY'] != 0);
+
+        # Duration
+        $duration = null;
+        $transPageGenerationTime = '';
+        if ($this->config['SHOW_PRCTIME'] && $this->session['START_TIME']) {
+            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
+            $duration = sprintf('%0.6f', $duration);
+            $transPageGenerationTime = Translator::trans('main.page_generation_time', ['%duration%' => $duration]);
         }
 
         # Lower main section
-        $this->template->displayParsedTemplate('treeview_lower');
-
-        print $this->prthtmlfoot();
+        $data = array_merge($this->config, $this->session, [
+            'MSGMORE' => $msgmore,
+            'SHOW_NEXTPAGE' => isset($eindex),
+            'EINDEX' => $eindex ?? '',
+            'SHOW_READNEW' => $showReadnew ?? false,
+            'SHOW_ADMINLOGIN' => $showAdminLogin,
+            'DURATION' => $duration,
+            'TRANS_PAGE_GENERATION_TIME' => $transPageGenerationTime,
+            'TRANS_NEXT_PAGE' => Translator::trans('tree.next_page'),
+            'TRANS_RELOAD' => Translator::trans('tree.reload'),
+            'TRANS_UNREAD' => Translator::trans('tree.unread'),
+            'TRANS_TOP' => Translator::trans('tree.top'),
+            'TRANS_POST_AS_ADMIN' => Translator::trans('tree.post_as_admin'),
+        ]);
+        echo $this->renderTwig('tree/lower.twig', $data);
     }
 
 
@@ -331,16 +357,17 @@ class Treeview extends Bbs
     {
 
         print "<pre class=\"msgtree\"><a href=\"{$this->session['DEFURL']}&amp;m=t&amp;s={$msgcurrent['THREAD']}\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
-        $msgcurrent['WDATE'] = Func::getdatestr($msgcurrent['NDATE']);
-        print "<span class=\"update\"> [Date updated: {$msgcurrent['WDATE']}]</span>\r";
+        $msgcurrent['WDATE'] = DateHelper::getDateString($msgcurrent['NDATE']);
+        $dateUpdatedLabel = Translator::trans('tree.date_updated');
+        print "<span class=\"update\"> [{$dateUpdatedLabel}: {$msgcurrent['WDATE']}]</span>\r";
         $tree = & $this->gentree(array_reverse($thread), $msgcurrent['THREAD']);
-        $tree = str_replace("</span><span class=\"bc\">", "", $tree);
-        $tree = str_replace("</span>　<span class=\"bc\">", "　", $tree);
+        $tree = str_replace('</span><span class="bc">', '', $tree);
+        $tree = str_replace('</span>　<span class="bc">', '　', $tree);
         $tree = '　' . str_replace("\r", "\r　", $tree);
 
         #20181110 Gikoneko: Escape special characters
-        $tree = str_replace("{", "&#123;", $tree);
-        $tree = str_replace("}", "&#125;", $tree);
+        $tree = str_replace('{', '&#123;', $tree);
+        $tree = str_replace('}', '&#125;', $tree);
 
         #20200207 Gikoneko: span style=tag enabled
         #    $tree = preg_replace("/&lt;span style=&quot;(.+?)&quot;&gt;(.+?)&lt;\/span&gt;/","<span style=\"$1\">$2</span>", $tree);
@@ -383,22 +410,23 @@ class Treeview extends Bbs
             if ($treemsg['POSTID'] == $parentid) {
 
                 # Delete reference
-                $treemsg['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", (string) $treemsg['MSG'], 1);
+                $treemsg['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', (string) $treemsg['MSG'], 1);
 
                 # Delete quotes
-                $treemsg['MSG'] = preg_replace("/(^|\r)&gt;[^\r]*/", "", $treemsg['MSG']);
-                $treemsg['MSG'] = preg_replace("/^\r+/", "", $treemsg['MSG']);
+                $treemsg['MSG'] = preg_replace("/(^|\r)&gt;[^\r]*/", '', $treemsg['MSG']);
+                $treemsg['MSG'] = preg_replace("/^\r+/", '', $treemsg['MSG']);
                 $treemsg['MSG'] = rtrim($treemsg['MSG']);
 
                 #20181117 Gikoneko: Personal word filter
-                $treemsg['MSG']  = preg_replace("/(.+)/", "<span class= \"ngline\">$1</span>\r", $treemsg['MSG']);
+                $treemsg['MSG']  = preg_replace('/(.+)/', "<span class= \"ngline\">$1</span>\r", $treemsg['MSG']);
 
                 # Link to the follow-up post page
                 $treeprint .= "<a href=\"{$this->session['DEFURL']}&amp;m=f&amp;s={$parentid}\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
 
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->config['ANONY_NAME']) {
-                    $treeprint .= "User: ".preg_replace("/<[^>]*>/", '', (string) $treemsg['USER'])."\r";
+                    $userLabel = Translator::trans('tree.user');
+                    $treeprint .= $userLabel . ': '.preg_replace('/<[^>]*>/', '', (string) $treemsg['USER'])."\r";
                 }
 
                 # Display new arrivals
@@ -407,7 +435,7 @@ class Treeview extends Bbs
                 }
 
                 # Hide images on the imageBBS
-                $treemsg['MSG'] = Func::conv_imgtag($treemsg['MSG']);
+                $treemsg['MSG'] = StringHelper::convertImageTag($treemsg['MSG']);
 
                 $treeprint .= $treemsg['MSG'];
 
@@ -481,8 +509,8 @@ class Treeview extends Bbs
         $toppostid = @$items[1];
 
         # Display results
-        $msgdisp = Func::fixnumberstr(@$this->form['d']);
-        if ($msgdisp === false) {
+        $msgdisp = StringHelper::fixNumberString(@$this->form['d']);
+        if ($msgdisp === '' || $msgdisp === false) {
             $msgdisp = $this->config['TREEDISP'];
         } elseif ($msgdisp < 0) {
             $msgdisp = -1;
@@ -526,11 +554,6 @@ class Treeview extends Bbs
         $this->session['TOPPOSTID'] = $toppostid;
         $this->session['MSGDISP'] = $msgdisp;
 
-        #20200210 Gikoneko: unread pointer fix
-        $this->template->addGlobalVars([
-          'TOPPOSTID' => $this->session['TOPPOSTID'],
-          'MSGDISP' => $this->session['MSGDISP']
-        ]);
         return [$logdata, $bindex + 1, $eindex, $lastindex];
     }
 
@@ -557,8 +580,15 @@ class Treeview extends Bbs
 __XHTML__;
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Tree view', '', $customstyle);
-        print "<hr>\n";
+        
+        // Output HTML header using Twig base template structure
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'),
+            'CUSTOMSTYLE' => $customstyle,
+            'CUSTOMHEAD' => '',
+        ]);
+        echo $this->renderTwig('layout/base_header.twig', $data);
+        echo "<hr>\n";
 
         $result = $this->msgsearchlist('t');
         if (@$this->form['ff']) {
@@ -568,11 +598,21 @@ __XHTML__;
         }
         $this->prttexttree($msgcurrent, $result);
 
-        print <<<__XHTML__
-<span class="bbsmsg"><a href="{$this->session['DEFURL']}">Return</a></span>
-__XHTML__;
+        $returnLabel = Translator::trans('tree.return');
+        echo "<span class=\"bbsmsg\"><a href=\"{$this->session['DEFURL']}\">{$returnLabel}</a></span>\n";
 
-        print $this->prthtmlfoot();
+        // Footer
+        echo "<footer>\n";
+        if ($this->config['SHOW_PRCTIME'] and $this->session['START_TIME']) {
+            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
+            $duration = sprintf('%0.6f', $duration);
+            $pageGenLabel = Translator::trans('main.page_generation_time');
+            $secondsLabel = Translator::trans('main.seconds');
+            echo "<p><span class=\"msgmore\">{$pageGenLabel}: {$duration} {$secondsLabel}</span>　<a href=\"#top\" title=\"" . Translator::trans('main.top') . "\">▲</a></p>\n";
+        } else {
+            echo "<p><a href=\"#top\" title=\"" . Translator::trans('main.top') . "\">▲</a></p>\n";
+        }
+        echo "</footer>\n</body>\n</html>\n";
 
     }
 

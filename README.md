@@ -2,46 +2,109 @@
 
 ## Deploy
 
-### 1. Set permissions
+### 1. Clone and setup
+
 ```bash
-chmod 777 log count
-chmod 666 bbs.log bbs.cnt
+git clone <repository-url>
+cd legacy-kuzuha-php
+cp .env.example .env
 ```
 
-### 2. Start Docker container
+### 2. Configure environment
+
+Edit `.env` and set your configuration:
+```bash
+APP_NAME="Your BBS Name"
+APP_URL=http://your-domain.com
+APP_LOCALE=ja  # or en
+
+ADMIN_NAME=Administrator
+ADMIN_EMAIL=your@email.com
+# Leave ADMIN_PASSWORD empty for initial setup
+ADMIN_PASSWORD=
+ADMIN_KEY=your-secret-key
+```
+
+### 3. Set permissions
+
+```bash
+chmod -R 777 storage/app storage/logs storage/cache
+```
+
+### 4. Start Docker container
+
 ```bash
 docker-compose up -d
 ```
 
-### 3. Initial password setup
-Access `http://localhost:8080/bbs.php` and you'll see the password settings page.
+### 5. Install dependencies
+
+```bash
+docker-compose exec web composer install
+```
+
+### 6. Initial password setup
+
+Access `http://localhost:8080/` and you'll see the password settings page.
+
+Enter your desired admin password and click "Set".
 
 Copy the encrypted password string displayed (e.g., `7PUPc9zzOI3DQ`).
 
-### 4. Configure admin password
-Edit `conf.php` and set the encrypted password:
-```php
-'ADMINPOST' => '7PUPc9zzOI3DQ',
+### 7. Configure admin password
+
+Edit `.env` and set the encrypted password:
+
+```bash
+ADMIN_PASSWORD=7PUPc9zzOI3DQ
 ```
 
-### 5. Restart container
+### 8. Restart container
+
 ```bash
 docker-compose restart
 ```
 
 The bulletin board is now ready at `http://localhost:8080/bbs.php`
 
+## Log Mode Configuration
+
+The bulletin board supports two log archive modes:
+
+### Daily Log Mode (OLDLOGSAVESW = 0)
+- Archives are saved daily with filename format: `YYYYMMDD.dat` (e.g., `20251108.dat`)
+- Time range search uses hours and minutes (HH:MM)
+- Suitable for high-traffic boards
+
+### Monthly Log Mode (OLDLOGSAVESW = 1) - Default
+- Archives are saved monthly with filename format: `YYYYMM.dat` (e.g., `202511.dat`)
+- Time range search uses days and hours (DD HH)
+- Suitable for low to medium-traffic boards
+
+**Configuration:**
+Edit `conf.php` and set:
+```php
+'OLDLOGSAVESW' => 0,  // Daily mode
+// or
+'OLDLOGSAVESW' => 1,  // Monthly mode (default)
+```
+
+**Important:** Once you start using the board, do not change this setting. The log mode cannot be switched after archives are created, as the file naming conventions are incompatible. Choose the appropriate mode before initial deployment.
+
 ## Routes
 
 ### Main Routes
+
 - `bbs.php` - Main bulletin board (default)
 - `bbs.php?m=g` - Message log search
 - `bbs.php?m=tree` - Tree view
 - `bbs.php?m=ad` (POST) - Admin mode (requires ADMINPOST password and ADMINKEY)
 
 ### Admin Routes
+
 - Initial setup (when ADMINPOST is empty) - Password settings page
 - `bbs.php?m=ad&ad=ps` (POST) - Generate encrypted password
 
 ### Image Mode
+
 When `BBSMODE_IMAGE` is enabled in `conf.php`, the bulletin board operates in image upload mode.

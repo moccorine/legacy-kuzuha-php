@@ -27,7 +27,7 @@ class SecurityHelper
         $basecode =  dechex($timestamp + $ukey);
         $adminPost = Config::getInstance()->get('ADMINPOST');
         $cryptcode = crypt($basecode . substr((string) $adminPost, -4), substr((string) $adminPost, -4) . $basecode);
-        $cryptcode = substr((string) preg_replace("/\W/", "", $cryptcode), -4);
+        $cryptcode = substr((string) preg_replace("/\W/", '', $cryptcode), -4);
         $pcode = dechex($timestamp) . $cryptcode;
         return $pcode;
     }
@@ -60,7 +60,7 @@ class SecurityHelper
         $basecode = dechex($timestamp + $ukey);
         $adminPost = Config::getInstance()->get('ADMINPOST');
         $verifycode = crypt($basecode . substr((string) $adminPost, -4), substr((string) $adminPost, -4) . $basecode);
-        $verifycode = substr((string) preg_replace("/\W/", "", $verifycode), -4);
+        $verifycode = substr((string) preg_replace("/\W/", '', $verifycode), -4);
         if ($cryptcode != $verifycode) {
             return null;
         }

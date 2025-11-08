@@ -1,0 +1,176 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <a id="top"></a>
+  <header>
+    <span class="pagetitle">
+      <a href="{{ CGIURL }}" style="text-decoration: none;">{{ BBSTITLE }}</a>
+    </span>
+    <a href="{{ DEFURL|raw }}">{{ TRANS_RETURN }}</a>
+    <a href="#bottom">▼</a>
+  </header>
+  <h1>
+    {{ TRANS_MESSAGE_LOGS }}
+  </h1>
+  <form name="form" method="get" action="{{ CGIURL }}">
+    <input type="hidden" name="m" value="g" />
+    <input type="hidden" name="c" value="{{ C }}" />
+    <input type="hidden" name="d" value="{{ MSGDISP }}" />
+    {% if SHOW_ZIP_LINK %}
+      <p class="medium">
+        <a href="{{ DEFURL|raw }}&amp;m=g&amp;gm=z">{{ TRANS_ZIP_ARCHIVES }}</a>
+      </p>
+    {% endif %}
+    <h2>
+      {{ TRANS_LIST_OF_LOGS }}
+    </h2>
+    <table border="0" cellpadding="3">
+      {% for file in files %}
+        <tr>
+          <td>
+            {{ file.FCHECK|raw }}
+          </td>
+          <td>
+            <a href="{{ DEFURL|raw }}&amp;m=g&amp;f={{ file.FILENAME }}">
+              {{ file.FTITLE }}
+            </a>
+          </td>
+          <td align="right">
+            <span class="medium"><i>{{ file.FTIME }}</i></span>
+          </td>
+          <td align="right">
+            <span class="medium"><i>{{ file.FSIZE }} bytes</i></span>
+          </td>
+          {% if SHOW_TOPIC_LINK %}
+            <td align="right">
+              <span class="medium">
+                <a href="{{ DEFURL|raw }}&amp;m=g&amp;l={{ file.FILENAME }}">
+                  {{ TRANS_TOPIC_LIST }}
+                </a>
+              </span>
+            </td>
+          {% endif %}
+          {% if SHOW_DL_LINK %}
+            <td align="right">
+              <span class="medium">
+                <a href="{{ DEFURL|raw }}&amp;m=g&amp;dl={{ file.FILENAME }}">
+                  {{ TRANS_DOWNLOAD }}
+                </a>
+              </span>
+            </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </table>
+    {% if MULTIPLE_SEARCH %}
+      <table>
+        <tr>
+          <td>
+            <input type="checkbox"
+              name="checkall"
+              onClick="AllChecked();"
+              id="checkall1" />
+            <label for="checkall1">{{ TRANS_SELECT_DESELECT_ALL }}</label>
+          </td>
+        </tr>
+      </table>
+      <noscript>
+        <strong>{{ TRANS_JAVASCRIPT_REQUIRED }}</strong>
+      </noscript>
+    {% endif %}
+    <hr />
+    <h2>
+      {{ TRANS_SEARCH_LOGS }}
+    </h2>
+    <fieldset>
+      <legend>
+        {{ TRANS_SPECIFY_KEYWORDS }}
+      </legend>
+      <input type="text"
+        name="q"
+        size="50"
+        maxlength="255"
+        value=""
+        class="text" />
+      <input type="submit" value="{{ TRANS_SEARCH }}" class="btn" />
+    </fieldset>
+    <br />
+    <fieldset>
+      <legend>
+        {{ TRANS_SPECIFY_TIME_RANGE }}
+      </legend>
+      <span class="medium">
+        {{ TRANS_FROM }} <input type="time" name="start_time" value="00:00" />
+        {{ TRANS_TO }} <input type="time" name="end_time" value="23:59" />
+      </span>
+    </fieldset>
+    <fieldset>
+      <legend>
+        {{ TRANS_BOOLEAN_OPERATOR }}
+      </legend>
+      <span class="medium">
+        <select name="b">
+          <option value="a">
+            {{ TRANS_AND_SEARCH }}
+          </option>
+          <option value="o">
+            {{ TRANS_OR_SEARCH }}
+          </option>
+        </select>
+      </span>
+    </fieldset>
+    <fieldset>
+      <legend>
+        {{ TRANS_SEARCH_TARGET }}
+      </legend>
+      <span class="medium">
+        <select name="t">
+          <option value="a">
+            {{ TRANS_ALL_TEXT }}
+          </option>
+          <option value="u">
+            {{ TRANS_USERNAMES }}
+          </option>
+          <option value="t">
+            {{ TRANS_TITLES }}
+          </option>
+        </select>
+      </span>
+    </fieldset>
+    <br />
+    <fieldset>
+      <legend>
+        {{ TRANS_OTHER }}
+      </legend>
+      <span class="medium">
+        <input type="checkbox"
+          name="ci"
+          value="checked"
+          checked="checked"
+          id="ci1" />
+        <label for="ci1">{{ TRANS_CASE_INSENSITIVE }}</label><br />
+        {% if SHOW_IMAGE_CHECK %}
+          <input type="checkbox"
+            name="sim"
+            value="checked"
+            {{ CHK_SI }}
+            id="sim1" />
+          <label for="sim1">{{ TRANS_SHOW_IMAGES }}</label><br />
+        {% endif %}
+        {% if SHOW_BUTTON_CHECK %}
+          <input type="checkbox"
+            name="bt"
+            value="checked"
+            checked="checked"
+            id="bt1" />
+          <label for="bt1">{{ TRANS_SHOW_POST_BUTTONS }}</label><br />
+        {% endif %}
+        <input type="checkbox" name="g" value="checked" {{ CHK_G }} id="g1" />
+        <label for="g1">{{ TRANS_GZIP_COMPRESSION }}</label><br />
+      </span>
+    </fieldset>
+  </form>
+  <br />
+  <a href="{{ DEFURL|raw }}">←{{ TRANS_BULLETIN_BOARD }}</a>
+  <hr />
+{% endblock %}

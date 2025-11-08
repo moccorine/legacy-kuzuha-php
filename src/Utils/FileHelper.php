@@ -36,9 +36,9 @@ class FileHelper
      * @param bool $printdate Whether to print date
      * @param string $debugfile Debug file path
      */
-    public static function debugWrite(string $debugstr, bool $printdate = true, string $debugfile = "debug.txt"): void
+    public static function debugWrite(string $debugstr, bool $printdate = true, string $debugfile = 'debug.txt'): void
     {
-        $fhdebug = @fopen($debugfile, "ab");
+        $fhdebug = @fopen($debugfile, 'ab');
         if (!$fhdebug) {
             return;
         }

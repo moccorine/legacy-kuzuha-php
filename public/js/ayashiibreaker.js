@@ -42,43 +42,42 @@ Have you ever seen mighty skills to treat pile heads, rough clenched fists to su
             Any texts! Any lines! And any comments can't stop us in any way!
                      Going ahead! Going ahead! AYASHII Break KOGYO
 */
- 
-(function() {
-    'use strict';
- 
-    function breaker() {
-        const MAX_LENGTH = 72;
-        let lines = document.getElementById('contents1').value.split('\n');
-        let newlines = [];
-        for (let i in lines) {
-            if (lines[i].charAt(0) == ">") {
-                newlines.push(lines[i]);
-                continue;
-            }
-            let idx = 0;
-            let words = lines[i].split(' ').filter(w => w.trim() != "");
-            let newline = "";
-        for (let word of words) {
-            if (idx+word.length > MAX_LENGTH) {
-               newline += '\n';
-               idx = 0;
+
+(function () {
+  "use strict";
+
+  function breaker() {
+    const MAX_LENGTH = 72;
+    let lines = document.getElementById("contents1").value.split("\n");
+    let newlines = [];
+    for (let i in lines) {
+      if (lines[i].charAt(0) == ">") {
+        newlines.push(lines[i]);
+        continue;
+      }
+      let idx = 0;
+      let words = lines[i].split(" ").filter((w) => w.trim() != "");
+      let newline = "";
+      for (let word of words) {
+        if (idx + word.length > MAX_LENGTH) {
+          newline += "\n";
+          idx = 0;
         }
-        newline += word + ' ';
+        newline += word + " ";
         idx += word.length + 1;
-	}
- 
-            newlines.push(newline.trim());
-        }
-        document.getElementById('contents1').value = newlines.join('\n');
+      }
+
+      newlines.push(newline.trim());
     }
- 
-function addButton() {
+    document.getElementById("contents1").value = newlines.join("\n");
+  }
+
+  function addButton() {
     var element = document.querySelector('[title="Alt(+Shift)+K"]');
-    var newElement = ' <input type="button" id="breakbutt" value="Make line breaks"> '
-    element.insertAdjacentHTML('afterend', newElement);
+    var newElement = ' <input type="button" id="breakbutt" value="Make line breaks"> ';
+    element.insertAdjacentHTML("afterend", newElement);
     document.getElementById("breakbutt").addEventListener("click", breaker, false);
-}
- 
- 
-    addButton();
+  }
+
+  addButton();
 })();

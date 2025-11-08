@@ -1,0 +1,48 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <header>
+    <span class="pagetitle">
+      <a href="{{ CGIURL }}" style="text-decoration: none;">{{ BBSTITLE }}</a>
+    </span>
+  </header>
+  <h1>
+    {{ TRANS_ADMIN_MENU }}
+  </h1>
+  <p>
+    <strong>{{ TRANS_WARNING }}:</strong>
+    {{ TRANS_UNAUTHORIZED_ACCESS }}
+  </p>
+  <form method="post" action="{{ CGIURL }}">
+    <input type="hidden" name="m" value="ad" />
+    <input type="hidden" name="ad" value="k" />
+    <input type="hidden" name="u" value="{{ U }}" />
+    <input type="hidden" name="v" value="{{ V }}" />
+    <input type="submit" value="{{ TRANS_DELETE_MESSAGES }}" class="btn" />
+  </form>
+  <form method="post" action="{{ CGIURL }}">
+    <input type="hidden" name="m" value="ad" />
+    <input type="hidden" name="ad" value="l" />
+    <input type="hidden" name="u" value="{{ U }}" />
+    <input type="hidden" name="v" value="{{ V }}" />
+    <input type="submit" value="{{ TRANS_VIEW_LOG }}" class="btn" />
+  </form>
+  <form method="post" action="{{ CGIURL }}">
+    <input type="hidden" name="m" value="ad" />
+    <input type="hidden" name="ad" value="p" />
+    <input type="hidden" name="u" value="{{ U }}" />
+    <input type="hidden" name="v" value="{{ V }}" />
+    <input type="submit" value="{{ TRANS_REGENERATE_PASSWORD }}" class="btn" />
+  </form>
+  <form method="post" action="{{ CGIURL }}">
+    <input type="hidden" name="m" value="ad" />
+    <input type="hidden" name="ad" value="phpinfo" />
+    <input type="hidden" name="u" value="{{ U }}" />
+    <input type="hidden" name="v" value="{{ V }}" />
+    <input type="submit" value="{{ TRANS_PHP_INFO }}" class="btn" />
+  </form>
+  <br />
+  <form method="post" action="{{ CGIURL }}">
+    <input type="submit" value="{{ TRANS_CLOSE }}" class="btn" />
+  </form>
+{% endblock %}

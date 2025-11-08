@@ -1,0 +1,19 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <table>
+    <tr>
+      <td>
+        <span class="pagetitle">
+          <a href="{{ CGIURL }}" style="text-decoration: none;">
+            {{ BBSTITLE }}
+          </a>
+        </span>
+        - {{ TRANS_MESSAGE_LOGS }}
+        <a href="{{ DEFURL|raw }}&m=g">←{{ TRANS_RETURN }}</a>
+        <a href="#bottom">▼</a>
+      </td>
+    </tr>
+  </table>
+  <hr />
+{% endblock %}

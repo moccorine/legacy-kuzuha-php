@@ -2,8 +2,8 @@
 
 namespace App;
 
-use Symfony\Component\Translation\Translator as SymfonyTranslator;
 use Symfony\Component\Translation\Loader\JsonFileLoader;
+use Symfony\Component\Translation\Translator as SymfonyTranslator;
 
 class Translator
 {
@@ -15,7 +15,7 @@ class Translator
         if (self::$instance === null) {
             self::$instance = new SymfonyTranslator(self::$locale);
             self::$instance->addLoader('json', new JsonFileLoader());
-            
+
             // Load translation files
             $translationsDir = __DIR__ . '/../translations';
             self::$instance->addResource('json', $translationsDir . '/messages.en.json', 'en');

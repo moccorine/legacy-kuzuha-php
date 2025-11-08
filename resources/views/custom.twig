@@ -1,0 +1,151 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <header>
+    <span class="pagetitle">
+      <a href="{{ DEFURL|raw }}" style="text-decoration: none;">
+        {{ BBSTITLE }}
+      </a>
+    </span>
+  </header>
+  <h1>
+    {{ TRANS_USER_SETTINGS }}
+  </h1>
+  <form method="post" action="{{ CGIURL }}">
+    <input type="hidden" name="m" value="c" />
+    <input type="hidden" name="nm" value="{{ MODE }}" />
+    <fieldset>
+      <legend>
+        {{ TRANS_DISPLAY_COLORS }}
+      </legend>
+      <label for="c1">{{ TRANS_TEXT_COLOR }}</label> #<input type="text"
+        name="C_TEXT"
+        size="7"
+        maxlength="6"
+        value="{{ C_TEXT }}"
+        id="c1" /><br />
+      <label for="c2">{{ TRANS_BG_COLOR }}</label> #<input type="text"
+        name="C_BACKGROUND"
+        size="7"
+        maxlength="6"
+        value="{{ C_BACKGROUND }}"
+        id="c2" /><br />
+      <label for="c3">{{ TRANS_LINK_COLOR }}</label> #<input type="text"
+        name="C_A_COLOR"
+        size="7"
+        maxlength="6"
+        value="{{ C_A_COLOR }}"
+        id="c3" /><br />
+      <label for="c4">{{ TRANS_VISITED_COLOR }}</label> #<input type="text"
+        name="C_A_VISITED"
+        size="7"
+        maxlength="6"
+        value="{{ C_A_VISITED }}"
+        id="c4" /><br />
+      <label for="c5">{{ TRANS_ACTIVE_COLOR }}</label> #<input type="text"
+        name="C_A_ACTIVE"
+        size="7"
+        maxlength="6"
+        value="{{ C_A_ACTIVE }}"
+        id="c5" /><br />
+      <label for="c6">{{ TRANS_HOVER_COLOR }}</label> #<input type="text"
+        name="C_A_HOVER"
+        size="7"
+        maxlength="6"
+        value="{{ C_A_HOVER }}"
+        id="c6" /><br />
+      <label for="c7">{{ TRANS_TITLE_COLOR }}</label> #<input type="text"
+        name="C_SUBJ"
+        size="7"
+        maxlength="6"
+        value="{{ C_SUBJ }}"
+        id="c7" /><br />
+      <label for="c8">{{ TRANS_QUOTE_COLOR }}</label> #<input type="text"
+        name="C_QMSG"
+        size="7"
+        maxlength="6"
+        value="{{ C_QMSG }}"
+        id="c8" />
+    </fieldset>
+    <br />
+    <fieldset>
+      <legend>
+        {{ TRANS_ADDITIONAL_FEATURES }}
+      </legend>
+      <label for="num2">{{ TRANS_POSTS_DISPLAYED }}</label>
+      <input type="number"
+        size="2"
+        name="d"
+        value="{{ MSGDISP }}"
+        min="0"
+        id="num2" /><br /><br />
+      <input type="checkbox" name="g" value="checked" {{ CHK_G }} id="g1" />
+      <label for="g1">{{ TRANS_GZIP }}</label><br />
+      {% if BBSMODE_ADMINONLY == 0 %}
+        <input type="checkbox"
+          name="hide"
+          value="checked"
+          {{ CHK_HIDE }}
+          id="hide2" />
+        <label for="hide2">{{ TRANS_HIDE_FORM }}</label><br />
+      {% else %}
+        <input type="hidden" name="hide" value="checked" />
+      {% endif %}
+      {% if BBSMODE_ADMINONLY != 1 %}
+        <input type="checkbox" name="a" value="checked" {{ CHK_A }} id="a4" />
+        <label for="a4">{{ TRANS_AUTOLINK }}</label><br />
+      {% else %}
+        <input type="hidden" name="a" value="checked" />
+      {% endif %}
+      <input type="checkbox"
+        name="cookie"
+        value="checked"
+        {{ CHK_COOKIE }}
+        id="cookie1" />
+      <label for="cookie1">{{ TRANS_COOKIE }}</label><br />
+      <input type="checkbox"
+        name="loff"
+        value="checked"
+        {{ CHK_LOFF }}
+        id="loff2" />
+      <label for="loff2">{{ TRANS_HIDE_LINKS }}</label><br />
+    </fieldset>
+    <br />
+    <fieldset>
+      <legend>
+        {{ TRANS_FOLLOWUP_DISPLAY }}
+      </legend>
+      <input type="radio"
+        name="fw"
+        value="0"
+        {{ CHK_FW_0 }}
+        id="fw1-1" /><label for="fw1-1">{{ TRANS_NEW_WINDOW }}</label><br />
+      <input type="radio"
+        name="fw"
+        value="1"
+        {{ CHK_FW_1 }}
+        id="fw1-2" /><label for="fw1-2">{{ TRANS_SAME_PAGE }}</label><br />
+    </fieldset>
+    <p>
+      {{ TRANS_BOOKMARK_INFO }}
+    </p>
+    <div>
+      <input type="submit"
+        value="{{ TRANS_REGISTER }}"
+        class="btn"
+        title="{{ TRANS_REGISTER_TITLE }}" />
+      <input type="reset"
+        value="{{ TRANS_UNDO }}"
+        class="btn"
+        title="{{ TRANS_UNDO_TITLE }}" />
+      <input type="submit"
+        name="cr"
+        value="{{ TRANS_RESTORE }}"
+        class="btn"
+        title="{{ TRANS_RESTORE_TITLE }}" />
+      <a href="{{ DEFURL|raw }}" title="{{ TRANS_RETURN }}">
+        {{ TRANS_RETURN }}
+      </a>
+    </div>
+  </form>
+{% endblock %}

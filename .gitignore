@@ -1,9 +1,22 @@
 vendor/
+node_modules/
 composer.lock
 .php-cs-fixer.cache
 .env
 .phpunit.result.cache
-archives/*.dat
+storage/app/archives/*.dat
 storage/app/bbs.log
 storage/app/bbs.cnt
 storage/logs/*.log
+storage/cache/twig/*
+
+# Vim swap files
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+
+# PHP CS Fixer
+php-cs-fixer
+.php-cs-fixer.cache

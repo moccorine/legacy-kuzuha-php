@@ -53,10 +53,10 @@ class NetworkHelper
         if ($_SERVER['HTTP_X_LOCKING']) {
             $proxyflg += 1024;
         }
-        if (preg_match("/cache|delegate|gateway|httpd|proxy|squid|www|via/i", (string) $agent)) {
+        if (preg_match('/cache|delegate|gateway|httpd|proxy|squid|www|via/i', (string) $agent)) {
             $proxyflg += 2048;
         }
-        if (preg_match("/cache|^dns|dummy|^ns|firewall|gate|keep|mail|^news|pop|proxy|smtp|w3|^web|www/i", (string) $host)) {
+        if (preg_match('/cache|^dns|dummy|^ns|firewall|gate|keep|mail|^news|pop|proxy|smtp|w3|^web|www/i', (string) $host)) {
             $proxyflg += 4096;
         }
         if ($host == $addr) {
@@ -101,11 +101,11 @@ class NetworkHelper
      */
     public static function checkIpRange(string $cidraddr, string $checkaddr): bool
     {
-        [$netaddr, $cidrmask] = explode("/", $cidraddr);
+        [$netaddr, $cidrmask] = explode('/', $cidraddr);
         $netaddr_long = ip2long($netaddr);
         $cidrmask = 2 ** (32 - $cidrmask) - 1;
-        $bits1 = str_pad(decbin($netaddr_long), 32, "0", STR_PAD_LEFT);
-        $bits2 = str_pad(decbin($cidrmask), 32, "0", STR_PAD_LEFT);
+        $bits1 = str_pad(decbin($netaddr_long), 32, '0', STR_PAD_LEFT);
+        $bits2 = str_pad(decbin($cidrmask), 32, '0', STR_PAD_LEFT);
         $final = '';
         for ($i = 0; $i < 32; $i++) {
             if ($bits2[$i] == '1') {
@@ -115,7 +115,7 @@ class NetworkHelper
             }
         }
         $checkaddr_long = ip2long($checkaddr);
-        $bits3 = str_pad(decbin($checkaddr_long), 32, "0", STR_PAD_LEFT);
+        $bits3 = str_pad(decbin($checkaddr_long), 32, '0', STR_PAD_LEFT);
         for ($i = 0; $i < 32; $i++) {
             if ($final[$i] != 'x' and $final[$i] != $bits3[$i]) {
                 return false;
