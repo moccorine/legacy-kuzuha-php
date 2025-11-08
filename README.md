@@ -74,10 +74,18 @@ The bulletin board uses RESTful routing:
 - `/` - Main bulletin board
 - `/search` - Message log search and archives
 - `/tree` - Tree view of message threads
-- `/thread` - Thread view (follow mode)
+- `/thread` - Thread view
+- `/follow` - Follow-up post page (reply to a specific post)
 - `/admin` - Admin mode (requires authentication)
 
-**Legacy URLs** (e.g., `/?m=g`, `/?m=tree`) are automatically redirected to the new paths with 301 status.
+**Legacy URLs** are automatically redirected to the new paths with 301 status:
+- `/?m=g` → `/search`
+- `/?m=tree` → `/tree`
+- `/?m=t` → `/thread`
+- `/?m=f` → `/follow`
+- `/?m=ad` → `/admin`
+
+**Subdirectory Installation**: The application automatically handles subdirectory installations (e.g., `/path/to/bbs/`) using the `route()` helper function. All URLs are generated relative to the `CGIURL` configuration.
 
 ## Log Mode Configuration
 
