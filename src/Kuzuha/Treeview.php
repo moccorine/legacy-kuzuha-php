@@ -261,11 +261,9 @@ class Treeview extends Bbs
                 if (!$hit) {
                     continue;
                 }
-            } elseif ($this->session['MSGDISP'] < 0) {
-                break;
             }
             # Beginning index
-            elseif ($threadindex < $bindex - 1) {
+            if ($this->session['MSGDISP'] >= 0 && $threadindex < $bindex - 1) {
                 $threadindex++;
                 continue;
             }
