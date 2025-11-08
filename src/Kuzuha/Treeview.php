@@ -181,11 +181,10 @@ class Treeview extends Bbs
             $isreadnew = true;
         }
 
-        $customstyle = $this->template->getParsedTemplate('tree_customstyle');
+        $customstyle = $this->renderTwig('components/tree_customstyle.twig', $this->config);
 
         # HTML header partial output
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Tree view', '', $customstyle);
 
         # Form section
         $dtitle = '';
@@ -207,6 +206,8 @@ class Treeview extends Bbs
         # Upper main section
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'),
+            'CUSTOMSTYLE' => $customstyle,
+            'CUSTOMHEAD' => '',
             'FORM' => $formHtml,
             'TRANS_TREE_VIEW' => Translator::trans('tree.tree_view'),
             'TRANS_PR_OFFICE' => Translator::trans('tree.pr_office'),
@@ -323,6 +324,15 @@ class Treeview extends Bbs
         # Administrator post
         $showAdminLogin = ($this->config['BBSMODE_ADMINONLY'] != 0);
 
+        # Duration
+        $duration = null;
+        $transPageGenerationTime = '';
+        if ($this->config['SHOW_PRCTIME'] && $this->session['START_TIME']) {
+            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
+            $duration = sprintf('%0.6f', $duration);
+            $transPageGenerationTime = Translator::trans('main.page_generation_time', ['%duration%' => $duration]);
+        }
+
         # Lower main section
         $data = array_merge($this->config, $this->session, [
             'MSGMORE' => $msgmore,
@@ -330,6 +340,8 @@ class Treeview extends Bbs
             'EINDEX' => $eindex ?? '',
             'SHOW_READNEW' => $showReadnew ?? false,
             'SHOW_ADMINLOGIN' => $showAdminLogin,
+            'DURATION' => $duration,
+            'TRANS_PAGE_GENERATION_TIME' => $transPageGenerationTime,
             'TRANS_NEXT_PAGE' => Translator::trans('tree.next_page'),
             'TRANS_RELOAD' => Translator::trans('tree.reload'),
             'TRANS_UNREAD' => Translator::trans('tree.unread'),
@@ -337,8 +349,6 @@ class Treeview extends Bbs
             'TRANS_POST_AS_ADMIN' => Translator::trans('tree.post_as_admin'),
         ]);
         echo $this->renderTwig('tree/lower.twig', $data);
-
-        print $this->prthtmlfoot();
     }
 
 

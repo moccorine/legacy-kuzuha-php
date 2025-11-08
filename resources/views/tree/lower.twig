@@ -74,3 +74,24 @@
       class="btn" />
   </form>
 {% endif %}
+<footer>
+  <p>
+    <span class="msgmore">{{ TRANS_PAGE_GENERATION_TIME }}</span>
+    <a href="#top" title="Top">▲</a>
+  </p>
+  <hr />
+  <p class="copyright">
+    <a href="https://github.com/Heyuri/ksphp-plus-en" target="_blank">
+      KuzuhaScriptPHP+EN
+    </a>
+    {{ VERSION|raw }} + vanish.js
+  </p>
+</footer>
+<script type="text/javascript" src="/js/vanish.js"></script>
+<script type="text/javascript">
+  (function() { $.autopager( { load: function(current, next) {
+  vanisher.init(); } }); });
+</script>
+<a id="bottom"></a>
+</body>
+</html>

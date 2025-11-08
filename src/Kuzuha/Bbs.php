@@ -331,6 +331,34 @@ class Bbs extends Webapp
      * @param   String  $dmsg       Initial value for the form contents
      * @param   String  $dlink      Initial value for the form link
      */
+    /**
+     * Generate kaomoji buttons HTML
+     */
+    private function generateKaomojiButtons()
+    {
+        $kaomojis = [
+            ['ヽ(´ー｀)ノ', '(´ー`)', '(;´Д`)', 'ヽ(´∇`)ノ', '(´∇`)σ', '(＾Д^)'],
+            ['(;^Д^)', '(ﾉД^､)σ', '(ﾟ∇ﾟ)', '(;ﾟ∇ﾟ)', 'Σ(;ﾟ∇ﾟ)', '(;ﾟДﾟ)', 'Σ(;ﾟДﾟ)'],
+            ['(｀∇´)', '(｀ー´)', '(｀～´)', '(;`-´)', 'ヽ(`Д´)ノ', '(`Д´)'],
+            ['(;`Д´)', '(ﾟ血ﾟ#)', '(╬⊙Д⊙)', '(ρ_;)', '(TДT)', '(ﾉД`､)', '(´Д`)'],
+            ['(´-｀)', '(´￢`)', 'ヽ(ﾟρﾟ)ノ', '(ﾟー｀)', '(´π｀)', '(ﾟДﾟ)', '(ﾟへﾟ)'],
+            ['(ﾟーﾟ)', '(ﾟｰﾟ)', '(*\'ｰ\')', '(\'ｰ\')', '(´人｀)', 'ъ( ﾟｰ^)', '（⌒∇⌒ゞ）'],
+            ['(^^;ﾜﾗ', 'ε≡三ヽ(´ー`)ﾉ', 'ε≡Ξヽ( ^Д^)ノ', 'ヽ(´Д`;)ノΞ≡3'],
+            ['(・∀・)', '( ´ω`)', 'Σ(ﾟдﾟlll)', '(´～`)', '┐(ﾟ～ﾟ)┌'],
+        ];
+        
+        $html = '';
+        foreach ($kaomojis as $row) {
+            foreach ($row as $kaomoji) {
+                $escaped = htmlspecialchars($kaomoji, ENT_QUOTES, 'UTF-8');
+                $html .= "<input type=\"button\" class=\"kaomoji\" onClick=\"insertThisInThere('{$escaped}','contents1')\" value=\"{$escaped}\" />\n\t\t";
+            }
+            $html .= "<br />\n";
+        }
+        
+        return $html;
+    }
+
     public function setform($dtitle, $dmsg, $dlink, $mode = '')
     {
         # Protect code generation
@@ -338,6 +366,10 @@ class Bbs extends Webapp
         if (!$mode) {
             $mode = '<input type="hidden" name="m" value="p" />';
         }
+        
+        # Generate kaomoji buttons HTML
+        $kaomojiButtons = $this->generateKaomojiButtons();
+        
         $this->template->addVars('form', [
             'MODE' => $mode,
             'PCODE' => $pcode,
