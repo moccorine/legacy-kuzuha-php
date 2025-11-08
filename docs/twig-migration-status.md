@@ -5,105 +5,157 @@ Migration from patTemplate to Twig template engine with internationalization (i1
 
 ## Completed Migrations
 
-### Pages (100%)
-- ✅ Main page (upper/lower)
-- ✅ Tree view (upper/lower)
-- ✅ Search list
-- ✅ Follow-up post page
-- ✅ New post page
-- ✅ User settings (custom)
-- ✅ Post completion page
-- ✅ Deletion completion page
-- ✅ Log search results (oldlog header/footer)
-- ✅ Topic list
-- ✅ Archive list
-- ✅ HTML download page
-- ✅ Admin pages (menu, killlist, password, log view)
-- ✅ Error page
-- ✅ Redirect page
+### Pages (95%)
+- ✅ Main page (upper/lower) - Fully migrated with i18n
+- ✅ Tree view (upper/lower) - Partially migrated (prttreeview uses Twig, prtthreadtree uses patTemplate header)
+- ✅ Search list - Fully migrated
+- ✅ Follow-up post page - Fully migrated with i18n
+- ✅ New post page - Fully migrated
+- ✅ User settings (custom) - Fully migrated
+- ✅ Post completion page - Fully migrated
+- ✅ Deletion completion page - Fully migrated
+- ✅ Log search results (oldlog header/footer) - Fully migrated
+- ✅ Topic list - Fully migrated with HTML entity decoding
+- ✅ Archive list - Fully migrated
+- ✅ HTML download page - Fully migrated
+- ✅ Admin pages (menu, killlist, password, log view) - Fully migrated
+- ✅ Error page - Fully migrated with i18n
+- ✅ Redirect page - Fully migrated with i18n
 
-### Components (80%)
-- ✅ Message display (`components/message.twig`)
-- ✅ Tree custom style (`components/tree_customstyle.twig`)
-- ✅ Error display (`components/error.twig`)
-- ✅ Layout base (`layout/base.twig`)
-- ✅ Footer (integrated into page templates)
-- ❌ **Form component** (remaining)
+### Components (100%)
+- ✅ Message display (`components/message.twig`) - With whitespace control for `<pre>` tags
+- ✅ Form component (`components/form.twig`) - Fully migrated with conditional display
+- ✅ Stats component (`components/stats.twig`) - Page statistics and navigation links
+- ✅ Tree custom style (`components/tree_customstyle.twig`) - CSS generation for tree view
+- ✅ Error display (`error.twig`) - Standalone error page
+- ✅ Layout base (`layout/base.twig`) - Base HTML structure
+- ✅ Footer - Integrated into main/lower.twig and tree/lower.twig
 
-### Translations
-- ✅ Japanese (ja) - 120+ keys
-- ✅ English (en) - 120+ keys
-- Namespaces: admin, log, search, follow, newpost, custom, tree, main, message, error, redirect
+### Translations (200+ keys)
+- ✅ Japanese (ja) - Complete coverage
+- ✅ English (en) - Complete coverage
+- Namespaces: 
+  - `admin.*` - Admin interface
+  - `log.*` - Log search and archives
+  - `search.*` - Search functionality
+  - `follow.*` - Follow-up posts
+  - `newpost.*` - New post page
+  - `custom.*` - User settings
+  - `tree.*` - Tree view
+  - `main.*` - Main page
+  - `message.*` - Message display
+  - `error.*` - Error messages
+  - `redirect.*` - Redirect page
+  - `stats.*` - Page statistics
+  - `form.*` - Form labels and help text
 
-## Remaining Work
+## Key Improvements
 
 ### Form Component Migration
-**Status:** Not started  
-**Complexity:** High  
-**Files affected:**
-- `src/Kuzuha/Bbs.php` (3 locations)
-- `src/Kuzuha/Treeview.php` (1 location)
-- `template/template.html` (form template)
+**Status:** ✅ Complete  
+**Features:**
+- Conditional display based on SHOW_FORMCONFIG (hidden on follow page)
+- Image mode and default mode support
+- Kaomoji buttons generation
+- Counter and member count display
+- All form labels translated
+- Whitespace control for textarea content
 
-**Challenges:**
-1. Large template with multiple modes (default, image, hide)
-2. Complex conditional logic (BBSMODE_IMAGE, HIDEFORM, etc.)
-3. Kaomoji buttons generation (顔文字ボタン)
-4. Form state management (DTITLE, DMSG, DLINK)
-5. Counter and member count display
-6. Help text and navigation buttons
+### Stats Component Separation
+**Status:** ✅ Complete  
+**Features:**
+- Separated from form component
+- Page view counter with bulletproof level
+- Current participants count
+- Navigation links (PR office, message logs)
+- Help text for symbols (■, ★, ◆, 木, Undo)
+- Only displayed on main page, hidden on follow page
 
-**Current Implementation:**
-- Uses output buffering to capture patTemplate output
-- Form HTML is passed to Twig templates as `{{ FORM|raw }}`
-- Works but not fully migrated to Twig
+### Message Component
+**Status:** ✅ Complete  
+**Features:**
+- Whitespace control with `{{- -}}` for `<pre>` tags
+- `|raw` filter for USER and TITLE to preserve HTML
+- `|raw` filter for MSG content
+- SHOW_ENV conditional for environment display
+- Proper handling of quoted text (>)
 
-**Migration Plan:**
-1. Create `components/form.twig` (draft exists)
-2. Migrate `setform()` method to prepare data for Twig
-3. Generate kaomoji buttons in PHP or Twig
-4. Handle all conditional display logic
-5. Add translation keys for all form labels
-6. Test all form modes (main, follow, newpost, tree)
-7. Remove patTemplate form template
+### Tree View
+**Status:** ⚠️ Partially Complete  
+**Completed:**
+- prttreeview() uses Twig (tree/upper.twig, tree/lower.twig)
+- Custom CSS generation (tree_customstyle.twig)
+- Form component integration
+- Full Japanese translation
 
-**Estimated effort:** 4-6 hours
+**Remaining:**
+- prtthreadtree() still uses patTemplate header (prthtmlhead)
+- Footer manually generated instead of using tree/lower.twig
+- Could be migrated to Twig for consistency
 
 ## Deprecated/Unused Components
-These patTemplate methods are no longer called:
-- `prthtmlhead()` - Replaced by `base.twig`
+These patTemplate methods are no longer called in main flow:
+- `prthtmlhead()` - Replaced by `base.twig` (still used in prtthreadtree)
 - `prthtmlfoot()` - Replaced by footer in page templates
 - `prtcopyright()` - Integrated into footer
+- Form template in `template/template.html` - Replaced by `components/form.twig`
+- Stats sections (counterrow, linkrow, helprow) - Replaced by `components/stats.twig`
 
 ## Benefits Achieved
 1. **Separation of concerns** - Logic in PHP, presentation in Twig
-2. **Internationalization** - Easy to add new languages
-3. **Maintainability** - Cleaner template syntax
-4. **Security** - Automatic HTML escaping by default
+2. **Internationalization** - Easy to add new languages via JSON files
+3. **Maintainability** - Cleaner template syntax, easier to modify
+4. **Security** - Automatic HTML escaping by default, explicit `|raw` where needed
 5. **Consistency** - Unified layout system with `base.twig`
+6. **Component reusability** - Form, message, stats components used across pages
+7. **Whitespace control** - Proper handling of `<pre>` tags without extra spaces
 
-## Known Issues Fixed
-1. ✅ Tree view not displaying when MSGDISP < 0
-2. ✅ MSGDISP defaulting to -1 when d parameter missing
-3. ✅ Double-escaped ampersands in URLs (DEFURL, QUERY)
-4. ✅ Whitespace issues in `<pre>` tags (using `{{- -}}`)
-5. ✅ Footer order (duration before copyright)
+## Issues Fixed During Migration
+1. ✅ Tree view not displaying when MSGDISP < 0 (removed incorrect break condition)
+2. ✅ MSGDISP defaulting to -1 when d parameter missing (explicit empty string check)
+3. ✅ Double-escaped ampersands in URLs (added `|raw` filter to DEFURL, QUERY)
+4. ✅ Whitespace in `<pre>` tags (using `{{- -}}` in message.twig)
+5. ✅ Footer order (duration before copyright in lower.twig)
+6. ✅ HTML tags in USER/TITLE fields (added `|raw` filter)
+7. ✅ Textarea whitespace (using `{{- DMSG|raw -}}` in form.twig)
+8. ✅ Reference link translation (message.reference: "参考")
+9. ✅ Topic list HTML entities (&gt; decoded to >)
+10. ✅ Topic list whitespace (single-line format in pre tag)
+11. ✅ Form config visibility (hidden on follow page with SHOW_FORMCONFIG)
+12. ✅ Stats component separation (moved from form to separate component)
 
 ## Testing Checklist
-- ✅ Main page display
-- ✅ Tree view display
-- ✅ Message display with buttons
-- ✅ Error pages
-- ✅ Admin pages
+- ✅ Main page display with stats and form
+- ✅ Tree view display (both prttreeview and prtthreadtree)
+- ✅ Message display with proper whitespace
+- ✅ Error pages in Japanese
+- ✅ Admin pages functionality
 - ✅ Search functionality
-- ✅ Follow-up posts
-- ✅ User settings
-- ✅ Log archives
-- ⏳ Form submission (still using patTemplate)
+- ✅ Follow-up posts (without form config and stats)
+- ✅ User settings page
+- ✅ Reference links with Japanese translation
+- ✅ Topic list with decoded HTML entities
+- ✅ Textarea content without extra whitespace
+- ✅ Form component conditional display
 
-## Next Steps
-1. Complete form component migration
-2. Remove patTemplate dependency entirely
-3. Add more translation keys as needed
-4. Performance testing
-5. Update README with new template system info
+## Remaining Work (Optional)
+
+### prtthreadtree() Full Migration
+**Status:** Optional improvement  
+**Current:** Uses patTemplate header, manual footer generation  
+**Proposed:** Create dedicated tree thread template or reuse tree/upper.twig  
+**Effort:** 1-2 hours  
+**Priority:** Low (current implementation works correctly)
+
+## Migration Statistics
+- **Total templates migrated:** 15+ pages, 5 components
+- **Translation keys added:** 200+
+- **patTemplate usage:** ~5% (only prtthreadtree header)
+- **Twig coverage:** ~95%
+- **Lines of template code:** ~2000+ lines migrated
+
+## Documentation
+- ✅ `query-parameters.md` - Complete URL parameter documentation
+- ✅ `twig-migration-status.md` - This file
+- ✅ Translation files with clear namespace organization
+- ✅ Inline comments in Twig templates
