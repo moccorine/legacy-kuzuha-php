@@ -1,9 +1,9 @@
 bbs.cnt
-bbs.log
 vendor/
 composer.lock
 .php-cs-fixer.cache
 .env
 .phpunit.result.cache
 archives/*.dat
-log/error.log
+storage/app/bbs.log
+storage/logs/*.log

@@ -19,7 +19,7 @@ $CONF = [
 
   #------------------------- Files and directories -------------------------
 
-  'LOGFILENAME' => './bbs.log',   # Log file name
+  'LOGFILENAME' => './storage/app/bbs.log',   # Log file name
   'OLDLOGFILEDIR' => './archives/',    # Name of the directory for storing logs (Please put a / at the end. If empty, logs will not be saved)
   'ZIPDIR' => '',       # ZIP archive directory for past log files (Please put a / at the end. If empty, or if gzcompress is unavailable, ZIP archives will not be created)
 

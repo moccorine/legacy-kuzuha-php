@@ -22,7 +22,7 @@ error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
 // Exception handler for logging stack traces
 set_exception_handler(function ($exception) {
-    $logFile = __DIR__ . '/../log/error.log';
+    $logFile = __DIR__ . '/../storage/logs/error.log';
     $message = sprintf(
         "[%s] Uncaught %s: %s\nFile: %s:%d\nStack trace:\n%s\n\n",
         date('Y-m-d H:i:s'),
@@ -37,7 +37,7 @@ set_exception_handler(function ($exception) {
     // Display user-friendly error
     http_response_code(500);
     echo "<h1>An error occurred</h1>";
-    echo "<p>Error details have been logged to log/error.log</p>";
+    echo "<p>Error details have been logged to storage/logs/error.log</p>";
     if (error_reporting() & E_ERROR) {
         echo "<pre>" . htmlspecialchars($message) . "</pre>";
     }
