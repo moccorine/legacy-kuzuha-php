@@ -187,7 +187,7 @@ $CONF = [
   'COUNTDATE' => '2024/07/10',
 
   # First part of the counter's file name
-  'COUNTFILE' => './count/count',
+  'COUNTFILE' => './storage/app/count/count',
 
   # Counter breakage resistance level
   # (Values between 3-5 are recommended. The larger the value, the less likely the counter will be erroneous, but the greater the server load)

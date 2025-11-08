@@ -100,7 +100,7 @@ class Imagebbs extends Bbs
      */
     public function __construct()
     {
-        $config = \App\Config::getInstance();
+        $config = Config::getInstance();
         foreach ($GLOBALS['CONF_IMAGEBBS'] as $key => $value) {
             $config->set($key, $value);
         }
@@ -117,7 +117,7 @@ class Imagebbs extends Bbs
     #[\Override]
     public function refcustom()
     {
-        $this->c['SHOWIMG'] = 1;
+        $this->config['SHOWIMG'] = 1;
 
         parent::refcustom();
     }
@@ -138,12 +138,12 @@ class Imagebbs extends Bbs
     #[\Override]
     public function setform($dtitle, $dmsg, $dlink, $mode = '')
     {
-        if ($this->c['SHOWIMG']) {
-            $this->t->addVar('sicheck', 'CHK_SI', ' checked="checked"');
+        if ($this->config['SHOWIMG']) {
+            $this->template->addVar('sicheck', 'CHK_SI', ' checked="checked"');
         }
-        $this->t->addVar('postform', 'MAX_FILE_SIZE', $this->c['MAX_IMAGESIZE'] * 1024);
-        $this->t->addVar('postform', 'mode', 'image');
-        $this->t->setAttribute('sicheck', 'visibility', 'visible');
+        $this->template->addVar('postform', 'MAX_FILE_SIZE', $this->config['MAX_IMAGESIZE'] * 1024);
+        $this->template->addVar('postform', 'mode', 'image');
+        $this->template->setAttribute('sicheck', 'visibility', 'visible');
         return parent::setform($dtitle, $dmsg, $dlink, $mode);
     }
 
@@ -172,8 +172,8 @@ class Imagebbs extends Bbs
 
             if ($_FILES['file']['error'] == 2
             or (file_exists($_FILES['file']['tmp_name'])
-            and filesize($_FILES['file']['tmp_name']) > ($this->c['MAX_IMAGESIZE'] * 1024))) {
-                $this->prterror('The file size is over ' .$this->c['MAX_IMAGESIZE'] .'KB.');
+            and filesize($_FILES['file']['tmp_name']) > ($this->config['MAX_IMAGESIZE'] * 1024))) {
+                $this->prterror('The file size is over ' .$this->config['MAX_IMAGESIZE'] .'KB.');
             }
 
             if ($_FILES['file']['error'] > 0
@@ -182,7 +182,7 @@ class Imagebbs extends Bbs
             }
 
             # Locking the image upload process
-            $fh = @fopen($this->c['UPLOADIDFILE'], "rb+");
+            $fh = @fopen($this->config['UPLOADIDFILE'], "rb+");
             if (!$fh) {
                 $this->prterror('Failed to load the uploaded image file.');
             }
@@ -196,7 +196,7 @@ class Imagebbs extends Bbs
 
             # File type check
             $imageinfo = GetImageSize($_FILES['file']['tmp_name']);
-            if ($imageinfo[0] > $this->c['MAX_IMAGEWIDTH'] or $imageinfo[1] > $this->c['MAX_IMAGEHEIGHT']) {
+            if ($imageinfo[0] > $this->config['MAX_IMAGEWIDTH'] or $imageinfo[1] > $this->config['MAX_IMAGEHEIGHT']) {
                 unlink($_FILES['file']['tmp_name']);
                 $this->prterror('The width of the image exceeds the limit.');
             }
@@ -221,7 +221,7 @@ class Imagebbs extends Bbs
             }
 
             $fileid++;
-            $filename = $this->c['UPLOADDIR'] . str_pad($fileid, 5, "0", STR_PAD_LEFT) . '_' . date("YmdHis", CURRENT_TIME) . $fileext;
+            $filename = $this->config['UPLOADDIR'] . str_pad($fileid, 5, "0", STR_PAD_LEFT) . '_' . date("YmdHis", CURRENT_TIME) . $fileext;
 
             copy($_FILES['file']['tmp_name'], $filename);
             unlink($_FILES['file']['tmp_name']);
@@ -233,9 +233,9 @@ class Imagebbs extends Bbs
             . "<img src=\"{$filename}\" width=\"{$imageinfo[0]}\" height=\"{$imageinfo[1]}\" border=\"0\" alt=\"{$message['FILEMSG']}\" /></a>";
 
             # Embedding tags in messages.
-            if (str_contains((string) $message['MSG'], (string) $this->c['IMAGETEXT'])) {
-                $message['MSG'] = preg_replace("/\Q{$this->c['IMAGETEXT']}\E/", $message['FILETAG'], (string) $message['MSG'], 1);
-                $message['MSG'] = preg_replace("/\Q{$this->c['IMAGETEXT']}\E/", '', $message['MSG']);
+            if (str_contains((string) $message['MSG'], (string) $this->config['IMAGETEXT'])) {
+                $message['MSG'] = preg_replace("/\Q{$this->config['IMAGETEXT']}\E/", $message['FILETAG'], (string) $message['MSG'], 1);
+                $message['MSG'] = preg_replace("/\Q{$this->config['IMAGETEXT']}\E/", '', $message['MSG']);
             } else {
                 if (preg_match("/\r\r<a href=[^<]+>Reference: [^<]+<\/a>$/", (string) $message['MSG'])) {
                     $message['MSG'] = preg_replace("/(\r\r<a href=[^<]+>Reference: [^<]+<\/a>)$/", "\r\r{$message['FILETAG']}$1", (string) $message['MSG'], 1);
@@ -276,17 +276,17 @@ class Imagebbs extends Bbs
         } else {
 
             $dirspace = 0;
-            $maxspace = $this->c['MAX_UPLOADSPACE'] * 1024;
+            $maxspace = $this->config['MAX_UPLOADSPACE'] * 1024;
 
             $files = [];
-            $dh = opendir($this->c['UPLOADDIR']);
+            $dh = opendir($this->config['UPLOADDIR']);
             if (!$dh) {
                 return;
             }
             while ($entry = readdir($dh)) {
-                if (is_file($this->c['UPLOADDIR'] . $entry) and preg_match("/\.(gif|jpg|png)$/i", $entry)) {
-                    $files[] = $this->c['UPLOADDIR'] . $entry;
-                    $dirspace += filesize($this->c['UPLOADDIR'] . $entry);
+                if (is_file($this->config['UPLOADDIR'] . $entry) and preg_match("/\.(gif|jpg|png)$/i", $entry)) {
+                    $files[] = $this->config['UPLOADDIR'] . $entry;
+                    $dirspace += filesize($this->config['UPLOADDIR'] . $entry);
                 }
             }
             closedir($dh);

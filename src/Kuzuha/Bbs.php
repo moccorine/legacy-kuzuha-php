@@ -43,11 +43,11 @@ class Bbs extends Webapp
         $this->refcustom();
         $this->setusersession();
         # gzip compression transfer
-        if ($this->c['GZIPU']) {
+        if ($this->config['GZIPU']) {
             ob_start("ob_gzhandler");
         }
         # Post operation
-        if ($this->f['m'] == 'p' and trim((string) $this->f['v'])) {
+        if ($this->form['m'] == 'p' and trim((string) $this->form['v'])) {
             # Get environment variables
             $this->setuserenv();
             # Parameter check
@@ -62,9 +62,9 @@ class Bbs extends Webapp
             }
             # Protect code redisplayed due to time lapse
             elseif ($posterr == 2) {
-                if ($this->f['f']) {
+                if ($this->form['f']) {
                     $this->prtfollow(true);
-                } elseif ($this->f['write']) {
+                } elseif ($this->form['write']) {
                     $this->prtnewpost(true);
                 } else {
                     $this->prtmain(true);
@@ -78,46 +78,46 @@ class Bbs extends Webapp
                 $bbsadmin->main();
             }
             # Post completion page
-            elseif ($this->f['f']) {
+            elseif ($this->form['f']) {
                 $this->prtputcomplete();
             } else {
                 $this->prtmain();
             }
         }
         # Display follow-up page
-        elseif ($this->f['m'] == 'f') {
+        elseif ($this->form['m'] == 'f') {
             $this->prtfollow();
         }
         # Message log search
-        elseif ($this->f['m'] == 'g') {
+        elseif ($this->form['m'] == 'g') {
             $getlog = new \Kuzuha\Getlog();
             $getlog->main();
             return;
         }
         # Tree view
-        elseif ($this->f['m'] == 'tree') {
+        elseif ($this->form['m'] == 'tree') {
             $treeview = new \Kuzuha\Treeview();
             $treeview->main();
             return;
         }
         # Post search
-        elseif ($this->f['m'] == 't' or $this->f['m'] == 's') {
+        elseif ($this->form['m'] == 't' or $this->form['m'] == 's') {
             $this->prtsearchlist();
         }
         # Display user settings page
-        elseif ($this->f['setup']) {
+        elseif ($this->form['setup']) {
             $this->prtcustom();
         }
         # User settings process
-        elseif ($this->f['m'] == 'c') {
+        elseif ($this->form['m'] == 'c') {
             $this->setcustom();
         }
         # New post
-        elseif ($this->f['m'] == 'p' and $this->f['write']) {
+        elseif ($this->form['m'] == 'p' and $this->form['write']) {
             $this->prtnewpost();
         }
         # UNDO process
-        elseif ($this->f['m'] == 'u') {
+        elseif ($this->form['m'] == 'u') {
             $this->prtundo();
         }
         # Default: bulletin board display
@@ -125,7 +125,7 @@ class Bbs extends Webapp
             $this->prtmain();
         }
 
-        if ($this->c['GZIPU']) {
+        if ($this->config['GZIPU']) {
             ob_end_flush();
         }
     }
@@ -145,22 +145,22 @@ class Bbs extends Webapp
         $dmsg = "";
         $dlink = "";
         if ($retry) {
-            $dtitle = $this->f['t'];
-            $dmsg = $this->f['v'];
-            $dlink = $this->f['l'];
+            $dtitle = $this->form['t'];
+            $dmsg = $this->form['v'];
+            $dlink = $this->form['l'];
         }
         $this->setform($dtitle, $dmsg, $dlink);
         # HTML header partial output
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE']);
+        print $this->prthtmlhead($this->config['BBSTITLE']);
         # Upper main section
-        $this->t->displayParsedTemplate('main_upper');
+        $this->template->displayParsedTemplate('main_upper');
         # Display message
         foreach ($logdatadisp as $msgdata) {
             print $this->prtmessage($this->getmessage($msgdata), 0, 0);
         }
         # Message information
-        if ($this->s['MSGDISP'] < 0) {
+        if ($this->session['MSGDISP'] < 0) {
             $msgmore = '';
         } elseif ($eindex > 0) {
             $msgmore = "Shown above are posts {$bindex} through {$eindex}, in order of newest to oldest. ";
@@ -170,24 +170,24 @@ class Bbs extends Webapp
         if ($eindex >= $lastindex) {
             $msgmore .= 'There are no posts below this point.';
         }
-        $this->t->addVar('main_lower', 'MSGMORE', $msgmore);
+        $this->template->addVar('main_lower', 'MSGMORE', $msgmore);
         # Navigation buttons
         if ($eindex > 0) {
             if ($eindex >= $lastindex) {
-                $this->t->setAttribute("nextpage", "visibility", "hidden");
+                $this->template->setAttribute("nextpage", "visibility", "hidden");
             } else {
-                $this->t->addVar('nextpage', 'EINDEX', $eindex);
+                $this->template->addVar('nextpage', 'EINDEX', $eindex);
             }
-            if (!$this->c['SHOW_READNEWBTN']) {
-                $this->t->setAttribute("readnew", "visibility", "hidden");
+            if (!$this->config['SHOW_READNEWBTN']) {
+                $this->template->setAttribute("readnew", "visibility", "hidden");
             }
         }
         # Post as administrator
-        if ($this->c['BBSMODE_ADMINONLY'] == 0) {
-            $this->t->setAttribute("adminlogin", "visibility", "hidden");
+        if ($this->config['BBSMODE_ADMINONLY'] == 0) {
+            $this->template->setAttribute("adminlogin", "visibility", "hidden");
         }
         # Lower main section
-        $this->t->displayParsedTemplate('main_lower');
+        $this->template->displayParsedTemplate('main_lower');
         print $this->prthtmlfoot();
     }
 
@@ -208,37 +208,37 @@ class Bbs extends Webapp
         $items = @explode(',', (string) $logdata[0], 3);
         $toppostid = $items[1];
         # Number of posts displayed
-        $msgdisp = \App\Utils\StringHelper::fixNumberString($this->f['d']);
+        $msgdisp = StringHelper::fixNumberString($this->form['d']);
         if ($msgdisp === false) {
-            $msgdisp = $this->c['MSGDISP'];
+            $msgdisp = $this->config['MSGDISP'];
         } elseif ($msgdisp < 0) {
-            $msgdisp = $this->c['MSGDISP'];
-        } elseif ($msgdisp > $this->c['LOGSAVE']) {
-            $msgdisp = $this->c['LOGSAVE'];
+            $msgdisp = $this->config['MSGDISP'];
+        } elseif ($msgdisp > $this->config['LOGSAVE']) {
+            $msgdisp = $this->config['LOGSAVE'];
         }
-        if ($this->f['readzero']) {
+        if ($this->form['readzero']) {
             $msgdisp = 0;
         }
         # Beginning of index
-        $bindex = $this->f['b'];
+        $bindex = $this->form['b'];
         if (!$bindex) {
             $bindex = 0;
         }
         # For the next and subsequent pages
         if ($bindex > 1) {
             # If there are new posts, shift the beginning of the index
-            if ($toppostid > $this->f['p']) {
-                $bindex += ($toppostid - $this->f['p']);
+            if ($toppostid > $this->form['p']) {
+                $bindex += ($toppostid - $this->form['p']);
             }
             # Don't update unread pointer
-            $toppostid = $this->f['p'];
+            $toppostid = $this->form['p'];
         }
         # End of index
         $eindex = $bindex + $msgdisp;
         # Unread reload
-        if ($this->f['readnew'] or ($msgdisp == '0' and $bindex == 0)) {
+        if ($this->form['readnew'] or ($msgdisp == '0' and $bindex == 0)) {
             $bindex = 0;
-            $eindex = $toppostid - $this->f['p'];
+            $eindex = $toppostid - $this->form['p'];
         }
         # For the last page, truncate
         $lastindex = count($logdata);
@@ -255,15 +255,15 @@ class Bbs extends Webapp
             $logdatadisp = [];
         } else {
             $logdatadisp = array_splice($logdata, $bindex, ($eindex - $bindex));
-            if ($this->c['RELTYPE'] and ($this->f['readnew'] or ($msgdisp == '0' and $bindex == 0))) {
+            if ($this->config['RELTYPE'] and ($this->form['readnew'] or ($msgdisp == '0' and $bindex == 0))) {
                 $logdatadisp = array_reverse($logdatadisp);
             }
         }
-        $this->s['TOPPOSTID'] = $toppostid;
-        $this->s['MSGDISP'] = $msgdisp;
-        $this->t->addGlobalVars([
-            'TOPPOSTID' => $this->s['TOPPOSTID'],
-            'MSGDISP' => $this->s['MSGDISP']
+        $this->session['TOPPOSTID'] = $toppostid;
+        $this->session['MSGDISP'] = $msgdisp;
+        $this->template->addGlobalVars([
+            'TOPPOSTID' => $this->session['TOPPOSTID'],
+            'MSGDISP' => $this->session['MSGDISP']
         ]);
         return [$logdatadisp, $bindex + 1, $eindex, $lastindex];
     }
@@ -279,74 +279,74 @@ class Bbs extends Webapp
     public function setform($dtitle, $dmsg, $dlink, $mode = '')
     {
         # Protect code generation
-        $pcode = \App\Utils\SecurityHelper::generateProtectCode();
+        $pcode = SecurityHelper::generateProtectCode();
         if (!$mode) {
             $mode = '<input type="hidden" name="m" value="p" />';
         }
-        $this->t->addVars('form', [
+        $this->template->addVars('form', [
             'MODE' => $mode,
             'PCODE' => $pcode,
         ]);
         # Hide post form
-        if ($this->c['HIDEFORM'] and $this->f['m'] != 'f' and !$this->f['write']) {
-            $this->t->addVar('postform', 'mode', 'hide');
+        if ($this->config['HIDEFORM'] and $this->form['m'] != 'f' and !$this->form['write']) {
+            $this->template->addVar('postform', 'mode', 'hide');
         } else {
-            $this->t->addVars('postform', [
+            $this->template->addVars('postform', [
                 'DTITLE' => $dtitle,
                 'DMSG' => $dmsg,
                 'DLINK' => $dlink,
             ]);
         }
         # Settings and links lines
-        if ($this->f['m'] != 'f' and !isset($this->f['f']) and !$this->f['write']) {
+        if ($this->form['m'] != 'f' and !isset($this->form['f']) and !$this->form['write']) {
             # Counter
-            if ($this->c['SHOW_COUNTER']) {
+            if ($this->config['SHOW_COUNTER']) {
                 $counter = $this->counter();
                 $counter = number_format($counter);
-                $this->t->addVar("counter", 'COUNTER', $counter);
-                $this->t->setAttribute("counter", "visibility", "visible");
+                $this->template->addVar("counter", 'COUNTER', $counter);
+                $this->template->setAttribute("counter", "visibility", "visible");
             }
-            if ($this->c['CNTFILENAME']) {
+            if ($this->config['CNTFILENAME']) {
                 $mbrcount = $this->mbrcount();
                 $mbrcount = number_format($mbrcount);
-                $this->t->addVar("mbrcount", 'MBRCOUNT', $mbrcount);
-                $this->t->setAttribute("mbrcount", "visibility", "visible");
+                $this->template->addVar("mbrcount", 'MBRCOUNT', $mbrcount);
+                $this->template->setAttribute("mbrcount", "visibility", "visible");
             }
-            if (!$this->c['SHOW_COUNTER'] and !$this->c['CNTFILENAME']) {
-                $this->t->setAttribute("counterrow", "visibility", "hidden");
+            if (!$this->config['SHOW_COUNTER'] and !$this->config['CNTFILENAME']) {
+                $this->template->setAttribute("counterrow", "visibility", "hidden");
             }
-            if ($this->c['BBSMODE_ADMINONLY'] == 0) {
-                if ($this->c['AUTOLINK']) {
-                    $this->t->addVar('formconfig', 'CHK_A', ' checked="checked"');
+            if ($this->config['BBSMODE_ADMINONLY'] == 0) {
+                if ($this->config['AUTOLINK']) {
+                    $this->template->addVar('formconfig', 'CHK_A', ' checked="checked"');
                 }
-                if ($this->c['HIDEFORM']) {
-                    $this->t->addVar('formconfig', 'CHK_HIDE', ' checked="checked"');
+                if ($this->config['HIDEFORM']) {
+                    $this->template->addVar('formconfig', 'CHK_HIDE', ' checked="checked"');
                 }
             } else {
-                $this->t->setAttribute("formconfig", "visibility", "hidden");
+                $this->template->setAttribute("formconfig", "visibility", "hidden");
             }
             # Hide link line
-            if ($this->c['LINKOFF']) {
-                $this->t->addVar('extraform', 'CHK_LOFF', ' checked="checked"');
-                $this->t->setAttribute("linkrow", "visibility", "hidden");
+            if ($this->config['LINKOFF']) {
+                $this->template->addVar('extraform', 'CHK_LOFF', ' checked="checked"');
+                $this->template->setAttribute("linkrow", "visibility", "hidden");
             }
             # Hide help line
-            if ($this->c['BBSMODE_ADMINONLY'] != 1) {
-                if (!$this->c['ALLOW_UNDO']) {
-                    $this->t->setAttribute("helpundo", "visibility", "hidden");
+            if ($this->config['BBSMODE_ADMINONLY'] != 1) {
+                if (!$this->config['ALLOW_UNDO']) {
+                    $this->template->setAttribute("helpundo", "visibility", "hidden");
                 }
             } else {
-                $this->t->setAttribute("helprow", "visibility", "hidden");
+                $this->template->setAttribute("helprow", "visibility", "hidden");
             }
             # Navigation buttons line
-            if (!$this->c['SHOW_READNEWBTN']) {
-                $this->t->setAttribute("readnewbtn", "visibility", "hidden");
+            if (!$this->config['SHOW_READNEWBTN']) {
+                $this->template->setAttribute("readnewbtn", "visibility", "hidden");
             }
-            if (!($this->c['HIDEFORM'] and $this->c['BBSMODE_ADMINONLY'] == 0)) {
-                $this->t->setAttribute("newpostbtn", "visibility", "hidden");
+            if (!($this->config['HIDEFORM'] and $this->config['BBSMODE_ADMINONLY'] == 0)) {
+                $this->template->setAttribute("newpostbtn", "visibility", "hidden");
             }
         } else {
-            $this->t->setAttribute("extraform", "visibility", "hidden");
+            $this->template->setAttribute("extraform", "visibility", "hidden");
         }
     }
 
@@ -359,22 +359,22 @@ class Bbs extends Webapp
     public function prtfollow($retry = false)
     {
 
-        if (!$this->f['s']) {
-            $this->prterror(\App\Translator::trans('error.no_parameters'));
+        if (!$this->form['s']) {
+            $this->prterror(Translator::trans('error.no_parameters'));
         }
 
         # Administrator authentication
-        if ($this->c['BBSMODE_ADMINONLY'] == 1
-            and crypt((string) $this->f['u'], (string) $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
-            $this->prterror(\App\Translator::trans('error.incorrect_password'));
+        if ($this->config['BBSMODE_ADMINONLY'] == 1
+            and crypt((string) $this->form['u'], (string) $this->config['ADMINPOST']) != $this->config['ADMINPOST']) {
+            $this->prterror(Translator::trans('error.incorrect_password'));
         }
         $filename = '';
-        if ($this->f['ff']) {
-            $filename = trim((string) $this->f['ff']);
+        if ($this->form['ff']) {
+            $filename = trim((string) $this->form['ff']);
         }
-        $result = $this->searchmessage('POSTID', $this->f['s'], false, $filename);
+        $result = $this->searchmessage('POSTID', $this->form['s'], false, $filename);
         if (!$result) {
-            $this->prterror(\App\Translator::trans('error.message_not_found'));
+            $this->prterror(Translator::trans('error.message_not_found'));
         }
         # Get message
         $message = $this->getmessage($result[0]);
@@ -390,12 +390,12 @@ class Bbs extends Webapp
             $formmsg = preg_replace("/\r>\s+\r/", "\r", $formmsg);
             $formmsg = preg_replace("/\r>\s+\r$/", "\r", (string) $formmsg);
         } else {
-            $formmsg = $this->f['v'];
+            $formmsg = $this->form['v'];
             $formmsg = preg_replace("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", "", (string) $formmsg);
         }
         $formmsg .= "\r";
 
-        $this->setform("＞" . preg_replace("/<[^>]*>/", '', (string) $message['USER']) . $this->c['FSUBJ'], $formmsg, '');
+        $this->setform("＞" . preg_replace("/<[^>]*>/", '', (string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
 
         if (!$message['THREAD']) {
             $message['THREAD'] = $message['POSTID'];
@@ -403,16 +403,16 @@ class Bbs extends Webapp
         $filename ? $mode = 1 : $mode = 0;
         $this->setmessage($message, $mode, $filename);
 
-        if ($this->c['AUTOLINK']) {
-            $this->t->addVar('follow', 'CHK_A', ' checked="checked"');
+        if ($this->config['AUTOLINK']) {
+            $this->template->addVar('follow', 'CHK_A', ' checked="checked"');
         }
-        $this->t->addVar('follow', 'FOLLOWID', $message['POSTID']);
-        $this->t->addVar('follow', 'SEARCHID', $this->f['s']);
-        $this->t->addVar('follow', 'FF', $this->f['ff']);
+        $this->template->addVar('follow', 'FOLLOWID', $message['POSTID']);
+        $this->template->addVar('follow', 'SEARCHID', $this->form['s']);
+        $this->template->addVar('follow', 'FF', $this->form['ff']);
         # Display
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Follow-up post');
-        $this->t->displayParsedTemplate('follow');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Follow-up post');
+        $this->template->displayParsedTemplate('follow');
         print $this->prthtmlfoot();
 
     }
@@ -426,28 +426,28 @@ class Bbs extends Webapp
     {
 
         # Administrator authentication
-        if ($this->c['BBSMODE_ADMINONLY'] != 0
-            and crypt((string) $this->f['u'], (string) $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
-            $this->prterror(\App\Translator::trans('error.incorrect_password'));
+        if ($this->config['BBSMODE_ADMINONLY'] != 0
+            and crypt((string) $this->form['u'], (string) $this->config['ADMINPOST']) != $this->config['ADMINPOST']) {
+            $this->prterror(Translator::trans('error.incorrect_password'));
         }
         # Form section
         $dtitle = "";
         $dmsg = "";
         $dlink = "";
         if ($retry) {
-            $dtitle = $this->f['t'];
-            $dmsg = $this->f['v'];
-            $dlink = $this->f['l'];
+            $dtitle = $this->form['t'];
+            $dmsg = $this->form['v'];
+            $dlink = $this->form['l'];
         }
         $this->setform($dtitle, $dmsg, $dlink);
 
-        if ($this->c['AUTOLINK']) {
-            $this->t->addVar('newpost', 'CHK_A', ' checked="checked"');
+        if ($this->config['AUTOLINK']) {
+            $this->template->addVar('newpost', 'CHK_A', ' checked="checked"');
         }
 
         $this->sethttpheader();
-        print $this->prthtmlhead("{$this->c['BBSTITLE']} New post");
-        $this->t->displayParsedTemplate('newpost');
+        print $this->prthtmlhead("{$this->config['BBSTITLE']} New post");
+        $this->template->displayParsedTemplate('newpost');
         print $this->prthtmlfoot();
 
     }
@@ -460,24 +460,24 @@ class Bbs extends Webapp
     public function prtsearchlist($mode = "")
     {
 
-        if (!$this->f['s']) {
-            $this->prterror(\App\Translator::trans('error.no_parameters'));
+        if (!$this->form['s']) {
+            $this->prterror(Translator::trans('error.no_parameters'));
         }
         if (!$mode) {
-            $mode = $this->f['m'];
+            $mode = $this->form['m'];
         }
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Post search');
-        $this->t->displayParsedTemplate('searchlist_upper');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Post search');
+        $this->template->displayParsedTemplate('searchlist_upper');
 
         $result = $this->msgsearchlist($mode);
         foreach ($result as $message) {
-            print $this->prtmessage($message, $mode, $this->f['ff']);
+            print $this->prtmessage($message, $mode, $this->form['ff']);
         }
         $success = count($result);
 
-        $this->t->addVar('searchlist_lower', 'SUCCESS', $success);
-        $this->t->displayParsedTemplate('searchlist_lower');
+        $this->template->addVar('searchlist_lower', 'SUCCESS', $success);
+        $this->template->displayParsedTemplate('searchlist_lower');
         print $this->prthtmlfoot();
 
     }
@@ -489,12 +489,12 @@ class Bbs extends Webapp
     {
 
         $fh = null;
-        if ($this->f['ff']) {
-            if (preg_match("/^[\w.]+$/", (string) $this->f['ff'])) {
-                $fh = @fopen($this->c['OLDLOGFILEDIR'] . $this->f['ff'], "rb");
+        if ($this->form['ff']) {
+            if (preg_match("/^[\w.]+$/", (string) $this->form['ff'])) {
+                $fh = @fopen($this->config['OLDLOGFILEDIR'] . $this->form['ff'], "rb");
             }
             if (!$fh) {
-                $this->prterror(\App\Translator::trans('error.file_open_failed', ['filename' => $this->f['ff']]));
+                $this->prterror(Translator::trans('error.file_open_failed', ['filename' => $this->form['ff']]));
             }
             flock($fh, 1);
         }
@@ -504,21 +504,21 @@ class Bbs extends Webapp
         if ($fh) {
             $linecount = 0;
             $threadstart = false;
-            while (($logline = \App\Utils\FileHelper::getLine($fh)) !== false) {
+            while (($logline = FileHelper::getLine($fh)) !== false) {
                 if ($threadstart) {
                     $linecount++;
                 }
-                if ($linecount > $this->c['LOGSAVE']) {
+                if ($linecount > $this->config['LOGSAVE']) {
                     break;
                 }
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and preg_replace("/<[^>]*>/", '', (string) $message['USER']) == $this->f['s']) {
+                if ($mode == 's' and preg_replace("/<[^>]*>/", '', (string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
                 elseif ($mode == 't'
-                    and ($message['THREAD'] == $this->f['s'] or $message['POSTID'] == $this->f['s'])) {
+                    and ($message['THREAD'] == $this->form['s'] or $message['POSTID'] == $this->form['s'])) {
                     $result[] = $message;
                     if (!$threadstart) {
                         $threadstart = true;
@@ -532,14 +532,14 @@ class Bbs extends Webapp
             foreach ($logdata as $logline) {
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and preg_replace("/<[^>]*>/", '', (string) $message['USER']) == $this->f['s']) {
+                if ($mode == 's' and preg_replace("/<[^>]*>/", '', (string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
                 elseif ($mode == 't'
-                    and ($message['THREAD'] == $this->f['s'] or $message['POSTID'] == $this->f['s'])) {
+                    and ($message['THREAD'] == $this->form['s'] or $message['POSTID'] == $this->form['s'])) {
                     $result[] = $message;
-                    if ($message['POSTID'] == $this->f['s']) {
+                    if ($message['POSTID'] == $this->form['s']) {
                         break;
                     }
                 }
@@ -555,8 +555,8 @@ class Bbs extends Webapp
     {
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Post complete');
-        $this->t->displayParsedTemplate('postcomplete');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Post complete');
+        $this->template->displayParsedTemplate('postcomplete');
         print $this->prthtmlfoot();
 
     }
@@ -567,37 +567,37 @@ class Bbs extends Webapp
     public function prtcustom($mode = '')
     {
 
-        if ($this->c['GZIPU']) {
-            $this->t->addVar('custom', 'CHK_G', ' checked="checked"');
+        if ($this->config['GZIPU']) {
+            $this->template->addVar('custom', 'CHK_G', ' checked="checked"');
         }
-        if ($this->c['AUTOLINK']) {
-            $this->t->addVar('custom', 'CHK_A', ' checked="checked"');
+        if ($this->config['AUTOLINK']) {
+            $this->template->addVar('custom', 'CHK_A', ' checked="checked"');
         }
-        if ($this->c['LINKOFF']) {
-            $this->t->addVar('custom', 'CHK_LOFF', ' checked="checked"');
+        if ($this->config['LINKOFF']) {
+            $this->template->addVar('custom', 'CHK_LOFF', ' checked="checked"');
         }
-        if ($this->c['HIDEFORM']) {
-            $this->t->addVar('custom', 'CHK_HIDE', ' checked="checked"');
+        if ($this->config['HIDEFORM']) {
+            $this->template->addVar('custom', 'CHK_HIDE', ' checked="checked"');
         }
-        if ($this->c['SHOWIMG']) {
-            $this->t->addVar('custom', 'CHK_SI', ' checked="checked"');
+        if ($this->config['SHOWIMG']) {
+            $this->template->addVar('custom', 'CHK_SI', ' checked="checked"');
         }
-        if ($this->c['COOKIE']) {
-            $this->t->addVar('custom', 'CHK_COOKIE', ' checked="checked"');
+        if ($this->config['COOKIE']) {
+            $this->template->addVar('custom', 'CHK_COOKIE', ' checked="checked"');
         }
 
-        $this->c['FOLLOWWIN'] ? $this->t->addVar('custom', 'CHK_FW_1', ' checked="checked"')
-            : $this->t->addVar('custom', 'CHK_FW_0', ' checked="checked"');
-        $this->c['RELTYPE'] ? $this->t->addVar('custom', 'CHK_RT_1', ' checked="checked"')
-            : $this->t->addVar('custom', 'CHK_RT_0', ' checked="checked"');
+        $this->config['FOLLOWWIN'] ? $this->template->addVar('custom', 'CHK_FW_1', ' checked="checked"')
+            : $this->template->addVar('custom', 'CHK_FW_0', ' checked="checked"');
+        $this->config['RELTYPE'] ? $this->template->addVar('custom', 'CHK_RT_1', ' checked="checked"')
+            : $this->template->addVar('custom', 'CHK_RT_0', ' checked="checked"');
 
-        $this->t->addVar('custom_hide', 'BBSMODE_ADMINONLY', $this->c['BBSMODE_ADMINONLY']);
-        $this->t->addVar('custom_a', 'BBSMODE_ADMINONLY', $this->c['BBSMODE_ADMINONLY']);
-        $this->t->addVar('custom', 'MODE', $mode);
+        $this->template->addVar('custom_hide', 'BBSMODE_ADMINONLY', $this->config['BBSMODE_ADMINONLY']);
+        $this->template->addVar('custom_a', 'BBSMODE_ADMINONLY', $this->config['BBSMODE_ADMINONLY']);
+        $this->template->addVar('custom', 'MODE', $mode);
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' User settings');
-        $this->t->displayParsedTemplate('custom');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' User settings');
+        $this->template->displayParsedTemplate('custom');
         print $this->prthtmlfoot();
     }
 
@@ -607,15 +607,15 @@ class Bbs extends Webapp
     public function setcustom()
     {
 
-        $redirecturl = $this->c['CGIURL'];
+        $redirecturl = $this->config['CGIURL'];
 
         # Cookie消去
-        if ($this->f['cr']) {
-            $this->f['c'] = '';
+        if ($this->form['cr']) {
+            $this->form['c'] = '';
             setcookie('c');
             setcookie('undo');
-            $this->s['UNDO_P'] = '';
-            $this->s['UNDO_K'] = '';
+            $this->session['UNDO_P'] = '';
+            $this->session['UNDO_K'] = '';
         } else {
             $colors = [
                 'C_BACKGROUND',
@@ -631,9 +631,9 @@ class Bbs extends Webapp
             $flgchgindex = -1;
             $cindex = 0;
             foreach ($colors as $confname) {
-                if (strlen((string) $this->f[$confname]) == 6 and preg_match("/^[0-9a-fA-F]{6}$/", (string) $this->f[$confname])
-                    and $this->f[$confname] != $this->c[$confname]) {
-                    $this->c[$confname] = $this->f[$confname];
+                if (strlen((string) $this->form[$confname]) == 6 and preg_match("/^[0-9a-fA-F]{6}$/", (string) $this->form[$confname])
+                    and $this->form[$confname] != $this->config[$confname]) {
+                    $this->config[$confname] = $this->form[$confname];
                     $flgchgindex = $cindex;
                 }
                 $cindex++;
@@ -641,27 +641,27 @@ class Bbs extends Webapp
 
             $cbase64str = '';
             for ($i = 0; $i <= $flgchgindex; $i++) {
-                $cbase64str .= \App\Utils\StringHelper::threeByteHexToBase64($this->c[$colors[$i]]);
+                $cbase64str .= StringHelper::threeByteHexToBase64($this->config[$colors[$i]]);
             }
             $this->refcustom();
 
-            $this->f['c'] = substr((string) $this->f['c'], 0, 2) . $cbase64str;
+            $this->form['c'] = substr((string) $this->form['c'], 0, 2) . $cbase64str;
 
-            $redirecturl .= "?c=".$this->f['c'];
+            $redirecturl .= "?c=".$this->form['c'];
             foreach (['w', 'd',] as $key) {
-                if ($this->f[$key] != '') {
-                    $redirecturl .= "&{$key}=".$this->f[$key];
+                if ($this->form[$key] != '') {
+                    $redirecturl .= "&{$key}=".$this->form[$key];
                 }
             }
-            if ($this->f['nm']) {
-                $redirecturl .= "&m=".$this->f['nm'];
+            if ($this->form['nm']) {
+                $redirecturl .= "&m=".$this->form['nm'];
             }
-            if ($this->c['COOKIE']) {
+            if ($this->config['COOKIE']) {
                 $this->setbbscookie();
             }
         }
         # Redirect
-        if (preg_match("/^(https?):\/\//", (string) $this->c['CGIURL'])) {
+        if (preg_match("/^(https?):\/\//", (string) $this->config['CGIURL'])) {
             header("Location: {$redirecturl}");
         } else {
             $this->prtredirect(htmlentities((string) $redirecturl));
@@ -673,33 +673,33 @@ class Bbs extends Webapp
      */
     public function prtundo()
     {
-        if (!$this->f['s']) {
-            $this->prterror(\App\Translator::trans('error.no_parameters'));
+        if (!$this->form['s']) {
+            $this->prterror(Translator::trans('error.no_parameters'));
         }
-        if (isset($this->s['UNDO_P']) and $this->s['UNDO_P'] == $this->f['s']) {
-            $loglines = $this->searchmessage('POSTID', $this->s['UNDO_P']);
+        if (isset($this->session['UNDO_P']) and $this->session['UNDO_P'] == $this->form['s']) {
+            $loglines = $this->searchmessage('POSTID', $this->session['UNDO_P']);
             if (count($loglines) < 1) {
-                $this->prterror(\App\Translator::trans('error.post_not_found'));
+                $this->prterror(Translator::trans('error.post_not_found'));
             }
             $message = $this->getmessage($loglines[0]);
-            $undokey = substr((string) preg_replace("/\W/", "", crypt((string) $message['PROTECT'], (string) $this->c['ADMINPOST'])), -8);
-            if ($undokey != $this->s['UNDO_K']) {
-                $this->prterror(\App\Translator::trans('error.deletion_not_permitted'));
+            $undokey = substr((string) preg_replace("/\W/", "", crypt((string) $message['PROTECT'], (string) $this->config['ADMINPOST'])), -8);
+            if ($undokey != $this->session['UNDO_K']) {
+                $this->prterror(Translator::trans('error.deletion_not_permitted'));
             }
             # Erase operation
             require_once(PHP_BBSADMIN);
             $bbsadmin = new Bbsadmin();
-            $bbsadmin->killmessage($this->s['UNDO_P']);
+            $bbsadmin->killmessage($this->session['UNDO_P']);
 
-            $this->s['UNDO_P'] = '';
-            $this->s['UNDO_K'] = '';
+            $this->session['UNDO_P'] = '';
+            $this->session['UNDO_K'] = '';
             setcookie('undo');
         } else {
-            $this->prterror(\App\Translator::trans('error.deletion_not_permitted'));
+            $this->prterror(Translator::trans('error.deletion_not_permitted'));
         }
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Deletion complete');
-        $this->t->displayParsedTemplate('undocomplete');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Deletion complete');
+        $this->template->displayParsedTemplate('undocomplete');
         print $this->prthtmlfoot();
     }
 
@@ -738,96 +738,96 @@ class Bbs extends Webapp
     public function chkmessage($limithost = true)
     {
         $posterr = 0;
-        if ($this->c['RUNMODE'] == 1) {
-            $this->prterror(\App\Translator::trans('error.posting_suspended'));
+        if ($this->config['RUNMODE'] == 1) {
+            $this->prterror(Translator::trans('error.posting_suspended'));
         }
         /* Prohibit access by host name process */
-        if (\App\Utils\NetworkHelper::hostnameMatch($this->c['HOSTNAME_POSTDENIED'], $this->c['HOSTAGENT_BANNED'])) {
-            $this->prterror(\App\Translator::trans('error.posting_suspended'));
+        if (NetworkHelper::hostnameMatch($this->config['HOSTNAME_POSTDENIED'], $this->config['HOSTAGENT_BANNED'])) {
+            $this->prterror(Translator::trans('error.posting_suspended'));
         }
-        if ($this->c['BBSMODE_ADMINONLY'] == 1 or ($this->c['BBSMODE_ADMINONLY'] == 2 and !$this->f['f'])) {
-            if (crypt((string) $this->f['u'], (string) $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
-                $this->prterror(\App\Translator::trans('error.admin_only'));
+        if ($this->config['BBSMODE_ADMINONLY'] == 1 or ($this->config['BBSMODE_ADMINONLY'] == 2 and !$this->form['f'])) {
+            if (crypt((string) $this->form['u'], (string) $this->config['ADMINPOST']) != $this->config['ADMINPOST']) {
+                $this->prterror(Translator::trans('error.admin_only'));
             }
         }
-        if ($_SERVER['HTTP_REFERER'] and $this->c['REFCHECKURL']
-            and (!str_contains((string) $_SERVER['HTTP_REFERER'], (string) $this->c['REFCHECKURL'])
-            or strpos((string) $_SERVER['HTTP_REFERER'], (string) $this->c['REFCHECKURL']) > 0)) {
-            $this->prterror("Posts cannot be made from any URLs besides <br>{$this->c['REFCHECKURL']}.");
+        if ($_SERVER['HTTP_REFERER'] and $this->config['REFCHECKURL']
+            and (!str_contains((string) $_SERVER['HTTP_REFERER'], (string) $this->config['REFCHECKURL'])
+            or strpos((string) $_SERVER['HTTP_REFERER'], (string) $this->config['REFCHECKURL']) > 0)) {
+            $this->prterror("Posts cannot be made from any URLs besides <br>{$this->config['REFCHECKURL']}.");
         }
-        foreach (explode("\r", (string) $this->f['v']) as $line) {
-            if (strlen($line) > $this->c['MAXMSGCOL']) {
-                $this->prterror(\App\Translator::trans('error.too_many_characters'));
+        foreach (explode("\r", (string) $this->form['v']) as $line) {
+            if (strlen($line) > $this->config['MAXMSGCOL']) {
+                $this->prterror(Translator::trans('error.too_many_characters'));
             }
         }
-        if (substr_count((string) $this->f['v'], "\r") > $this->c['MAXMSGLINE'] - 1) {
-            $this->prterror(\App\Translator::trans('error.too_many_linebreaks'));
+        if (substr_count((string) $this->form['v'], "\r") > $this->config['MAXMSGLINE'] - 1) {
+            $this->prterror(Translator::trans('error.too_many_linebreaks'));
         }
-        if (strlen((string) $this->f['v']) > $this->c['MAXMSGSIZE']) {
-            $this->prterror(\App\Translator::trans('error.file_size_too_large'));
+        if (strlen((string) $this->form['v']) > $this->config['MAXMSGSIZE']) {
+            $this->prterror(Translator::trans('error.file_size_too_large'));
         }
-        if (strlen((string) $this->f['u']) > $this->c['MAXNAMELENGTH']) {
+        if (strlen((string) $this->form['u']) > $this->config['MAXNAMELENGTH']) {
             $this->prterror('There are too many characters in the name field. (Up to {MAXNAMELENGTH} characters)');
         }
-        if (strlen((string) $this->f['i']) > $this->c['MAXMAILLENGTH']) {
+        if (strlen((string) $this->form['i']) > $this->config['MAXMAILLENGTH']) {
             $this->prterror('There are too many characters in the email field. (Up to {MAXMAILLENGTH} characters)');
         }
-        if ($this->f['i']) { ## mod
-            $this->prterror(\App\Translator::trans('error.spam_detected')); ## mod
+        if ($this->form['i']) { ## mod
+            $this->prterror(Translator::trans('error.spam_detected')); ## mod
         } ## mod
-        if (strlen((string) $this->f['t']) > $this->c['MAXTITLELENGTH']) {
+        if (strlen((string) $this->form['t']) > $this->config['MAXTITLELENGTH']) {
             $this->prterror('There are too many characters in the title field. (Up to {MAXTITLELENGTH} characters)');
         }
         {
-            $timestamp = \App\Utils\SecurityHelper::verifyProtectCode($this->f['pc'], $limithost);
+            $timestamp = SecurityHelper::verifyProtectCode($this->form['pc'], $limithost);
 
-            if ((CURRENT_TIME - $timestamp) < $this->c['MINPOSTSEC']) {
-                $this->prterror(\App\Translator::trans('error.post_interval_too_short'));
+            if ((CURRENT_TIME - $timestamp) < $this->config['MINPOSTSEC']) {
+                $this->prterror(Translator::trans('error.post_interval_too_short'));
             }
-            /*            if ((CURRENT_TIME - $timestamp ) > $this->c['MAXPOSTSEC'] ) {
+            /*            if ((CURRENT_TIME - $timestamp ) > $this->config['MAXPOSTSEC'] ) {
                             $this->prterror ( 'The time between posts is too long. Please try again.');
                             $posterr = 2;
                             return $posterr;
                         } */
         }
 
-        if (trim((string) $this->f['v']) == '') {
+        if (trim((string) $this->form['v']) == '') {
             $posterr = 2;
             return $posterr;
         }
 
-        ## if ($this->c['NGWORD']) {
-        ##     foreach ($this->c['NGWORD'] as $ngword) {
-        ##         if (strpos($this->f['v'], $ngword) !== FALSE
-        ##             or strpos($this->f['l'], $ngword) !== FALSE
-        ##             or strpos($this->f['t'], $ngword) !== FALSE
-        ##             or strpos($this->f['u'], $ngword) !== FALSE
-        ##             or strpos($this->f['i'], $ngword) !== FALSE) {
+        ## if ($this->config['NGWORD']) {
+        ##     foreach ($this->config['NGWORD'] as $ngword) {
+        ##         if (strpos($this->form['v'], $ngword) !== FALSE
+        ##             or strpos($this->form['l'], $ngword) !== FALSE
+        ##             or strpos($this->form['t'], $ngword) !== FALSE
+        ##             or strpos($this->form['u'], $ngword) !== FALSE
+        ##             or strpos($this->form['i'], $ngword) !== FALSE) {
         ##             $this->prterror ( 'The post contains prohibited words.' );
         ##         }
         ##     }
         ## }
-        if ($this->c['NGWORD']) { ## mod
-            foreach ($this->c['NGWORD'] as $ngword) {
+        if ($this->config['NGWORD']) { ## mod
+            foreach ($this->config['NGWORD'] as $ngword) {
                 $ngword = strtolower((string) $ngword); // Convert prohibited word to lowercase
                 if (
-                    str_contains(strtolower((string) $this->f['v']), $ngword) ||
-                    str_contains(strtolower((string) $this->f['l']), $ngword) ||
-                    str_contains(strtolower((string) $this->f['t']), $ngword) ||
-                    str_contains(strtolower((string) $this->f['u']), $ngword) ||
-                    str_contains(strtolower((string) $this->f['i']), $ngword)
+                    str_contains(strtolower((string) $this->form['v']), $ngword) ||
+                    str_contains(strtolower((string) $this->form['l']), $ngword) ||
+                    str_contains(strtolower((string) $this->form['t']), $ngword) ||
+                    str_contains(strtolower((string) $this->form['u']), $ngword) ||
+                    str_contains(strtolower((string) $this->form['i']), $ngword)
                 ) {
-                    $this->prterror(\App\Translator::trans('error.prohibited_words'));
+                    $this->prterror(Translator::trans('error.prohibited_words'));
                 }
             }
         } ## mod end
 
         #20240204 猫 spam detection (https://php.o0o0.jp/article/php-spam)
-        # Number of characters: char_num = mb_strlen( $this->f['v'], 'UTF8');
-        # Number of bytes: byte_num = strlen( $this->f['v']);
+        # Number of characters: char_num = mb_strlen( $this->form['v'], 'UTF8');
+        # Number of bytes: byte_num = strlen( $this->form['v']);
 
-        ## $char_num = mb_strlen( $this->f['v'], 'UTF8');
-        ## $byte_num = strlen( $this->f['v']);
+        ## $char_num = mb_strlen( $this->form['v'], 'UTF8');
+        ## $byte_num = strlen( $this->form['v']);
 
         # When single-byte characters makes up more than 90% of the total
         ## if ((($char_num * 3 - $byte_num) / 2 / $char_num * 100) > 90) {
@@ -850,17 +850,17 @@ class Bbs extends Webapp
     {
 
         $message = [];
-        $message['PCODE'] = $this->f['pc'];
-        $message['USER'] = $this->f['u'];
-        $message['MAIL'] = $this->f['i'];
-        $message['TITLE'] = $this->f['t'];
-        $message['MSG'] = $this->f['v'];
-        $message['URL'] = $this->f['l'];
-        $message['PHOST'] = $this->s['HOST'];
-        $message['AGENT'] = $this->s['AGENT'];
+        $message['PCODE'] = $this->form['pc'];
+        $message['USER'] = $this->form['u'];
+        $message['MAIL'] = $this->form['i'];
+        $message['TITLE'] = $this->form['t'];
+        $message['MSG'] = $this->form['v'];
+        $message['URL'] = $this->form['l'];
+        $message['PHOST'] = $this->session['HOST'];
+        $message['AGENT'] = $this->session['AGENT'];
         # Reference ID
-        if ($this->f['f']) {
-            $message['REFID'] = $this->f['f'];
+        if ($this->form['f']) {
+            $message['REFID'] = $this->form['f'];
         } else {
             $message['REFID'] = '';
         }
@@ -872,34 +872,34 @@ class Bbs extends Webapp
         }
         # User
         if (!$message['USER']) {
-            $message['USER'] = $this->c['ANONY_NAME'];
+            $message['USER'] = $this->config['ANONY_NAME'];
         } else {
             # Admin check
-            if ($this->c['ADMINPOST'] and crypt((string) $message['USER'], (string) $this->c['ADMINPOST']) == $this->c['ADMINPOST']) {
-                $message['USER'] = "<span class=\"muh\">{$this->c['ADMINNAME']}</span>";
+            if ($this->config['ADMINPOST'] and crypt((string) $message['USER'], (string) $this->config['ADMINPOST']) == $this->config['ADMINPOST']) {
+                $message['USER'] = "<span class=\"muh\">{$this->config['ADMINNAME']}</span>";
                 # Enter admin mode
-                if ($this->c['ADMINKEY'] and trim((string) $message['MSG']) == $this->c['ADMINKEY']) {
+                if ($this->config['ADMINKEY'] and trim((string) $message['MSG']) == $this->config['ADMINKEY']) {
                     return 3;
                 }
-            } elseif ($this->c['ADMINPOST'] and $message['USER'] == $this->c['ADMINPOST']) {
-                $message['USER'] = $this->c['ADMINNAME'] . '<span class="muh"> (hacker)</span>';
-            } elseif (!(!str_contains((string) $message['USER'], (string) $this->c['ADMINNAME']))) {
-                $message['USER'] = $this->c['ADMINNAME'] . '<span class="muh"> (fraudster)</span>';
+            } elseif ($this->config['ADMINPOST'] and $message['USER'] == $this->config['ADMINPOST']) {
+                $message['USER'] = $this->config['ADMINNAME'] . '<span class="muh"> (hacker)</span>';
+            } elseif (!(!str_contains((string) $message['USER'], (string) $this->config['ADMINNAME']))) {
+                $message['USER'] = $this->config['ADMINNAME'] . '<span class="muh"> (fraudster)</span>';
             }
             # Fixed handle name check
-            elseif ($this->c['HANDLENAMES'][trim((string) $message['USER'])]) {
+            elseif ($this->config['HANDLENAMES'][trim((string) $message['USER'])]) {
                 $message['USER'] .= '<span class="muh"> (fraudster)</span>';
             }
             # Trip function (simple deception prevention function)
             elseif (str_contains((string) $message['USER'], '#')) {
                 #20210702 猫・管理パスばれ防止
-                if ($this->c['ADMINPOST'] and crypt(substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#')), (string) $this->c['ADMINPOST']) == $this->c['ADMINPOST']) {
-                    $message['USER'] = "<span class=\"muh\"><a href=\"mailto:{$this->c['ADMINMAIL']}\">{$this->c['ADMINNAME']}</a></span>".substr((string) $message['USER'], strpos((string) $message['USER'], '#'));
+                if ($this->config['ADMINPOST'] and crypt(substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#')), (string) $this->config['ADMINPOST']) == $this->config['ADMINPOST']) {
+                    $message['USER'] = "<span class=\"muh\"><a href=\"mailto:{$this->config['ADMINMAIL']}\">{$this->config['ADMINNAME']}</a></span>".substr((string) $message['USER'], strpos((string) $message['USER'], '#'));
                 }
                 #20210923 猫・固定ハンドル名 パスばれ防止
                 # 固定ハンドル名変換
-                elseif (isset($this->c['HANDLENAMES'])) {
-                    $handlename = array_search(trim(substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#'))), $this->c['HANDLENAMES']);
+                elseif (isset($this->config['HANDLENAMES'])) {
+                    $handlename = array_search(trim(substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#'))), $this->config['HANDLENAMES']);
                     if ($handlename !== false) {
                         $message['USER'] = "<span class=\"muh\">{$handlename}</span>".substr((string) $message['USER'], strpos((string) $message['USER'], '#'));
                     }
@@ -909,8 +909,8 @@ class Bbs extends Webapp
                 $message['USER'] .= ' (fraudster)';
             }
             # Fixed handle name conversion
-            elseif (isset($this->c['HANDLENAMES'])) {
-                $handlename = array_search(trim((string) $message['USER']), $this->c['HANDLENAMES']);
+            elseif (isset($this->config['HANDLENAMES'])) {
+                $handlename = array_search(trim((string) $message['USER']), $this->config['HANDLENAMES']);
                 if ($handlename !== false) {
                     $message['USER'] = "<span class=\"muh\">{$handlename}</span>";
                 }
@@ -919,7 +919,7 @@ class Bbs extends Webapp
         $message['MSG'] = rtrim((string) $message['MSG']);
 
         # Auto-link URLs
-        if ($this->c['AUTOLINK']) {
+        if ($this->config['AUTOLINK']) {
             $message['MSG'] = preg_replace(
                 "/((https?|ftp|news):\/\/[-_.,!~*'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)/",
                 "<a href=\"$1\" target=\"link\">$1</a>",
@@ -929,25 +929,25 @@ class Bbs extends Webapp
         # URL field
         $message['URL'] = trim((string) $message['URL']);
         if ($message['URL']) {
-            $message['MSG'] .= "\r\r<a href=\"".\App\Utils\StringHelper::escapeUrl($message['URL'])."\" target=\"link\">{$message['URL']}</a>";
+            $message['MSG'] .= "\r\r<a href=\"".StringHelper::escapeUrl($message['URL'])."\" target=\"link\">{$message['URL']}</a>";
         }
         # Reference
         if ($message['REFID']) {
-            $refdata = $this->searchmessage('POSTID', $message['REFID'], false, $this->f['ff']);
+            $refdata = $this->searchmessage('POSTID', $message['REFID'], false, $this->form['ff']);
             if (!$refdata) {
-                $this->prterror(\App\Translator::trans('error.reference_not_found'));
+                $this->prterror(Translator::trans('error.reference_not_found'));
             }
             $refmessage = $this->getmessage($refdata[0]);
-            $refmessage['WDATE'] = \App\Utils\DateHelper::getDateString($refmessage['NDATE'], $this->c['DATEFORMAT']);
+            $refmessage['WDATE'] = DateHelper::getDateString($refmessage['NDATE'], $this->config['DATEFORMAT']);
             $message['MSG'] .= "\r\r<a href=\"m=f&s={$message['REFID']}&r=&\">Reference: {$refmessage['WDATE']}</a>";
             # Simple self-reply prevention function
-            if ($this->c['IPREC'] and $this->c['SHOW_SELFFOLLOW']
+            if ($this->config['IPREC'] and $this->config['SHOW_SELFFOLLOW']
                 and $refmessage['PHOST'] != '' and $refmessage['PHOST'] == $message['PHOST']) {
                 $message['USER'] .= '<span class="muh"> (self-reply)</span>';
             }
         }
         # Check
-        if (strlen((string) $message['MSG']) > $this->c['MAXMSGSIZE']) {
+        if (strlen((string) $message['MSG']) > $this->config['MAXMSGSIZE']) {
             $this->prterror('The post contents are too large.');
         }
         return $message;
@@ -964,20 +964,20 @@ class Bbs extends Webapp
         if (!is_array($message)) {
             return $message;
         }
-        $fh = @fopen($this->c['LOGFILENAME'], "rb+");
+        $fh = @fopen($this->config['LOGFILENAME'], "rb+");
         if (!$fh) {
-            $this->prterror(\App\Translator::trans('error.failed_to_read'));
+            $this->prterror(Translator::trans('error.failed_to_read'));
         }
         flock($fh, 2);
         fseek($fh, 0, 0);
 
         $logdata = [];
-        while (($logline = \App\Utils\FileHelper::getLine($fh)) !== false) {
+        while (($logline = FileHelper::getLine($fh)) !== false) {
             $logdata[] = $logline;
         }
         $posterr = 0;
-        if ($this->f['ff']) {
-            $refdata = $this->searchmessage('THREAD', $message['REFID'], false, $this->f['ff']);
+        if ($this->form['ff']) {
+            $refdata = $this->searchmessage('THREAD', $message['REFID'], false, $this->form['ff']);
             if (isset($refdata[0])) {
                 $refmessage = $this->getmessage($refdata[0]);
                 if ($refmessage) {
@@ -993,12 +993,12 @@ class Bbs extends Webapp
                 $items = @explode(',', $logdata[$i]);
                 if (count($items) > 8) {
                     $items[9] = rtrim($items[9]);
-                    if ($i < $this->c['CHECKCOUNT'] and $message['MSG'] == $items[9]) {
+                    if ($i < $this->config['CHECKCOUNT'] and $message['MSG'] == $items[9]) {
                         $posterr = 1;
                         break;
                     }
-                    if ($this->c['IPREC'] and CURRENT_TIME < ($items[0] + $this->c['SPTIME'])
-                        and $this->s['HOST'] == $items[4]) {
+                    if ($this->config['IPREC'] and CURRENT_TIME < ($items[0] + $this->config['SPTIME'])
+                        and $this->session['HOST'] == $items[4]) {
                         $posterr = 2;
                         break;
                     }
@@ -1039,8 +1039,8 @@ class Bbs extends Webapp
                 $message['REFID'],
             ]);
             $msgdata = str_replace("\n", "", $msgdata) . "\n";
-            if (count($logdata) >= $this->c['LOGSAVE']) {
-                $logdata = array_slice($logdata, 0, $this->c['LOGSAVE'] - 2);
+            if (count($logdata) >= $this->config['LOGSAVE']) {
+                $logdata = array_slice($logdata, 0, $this->config['LOGSAVE'] - 2);
             }
             {
                 $logdata = $msgdata . implode('', $logdata);
@@ -1051,42 +1051,42 @@ class Bbs extends Webapp
             flock($fh, 3);
             fclose($fh);
             # Cookie registration
-            if ($this->c['COOKIE']) {
+            if ($this->config['COOKIE']) {
                 $this->setbbscookie();
-                if ($this->c['ALLOW_UNDO']) {
+                if ($this->config['ALLOW_UNDO']) {
                     $this->setundocookie($message['POSTID'], $message['PCODE']);
                 }
             }
 
             # Message log output
-            if ($this->c['OLDLOGFILEDIR']) {
-                $dir = $this->c['OLDLOGFILEDIR'];
+            if ($this->config['OLDLOGFILEDIR']) {
+                $dir = $this->config['OLDLOGFILEDIR'];
 
-                if ($this->c['OLDLOGFMT']) {
+                if ($this->config['OLDLOGFMT']) {
                     $oldlogext = 'dat';
                 } else {
                     $oldlogext = 'html';
                 }
-                if ($this->c['OLDLOGSAVESW']) {
+                if ($this->config['OLDLOGSAVESW']) {
                     $oldlogfilename = $dir . date("Ym", CURRENT_TIME) . ".$oldlogext";
-                    $oldlogtitle = $this->c['BBSTITLE'] . date(" Y.m", CURRENT_TIME);
+                    $oldlogtitle = $this->config['BBSTITLE'] . date(" Y.m", CURRENT_TIME);
                 } else {
                     $oldlogfilename = $dir . date("Ymd", CURRENT_TIME) . ".$oldlogext";
-                    $oldlogtitle = $this->c['BBSTITLE'] . date(" Y.m.d", CURRENT_TIME);
+                    $oldlogtitle = $this->config['BBSTITLE'] . date(" Y.m.d", CURRENT_TIME);
                 }
-                if (@filesize($oldlogfilename) > $this->c['MAXOLDLOGSIZE']) {
-                    $this->prterror(\App\Translator::trans('error.log_size_limit'));
+                if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
+                    $this->prterror(Translator::trans('error.log_size_limit'));
                 }
                 $fh = @fopen($oldlogfilename, "ab");
                 if (!$fh) {
-                    $this->prterror(\App\Translator::trans('error.log_output_failed'));
+                    $this->prterror(Translator::trans('error.log_output_failed'));
                 }
                 flock($fh, 2);
                 $isnewdate = false;
                 if (!@filesize($oldlogfilename)) {
                     $isnewdate = true;
                 }
-                if ($this->c['OLDLOGFMT']) {
+                if ($this->config['OLDLOGFMT']) {
                     fwrite($fh, $msgdata);
                 } else {
                     # HTML header for HTML output
@@ -1100,12 +1100,12 @@ class Bbs extends Webapp
                 }
                 flock($fh, 3);
                 fclose($fh);
-                if (@filesize($oldlogfilename) > $this->c['MAXOLDLOGSIZE']) {
+                if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
                     @chmod($oldlogfilename, 0400);
                 }
                 # Delete old log files
-                if (!$this->c['OLDLOGSAVESW'] and $isnewdate) {
-                    $limitdate = CURRENT_TIME - $this->c['OLDLOGSAVEDAY'] * 60 * 60 * 24;
+                if (!$this->config['OLDLOGSAVESW'] and $isnewdate) {
+                    $limitdate = CURRENT_TIME - $this->config['OLDLOGSAVEDAY'] * 60 * 60 * 24;
                     $limitdate = date("Ymd", $limitdate);
                     $dh = opendir($dir);
                     while ($entry = readdir($dh)) {
@@ -1122,13 +1122,13 @@ class Bbs extends Webapp
                 }
 
                 # Archive creation
-                if ($this->c['ZIPDIR'] and @function_exists('gzcompress')) {
+                if ($this->config['ZIPDIR'] and @function_exists('gzcompress')) {
                     # In the case of dat, it also writes the message log in HTML format as a temporary file to be saved in the ZIP
-                    if ($this->c['OLDLOGFMT']) {
-                        if ($this->c['OLDLOGSAVESW']) {
-                            $tmplogfilename = $this->c['ZIPDIR'] . date("Ym", CURRENT_TIME) . ".html";
+                    if ($this->config['OLDLOGFMT']) {
+                        if ($this->config['OLDLOGSAVESW']) {
+                            $tmplogfilename = $this->config['ZIPDIR'] . date("Ym", CURRENT_TIME) . ".html";
                         } else {
-                            $tmplogfilename = $this->c['ZIPDIR'] . date("Ymd", CURRENT_TIME) . ".html";
+                            $tmplogfilename = $this->config['ZIPDIR'] . date("Ymd", CURRENT_TIME) . ".html";
                         }
 
                         $fhtmp = @fopen($tmplogfilename, "ab");
@@ -1148,10 +1148,10 @@ class Bbs extends Webapp
                         fclose($fhtmp);
                     }
                     $tmpdir = $dir;
-                    if ($this->c['OLDLOGFMT']) {
-                        $tmpdir = $this->c['ZIPDIR'];
+                    if ($this->config['OLDLOGFMT']) {
+                        $tmpdir = $this->config['ZIPDIR'];
                     }
-                    if ($this->c['OLDLOGSAVESW']) {
+                    if ($this->config['OLDLOGSAVESW']) {
                         $currentfile = date("Ym", CURRENT_TIME) . ".html";
                     } else {
                         $currentfile = date("Ymd", CURRENT_TIME) . ".html";
@@ -1190,7 +1190,7 @@ class Bbs extends Webapp
                     $zip->Zip($zipfiles, $zipfilename);
 
                     # Delete temporary files
-                    if ($this->c['OLDLOGFMT']) {
+                    if ($this->config['OLDLOGFMT']) {
                         unlink($checkedfile);
                     }
                 }
@@ -1205,21 +1205,21 @@ class Bbs extends Webapp
     public function setuserenv()
     {
 
-        if ($this->c['UAREC']) {
+        if ($this->config['UAREC']) {
             $agent = $_SERVER['HTTP_USER_AGENT'];
-            $agent = \App\Utils\StringHelper::htmlEscape($agent);
-            $this->s['AGENT'] = $agent;
+            $agent = StringHelper::htmlEscape($agent);
+            $this->session['AGENT'] = $agent;
         }
-        if (!$this->c['IPREC']) {
+        if (!$this->config['IPREC']) {
             return;
         }
-        [$addr, $host, $proxyflg, $realaddr, $realhost] = \App\Utils\NetworkHelper::getUserEnv();
+        [$addr, $host, $proxyflg, $realaddr, $realhost] = NetworkHelper::getUserEnv();
 
-        $this->s['ADDR'] = $addr;
-        $this->s['HOST'] = $host;
-        $this->s['PROXYFLG'] = $proxyflg;
-        $this->s['REALADDR'] = $realaddr;
-        $this->s['REALHOST'] = $realhost;
+        $this->session['ADDR'] = $addr;
+        $this->session['HOST'] = $host;
+        $this->session['PROXYFLG'] = $proxyflg;
+        $this->session['REALADDR'] = $realaddr;
+        $this->session['REALHOST'] = $realhost;
     }
 
     /**
@@ -1227,9 +1227,9 @@ class Bbs extends Webapp
      */
     public function setbbscookie()
     {
-        $cookiestr = "u=" . urlencode((string) $this->f['u']);
-        $cookiestr .= "&i=" . urlencode((string) $this->f['i']);
-        $cookiestr .= "&c=" . $this->f['c'];
+        $cookiestr = "u=" . urlencode((string) $this->form['u']);
+        $cookiestr .= "&i=" . urlencode((string) $this->form['i']);
+        $cookiestr .= "&c=" . $this->form['c'];
         setcookie('c', $cookiestr, CURRENT_TIME + 7776000); // expires in 90 days
     }
 
@@ -1238,10 +1238,10 @@ class Bbs extends Webapp
      */
     public function setundocookie($undoid, $pcode)
     {
-        $undokey = substr((string) preg_replace("/\W/", "", crypt((string) $pcode, (string) $this->c['ADMINPOST'])), -8);
+        $undokey = substr((string) preg_replace("/\W/", "", crypt((string) $pcode, (string) $this->config['ADMINPOST'])), -8);
         $cookiestr = "p=$undoid&k=$undokey";
-        $this->s['UNDO_P'] = $undoid;
-        $this->s['UNDO_K'] = $undokey;
+        $this->session['UNDO_P'] = $undoid;
+        $this->session['UNDO_K'] = $undokey;
         setcookie('undo', $cookiestr, CURRENT_TIME + 86400); // expires in 24 hours
     }
 
@@ -1255,8 +1255,8 @@ class Bbs extends Webapp
     public function counter($countlevel = 0)
     {
         if (!$countlevel) {
-            if (isset($this->c['COUNTLEVEL'])) {
-                $countlevel = $this->c['COUNTLEVEL'];
+            if (isset($this->config['COUNTLEVEL'])) {
+                $countlevel = $this->config['COUNTLEVEL'];
             }
             if ($countlevel < 1) {
                 $countlevel = 1;
@@ -1264,7 +1264,7 @@ class Bbs extends Webapp
         }
         $count = [];
         for ($i = 0; $i < $countlevel; $i++) {
-            $filename = "{$this->c['COUNTFILE']}{$i}.dat";
+            $filename = "{$this->config['COUNTFILE']}{$i}.dat";
             if (is_writable($filename) and $fh = @fopen($filename, "r")) {
                 $count[$i] = fgets($fh, 10);
                 fclose($fh);
@@ -1276,7 +1276,7 @@ class Bbs extends Webapp
         sort($count, SORT_NUMERIC);
         $mincount = $count[0];
         $maxcount = $count[$countlevel - 1] + 1;
-        if ($fh = @fopen("{$this->c['COUNTFILE']}{$filenumber[$mincount]}.dat", "w")) {
+        if ($fh = @fopen("{$this->config['COUNTFILE']}{$filenumber[$mincount]}.dat", "w")) {
             fputs($fh, $maxcount);
             fclose($fh);
             return $maxcount;
@@ -1295,7 +1295,7 @@ class Bbs extends Webapp
     public function mbrcount($cntfilename = "")
     {
         if (!$cntfilename) {
-            $cntfilename = $this->c['CNTFILENAME'];
+            $cntfilename = $this->config['CNTFILENAME'];
         }
         if ($cntfilename) {
             $mbrcount = 0;
@@ -1315,7 +1315,7 @@ class Bbs extends Webapp
                             $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
                             $cadd = 1;
                             $mbrcount++;
-                        } elseif (($ctime + $this->c['CNTLIMIT']) >= CURRENT_TIME) {
+                        } elseif (($ctime + $this->config['CNTLIMIT']) >= CURRENT_TIME) {
                             $newcntdata[] = "$cuser,$ctime\n";
                             $mbrcount++;
                         }

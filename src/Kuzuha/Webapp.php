@@ -11,10 +11,10 @@ use App\Utils\TripHelper;
 
 class Webapp
 {
-    public $c; /* Settings information */
-    public $f; /* Form input */
-    public $s = []; /* Session-specific information such as the user's host */
-    public $t; /* HTML template object */
+    public $config; /* Settings information */
+    public $form; /* Form input */
+    public $session = []; /* Session-specific information such as the user's host */
+    public $template; /* HTML template object */
 
     /**
      * Constructor
@@ -22,9 +22,9 @@ class Webapp
      */
     public function __construct()
     {
-        $this->c = \App\Config::getInstance()->all();
-        $this->t = new \patTemplate();
-        $this->t->readTemplatesFromFile($this->c['TEMPLATE']);
+        $this->config = Config::getInstance()->all();
+        $this->template = new \patTemplate();
+        $this->template->readTemplatesFromFile($this->config['TEMPLATE']);
     }
 
     /**
@@ -38,11 +38,11 @@ class Webapp
 
     public function procForm()
     {
-        if (!$this->c['BBSMODE_IMAGE'] and $_SERVER['CONTENT_LENGTH'] > $this->c['MAXMSGSIZE'] * 5) {
-            $this->prterror(\App\Translator::trans('error.post_too_large'));
+        if (!$this->config['BBSMODE_IMAGE'] and $_SERVER['CONTENT_LENGTH'] > $this->config['MAXMSGSIZE'] * 5) {
+            $this->prterror(Translator::trans('error.post_too_large'));
         }
-        if ($this->c['BBSHOST'] and $_SERVER['HTTP_HOST'] != $this->c['BBSHOST']) {
-            $this->prterror(\App\Translator::trans('error.invalid_caller'));
+        if ($this->config['BBSHOST'] and $_SERVER['HTTP_HOST'] != $this->config['BBSHOST']) {
+            $this->prterror(Translator::trans('error.invalid_caller'));
         }
         # Limited to POST or GET only
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -54,12 +54,12 @@ class Webapp
         foreach ($this->f as $name => $value) {
             if (is_array($value)) {
                 foreach (array_keys($value) as $valuekey) {
-                    $value[$valuekey] = \App\Utils\StringHelper::htmlEscape($value[$valuekey]);
+                    $value[$valuekey] = StringHelper::htmlEscape($value[$valuekey]);
                 }
             } else {
-                $value = \App\Utils\StringHelper::htmlEscape($value);
+                $value = StringHelper::htmlEscape($value);
             }
-            $this->f[$name] = $value;
+            $this->form[$name] = $value;
         }
     }
 
@@ -69,48 +69,48 @@ class Webapp
     public function setusersession()
     {
 
-        $this->s['U'] = $this->f['u'];
-        $this->s['I'] = $this->f['i'];
-        $this->s['C'] = $this->f['c'];
-        $this->s['MSGDISP'] = ($this->f['d'] == -1) ? $this->c['MSGDISP'] : $this->f['d'];
-        $this->s['TOPPOSTID'] = $this->f['p'];
+        $this->session['U'] = $this->form['u'];
+        $this->session['I'] = $this->form['i'];
+        $this->session['C'] = $this->form['c'];
+        $this->session['MSGDISP'] = ($this->form['d'] == -1) ? $this->config['MSGDISP'] : $this->form['d'];
+        $this->session['TOPPOSTID'] = $this->form['p'];
         # Get settings information cookies
-        if ($this->c['COOKIE'] and $_COOKIE['c']
+        if ($this->config['COOKIE'] and $_COOKIE['c']
             and preg_match("/u=([^&]*)&i=([^&]*)&c=([^&]*)/", (string) $_COOKIE['c'], $matches)) {
-            if (!isset($this->f['u'])) {
-                $this->s['U'] = urldecode($matches[1]);
+            if (!isset($this->form['u'])) {
+                $this->session['U'] = urldecode($matches[1]);
             }
-            if (!isset($this->f['i'])) {
-                $this->s['I'] = urldecode($matches[2]);
+            if (!isset($this->form['i'])) {
+                $this->session['I'] = urldecode($matches[2]);
             }
-            if (!isset($this->f['c'])) {
-                $this->s['C'] = $matches[3];
+            if (!isset($this->form['c'])) {
+                $this->session['C'] = $matches[3];
             }
         }
         # Get cookie for the UNDO button
-        if ($this->c['COOKIE'] and $this->c['ALLOW_UNDO'] and $_COOKIE['undo']
+        if ($this->config['COOKIE'] and $this->config['ALLOW_UNDO'] and $_COOKIE['undo']
             and preg_match("/p=([^&]*)&k=([^&]*)/", (string) $_COOKIE['undo'], $matches)) {
-            $this->s['UNDO_P'] = $matches[1];
-            $this->s['UNDO_K'] = $matches[2];
+            $this->session['UNDO_P'] = $matches[1];
+            $this->session['UNDO_K'] = $matches[2];
         }
         # Default query
-        $this->s['QUERY'] = "c=".$this->s['C'];
-        if ($this->s['MSGDISP']) {
-            $this->s['QUERY'] .= "&amp;d=".$this->s['MSGDISP'];
+        $this->session['QUERY'] = "c=".$this->session['C'];
+        if ($this->session['MSGDISP']) {
+            $this->session['QUERY'] .= "&amp;d=".$this->session['MSGDISP'];
         }
-        if ($this->s['TOPPOSTID']) {
-            $this->s['QUERY'] .= "&amp;p=".$this->s['TOPPOSTID'];
+        if ($this->session['TOPPOSTID']) {
+            $this->session['QUERY'] .= "&amp;p=".$this->session['TOPPOSTID'];
         }
         # Default URL
-        $this->s['DEFURL'] = $this->c['CGIURL'] . '?' . $this->s['QUERY'];
+        $this->session['DEFURL'] = $this->config['CGIURL'] . '?' . $this->session['QUERY'];
         # Initialize template variables
-        $tmp = array_merge($this->c, $this->s);
+        $tmp = array_merge($this->config, $this->session);
         foreach ($tmp as $key => $val) {
             if (is_array($val)) {
                 unset($tmp[$key]);
             }
         }
-        $this->t->addGlobalVars($tmp);
+        $this->template->addGlobalVars($tmp);
     }
 
     /**
@@ -122,12 +122,12 @@ class Webapp
     public function prterror($err_message)
     {
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Error');
-        $this->t->addVar('error', 'ERR_MESSAGE', $err_message);
-        if (isset($this->s['DEFURL'])) {
-            $this->t->setAttribute('backnavi', 'visibility', 'visible');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Error');
+        $this->template->addVar('error', 'ERR_MESSAGE', $err_message);
+        if (isset($this->session['DEFURL'])) {
+            $this->template->setAttribute('backnavi', 'visibility', 'visible');
         }
-        $this->t->displayParsedTemplate('error');
+        $this->template->displayParsedTemplate('error');
         print $this->prthtmlfoot();
         $this->destroy();
         exit();
@@ -144,13 +144,13 @@ class Webapp
      */
     public function prthtmlhead($title = "", $customhead = "", $customstyle = "")
     {
-        $this->t->clearTemplate('header');
-        $this->t->addVars('header', [
+        $this->template->clearTemplate('header');
+        $this->template->addVars('header', [
             'TITLE' => $title,
             'CUSTOMHEAD' => $customhead,
             'CUSTOMSTYLE' => $customstyle,
         ]);
-        $htmlstr = $this->t->getParsedTemplate('header');
+        $htmlstr = $this->template->getParsedTemplate('header');
         return $htmlstr;
     }
 
@@ -162,13 +162,13 @@ class Webapp
      */
     public function prthtmlfoot()
     {
-        if ($this->c['SHOW_PRCTIME'] and $this->s['START_TIME']) {
-            $duration = \App\Utils\DateHelper::microtimeDiff($this->s['START_TIME'], microtime());
+        if ($this->config['SHOW_PRCTIME'] and $this->session['START_TIME']) {
+            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
             $duration = sprintf("%0.6f", $duration);
-            $this->t->setAttribute('duration', 'visibility', 'visible');
-            $this->t->addVar('duration', 'DURATION', $duration);
+            $this->template->setAttribute('duration', 'visibility', 'visible');
+            $this->template->addVar('duration', 'DURATION', $duration);
         }
-        $htmlstr = $this->t->getParsedTemplate('footer');
+        $htmlstr = $this->template->getParsedTemplate('footer');
         return $htmlstr;
     }
 
@@ -177,7 +177,7 @@ class Webapp
      */
     public function prtcopyright()
     {
-        $copyright = $this->t->getParsedTemplate('copyright');
+        $copyright = $this->template->getParsedTemplate('copyright');
         return $copyright;
     }
 
@@ -191,11 +191,11 @@ class Webapp
     {
         $this->sethttpheader();
         print $this->prthtmlhead(
-            $this->c['BBSTITLE'] . ' - URL redirection',
+            $this->config['BBSTITLE'] . ' - URL redirection',
             "<meta http-equiv=\"refresh\" content=\"1;url={$redirecturl}\">\n"
         );
-        $this->t->addVar('redirect', 'REDIRECTURL', $redirecturl);
-        $this->t->displayParsedTemplate('redirect');
+        $this->template->addVar('redirect', 'REDIRECTURL', $redirecturl);
+        $this->template->displayParsedTemplate('redirect');
         print $this->prthtmlfoot();
     }
 
@@ -208,7 +208,7 @@ class Webapp
         if (count($message) < 10) {
             return;
         }
-        $message['WDATE'] = \App\Utils\DateHelper::getDateString($message['NDATE'], $this->c['DATEFORMAT']);
+        $message['WDATE'] = DateHelper::getDateString($message['NDATE'], $this->config['DATEFORMAT']);
         #20181102 Gikoneko: Escape special characters
         $message['MSG'] = preg_replace("/{/i", "&#123;", (string) $message['MSG'], -1);
         $message['MSG'] = preg_replace("/}/i", "&#125;", $message['MSG'], -1);
@@ -228,13 +228,13 @@ class Webapp
         if (!$mode) {
             $message['MSG'] = preg_replace(
                 "/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"{$this->c['CGIURL']}?m=f&amp;s=$1&amp;{$this->s['QUERY']}\">$2</a>",
+                "<a href=\"{$this->config['CGIURL']}?m=f&amp;s=$1&amp;{$this->session['QUERY']}\">$2</a>",
                 $message['MSG'],
                 1
             );
             $message['MSG'] = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"{$this->c['CGIURL']}?m=f&amp;s=$1&amp;{$this->s['QUERY']}\">$2</a>",
+                "<a href=\"{$this->config['CGIURL']}?m=f&amp;s=$1&amp;{$this->session['QUERY']}\">$2</a>",
                 $message['MSG'],
                 1
             );
@@ -252,9 +252,9 @@ class Webapp
                 1
             );
         }
-        if ($mode == 0 or ($mode == 1 and $this->c['OLDLOGBTN'])) {
+        if ($mode == 0 or ($mode == 1 and $this->config['OLDLOGBTN'])) {
 
-            if (!$this->c['FOLLOWWIN']) {
+            if (!$this->config['FOLLOWWIN']) {
                 $newwin = " target=\"link\"";
             } else {
                 $newwin = '';
@@ -263,56 +263,56 @@ class Webapp
             $lnk_class = "class=\"internal\"";
             # Follow-up post button
             $message['BTNFOLLOW'] = '';
-            if ($this->c['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNFOLLOW'] = "$spacer<a href=\"{$this->c['CGIURL']}"
-                    ."?m=f&amp;s={$message['POSTID']}&amp;".$this->s['QUERY'];
-                if ($this->f['w']) {
-                    $message['BTNFOLLOW'] .= "&amp;w=".$this->f['w'];
+            if ($this->config['BBSMODE_ADMINONLY'] != 1) {
+                $message['BTNFOLLOW'] = "$spacer<a href=\"{$this->config['CGIURL']}"
+                    ."?m=f&amp;s={$message['POSTID']}&amp;".$this->session['QUERY'];
+                if ($this->form['w']) {
+                    $message['BTNFOLLOW'] .= "&amp;w=".$this->form['w'];
                 }
                 if ($mode == 1) {
                     $message['BTNFOLLOW'] .= "&amp;ff=$tlog";
                 }
-                $message['BTNFOLLOW'] .= "\"$newwin $lnk_class title=\"Follow-up post (reply)\" >{$this->c['TXTFOLLOW']}</a>";
+                $message['BTNFOLLOW'] .= "\"$newwin $lnk_class title=\"Follow-up post (reply)\" >{$this->config['TXTFOLLOW']}</a>";
             }
             # Search by user button
             $message['BTNAUTHOR'] = '';
-            if ($message['USER'] != $this->c['ANONY_NAME'] and $this->c['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNAUTHOR'] = "$spacer<a href=\"{$this->c['CGIURL']}"
-                    ."?m=s&amp;s=". urlencode(preg_replace("/<[^>]*>/", '', (string) $message['USER'])) ."&amp;".$this->s['QUERY'];
-                if ($this->f['w']) {
-                    $message['BTNAUTHOR'] .= "&amp;w=".$this->f['w'];
+            if ($message['USER'] != $this->config['ANONY_NAME'] and $this->config['BBSMODE_ADMINONLY'] != 1) {
+                $message['BTNAUTHOR'] = "$spacer<a href=\"{$this->config['CGIURL']}"
+                    ."?m=s&amp;s=". urlencode(preg_replace("/<[^>]*>/", '', (string) $message['USER'])) ."&amp;".$this->session['QUERY'];
+                if ($this->form['w']) {
+                    $message['BTNAUTHOR'] .= "&amp;w=".$this->form['w'];
                 }
                 if ($mode == 1) {
                     $message['BTNAUTHOR'] .= "&amp;ff=$tlog";
                 }
-                $message['BTNAUTHOR'] .= "\" target=\"link\" $lnk_class title=\"Search by user\" >{$this->c['TXTAUTHOR']}</a>";
+                $message['BTNAUTHOR'] .= "\" target=\"link\" $lnk_class title=\"Search by user\" >{$this->config['TXTAUTHOR']}</a>";
             }
             # Thread view button
             if (!$message['THREAD']) {
                 $message['THREAD'] = $message['POSTID'];
             }
             $message['BTNTHREAD'] = '';
-            if ($this->c['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNTHREAD'] = "$spacer<a href=\"{$this->c['CGIURL']}?m=t&amp;s={$message['THREAD']}&amp;".$this->s['QUERY'];
+            if ($this->config['BBSMODE_ADMINONLY'] != 1) {
+                $message['BTNTHREAD'] = "$spacer<a href=\"{$this->config['CGIURL']}?m=t&amp;s={$message['THREAD']}&amp;".$this->session['QUERY'];
                 if ($mode == 1) {
                     $message['BTNTHREAD'] .= "&amp;ff=$tlog";
                 }
-                $message['BTNTHREAD'] .= "\" target=\"link\" $lnk_class title=\"Thread view\" >{$this->c['TXTTHREAD']}</a>";
+                $message['BTNTHREAD'] .= "\" target=\"link\" $lnk_class title=\"Thread view\" >{$this->config['TXTTHREAD']}</a>";
             }
             # Tree view button
             $message['BTNTREE'] = '';
-            if ($this->c['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNTREE'] = "$spacer<a href=\"{$this->c['CGIURL']}?m=tree&amp;s={$message['THREAD']}&amp;".$this->s['QUERY'];
+            if ($this->config['BBSMODE_ADMINONLY'] != 1) {
+                $message['BTNTREE'] = "$spacer<a href=\"{$this->config['CGIURL']}?m=tree&amp;s={$message['THREAD']}&amp;".$this->session['QUERY'];
                 if ($mode == 1) {
                     $message['BTNTREE'] .= "&amp;ff=$tlog";
                 }
-                $message['BTNTREE'] .= "\" target=\"link\" $lnk_class title=\"Tree view\" >{$this->c['TXTTREE']}</a>";
+                $message['BTNTREE'] .= "\" target=\"link\" $lnk_class title=\"Tree view\" >{$this->config['TXTTREE']}</a>";
             }
             # UNDO button
             $message['BTNUNDO'] = '';
-            if ($this->c['ALLOW_UNDO'] and isset($this->s['UNDO_P']) and $this->s['UNDO_P'] == $message['POSTID']) {
-                $message['BTNUNDO'] = "$spacer<a href=\"{$this->c['CGIURL']}?m=u&amp;s={$message['POSTID']}&amp;".$this->s['QUERY'];
-                $message['BTNUNDO'] .= "\" $lnk_class title=\"Delete post\" >{$this->c['TXTUNDO']}</a>";
+            if ($this->config['ALLOW_UNDO'] and isset($this->session['UNDO_P']) and $this->session['UNDO_P'] == $message['POSTID']) {
+                $message['BTNUNDO'] = "$spacer<a href=\"{$this->config['CGIURL']}?m=u&amp;s={$message['POSTID']}&amp;".$this->session['QUERY'];
+                $message['BTNUNDO'] .= "\" $lnk_class title=\"Delete post\" >{$this->config['TXTUNDO']}</a>";
             }
             # Button integration
             $message['BTN'] = $message['BTNFOLLOW']. $message['BTNAUTHOR']. $message['BTNTHREAD']. $message['BTNTREE']. $message['BTNUNDO'];
@@ -328,20 +328,20 @@ class Webapp
         $message['ENVADDR'] = '';
         $message['ENVUA'] = '';
         $message['ENVBR'] = '';
-        if ($this->c['IPPRINT'] or $this->c['UAPRINT']) {
-            if ($this->c['IPPRINT']) {
+        if ($this->config['IPPRINT'] or $this->config['UAPRINT']) {
+            if ($this->config['IPPRINT']) {
                 $message['ENVADDR'] = $message['PHOST'];
             }
-            if ($this->c['UAPRINT']) {
+            if ($this->config['UAPRINT']) {
                 $message['ENVUA'] = $message['AGENT'];
             }
-            if ($this->c['IPPRINT'] and $this->c['UAPRINT']) {
+            if ($this->config['IPPRINT'] and $this->config['UAPRINT']) {
                 $message['ENVBR'] = '<br>';
             }
             if ($message['ENVADDR'] or $message['ENVUA']) {
-                $this->t->clearTemplate('envlist');
-                $this->t->setAttribute("envlist", "visibility", "visible");
-                $this->t->addVars('envlist', [
+                $this->template->clearTemplate('envlist');
+                $this->template->setAttribute("envlist", "visibility", "visible");
+                $this->template->addVars('envlist', [
                     'ENVADDR' => $message['ENVADDR'],
                     'ENVUA' => $message['ENVUA'],
                     'ENVBR' => $message['ENVBR'],
@@ -349,18 +349,18 @@ class Webapp
             }
         }
         # Whether or not to display images on the image BBS
-        if (!$this->c['SHOWIMG']) {
-            $message['MSG'] = \App\Utils\StringHelper::convertImageTag($message['MSG']);
+        if (!$this->config['SHOWIMG']) {
+            $message['MSG'] = StringHelper::convertImageTag($message['MSG']);
         }
         # Convert img tags even if there is no image file
         elseif (preg_match("/<a href=[^>]+><img [^>]*?src=\"([^\"]+)\"[^>]+><\/a>/i", (string) $message['MSG'], $matches)) {
             if (!file_exists($matches[1])) {
-                $message['MSG'] = \App\Utils\StringHelper::convertImageTag($message['MSG']);
+                $message['MSG'] = StringHelper::convertImageTag($message['MSG']);
             }
         }
         # Message display content definition
-        $this->t->clearTemplate('message');
-        $this->t->addVars('message', $message);
+        $this->template->clearTemplate('message');
+        $this->template->addVars('message', $message);
     }
 
     /**
@@ -378,7 +378,7 @@ class Webapp
     public function prtmessage($message, $mode = 0, $tlog = '')
     {
         $this->setmessage($message, $mode, $tlog);
-        $prtmessage = $this->t->getParsedTemplate('message');
+        $prtmessage = $this->template->getParsedTemplate('message');
         return $prtmessage;
     }
 
@@ -395,12 +395,12 @@ class Webapp
     {
         if ($logfilename) {
             preg_match("/^([\w.]*)$/", $logfilename, $matches);
-            $logfilename = $this->c['OLDLOGFILEDIR']."/".$matches[1];
+            $logfilename = $this->config['OLDLOGFILEDIR']."/".$matches[1];
         } else {
-            $logfilename = $this->c['LOGFILENAME'];
+            $logfilename = $this->config['LOGFILENAME'];
         }
         if (!file_exists($logfilename)) {
-            $this->prterror(\App\Translator::trans('error.failed_to_read'));
+            $this->prterror(Translator::trans('error.failed_to_read'));
         }
         $logdata = file($logfilename);
         return $logdata;
@@ -448,11 +448,11 @@ class Webapp
     public function refcustom()
     {
 
-        $this->c['LINKOFF'] = 0;
-        $this->c['HIDEFORM'] = 0;
-        $this->c['RELTYPE'] = 0;
-        if (!isset($this->c['SHOWIMG'])) {
-            $this->c['SHOWIMG'] = 0;
+        $this->config['LINKOFF'] = 0;
+        $this->config['HIDEFORM'] = 0;
+        $this->config['RELTYPE'] = 0;
+        if (!isset($this->config['SHOWIMG'])) {
+            $this->config['SHOWIMG'] = 0;
         }
         $flgcolorchanged = false;
 
@@ -477,18 +477,18 @@ class Webapp
             'SHOWIMG',
         ];
         # Update from settings string
-        if ($this->f['c']) {
+        if ($this->form['c']) {
             $strflag = '';
-            $formc = $this->f['c'];
+            $formc = $this->form['c'];
             if (strlen((string) $formc) > 5) {
                 $formclen = strlen((string) $formc);
                 $strflag = substr((string) $formc, 0, 2);
                 $currentpos = 2;
                 foreach ($colors as $confname) {
-                    $colorval = \App\Utils\StringHelper::base64ToThreeByteHex(substr((string) $formc, $currentpos, 4));
-                    if (strlen($colorval) == 6 and strcasecmp((string) $this->c[$confname], $colorval) != 0) {
+                    $colorval = StringHelper::base64ToThreeByteHex(substr((string) $formc, $currentpos, 4));
+                    if (strlen($colorval) == 6 and strcasecmp((string) $this->config[$confname], $colorval) != 0) {
                         $flgcolorchanged = true;
-                        $this->c[$confname] = $colorval;
+                        $this->config[$confname] = $colorval;
                     }
                     $currentpos += 4;
                     if ($currentpos > $formclen) {
@@ -502,40 +502,40 @@ class Webapp
                 $flagbin = str_pad(base_convert((string) $strflag, 32, 2), count($flags), "0", STR_PAD_LEFT);
                 $currentpos = 0;
                 foreach ($flags as $confname) {
-                    $this->c[$confname] = substr($flagbin, $currentpos, 1);
+                    $this->config[$confname] = substr($flagbin, $currentpos, 1);
                     $currentpos++;
                 }
             }
         }
         # Update settings information
-        if ($this->f['m'] == 'p' or $this->f['m'] == 'c' or $this->f['m'] == 'g') {
-            $this->f['a'] ? $this->c['AUTOLINK'] = 1 : $this->c['AUTOLINK'] = 0;
-            $this->f['g'] ? $this->c['GZIPU'] = 1 : $this->c['GZIPU'] = 0;
-            $this->f['loff'] ? $this->c['LINKOFF'] = 1 : $this->c['LINKOFF'] = 0;
-            $this->f['hide'] ? $this->c['HIDEFORM'] = 1 : $this->c['HIDEFORM'] = 0;
-            $this->f['sim'] ? $this->c['SHOWIMG'] = 1 : $this->c['SHOWIMG'] = 0;
-            if ($this->f['m'] == 'c') {
-                $this->f['fw'] ? $this->c['FOLLOWWIN'] = 1 : $this->c['FOLLOWWIN'] = 0;
-                $this->f['rt'] ? $this->c['RELTYPE'] = 1 : $this->c['RELTYPE'] = 0;
-                $this->f['cookie'] ? $this->c['COOKIE'] = 1 : $this->c['COOKIE'] = 0;
+        if ($this->form['m'] == 'p' or $this->form['m'] == 'c' or $this->form['m'] == 'g') {
+            $this->form['a'] ? $this->config['AUTOLINK'] = 1 : $this->config['AUTOLINK'] = 0;
+            $this->form['g'] ? $this->config['GZIPU'] = 1 : $this->config['GZIPU'] = 0;
+            $this->form['loff'] ? $this->config['LINKOFF'] = 1 : $this->config['LINKOFF'] = 0;
+            $this->form['hide'] ? $this->config['HIDEFORM'] = 1 : $this->config['HIDEFORM'] = 0;
+            $this->form['sim'] ? $this->config['SHOWIMG'] = 1 : $this->config['SHOWIMG'] = 0;
+            if ($this->form['m'] == 'c') {
+                $this->form['fw'] ? $this->config['FOLLOWWIN'] = 1 : $this->config['FOLLOWWIN'] = 0;
+                $this->form['rt'] ? $this->config['RELTYPE'] = 1 : $this->config['RELTYPE'] = 0;
+                $this->form['cookie'] ? $this->config['COOKIE'] = 1 : $this->config['COOKIE'] = 0;
             }
         }
         # Special conditions
-        if ($this->c['BBSMODE_ADMINONLY'] != 0) {
-            ($this->f['m'] == 'f' or ($this->f['m'] == 'p' and $this->f['write'])) ? $this->c['HIDEFORM'] = 0 : $this->c['HIDEFORM'] = 1;
+        if ($this->config['BBSMODE_ADMINONLY'] != 0) {
+            ($this->form['m'] == 'f' or ($this->form['m'] == 'p' and $this->form['write'])) ? $this->config['HIDEFORM'] = 0 : $this->config['HIDEFORM'] = 1;
         }
         # Update the settings string
         {
             $flagbin = '';
             foreach ($flags as $confname) {
-                $this->c[$confname] ? $flagbin .= '1' : $flagbin .= '0';
+                $this->config[$confname] ? $flagbin .= '1' : $flagbin .= '0';
             }
             $flagvalue = str_pad(base_convert($flagbin, 2, 32), 2, "0", STR_PAD_LEFT);
 
             if ($flgcolorchanged) {
-                $this->f['c'] = $flagvalue . substr((string) $this->f['c'], 2);
+                $this->form['c'] = $flagvalue . substr((string) $this->form['c'], 2);
             } else {
-                $this->f['c'] = $flagvalue;
+                $this->form['c'] = $flagvalue;
             }
         }
     }
@@ -560,7 +560,7 @@ class Webapp
      */
     public function setstarttime()
     {
-        $this->s['START_TIME'] = microtime();
+        $this->session['START_TIME'] = microtime();
     }
 
 }

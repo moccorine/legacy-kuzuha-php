@@ -62,12 +62,12 @@ class Getlog extends Webapp
      */
     public function __construct()
     {
-        $config = \App\Config::getInstance();
+        $config = Config::getInstance();
         foreach ($GLOBALS['CONF_GETLOG'] as $key => $value) {
             $config->set($key, $value);
         }
         parent::__construct();
-        $this->t->readTemplatesFromFile($this->c['TEMPLATE_LOG']);
+        $this->template->readTemplatesFromFile($this->config['TEMPLATE_LOG']);
     }
 
 
@@ -88,30 +88,30 @@ class Getlog extends Webapp
         $this->setusersession();
 
         # gzip compressed transfer
-        if ($this->c['GZIPU']) {
+        if ($this->config['GZIPU']) {
             ob_start("ob_gzhandler");
         }
 
         # Search process
-        if (@$this->f['f']) {
+        if (@$this->form['f']) {
             $this->prtsearchresult();
         }
         # Download
-        elseif (@$this->f['dl']) {
-            $result = $this->prthtmldownload($this->f['dl']);
+        elseif (@$this->form['dl']) {
+            $result = $this->prthtmldownload($this->form['dl']);
             if ($result) {
                 $this->prtloglist();
             }
         }
         # Topic list
-        elseif (@$this->f['l']) {
-            $result = $this->prttopiclist($this->f['l']);
+        elseif (@$this->form['l']) {
+            $result = $this->prttopiclist($this->form['l']);
             if ($result) {
                 $this->prtloglist();
             }
         }
         # ZIP archives
-        elseif (@$this->f['gm'] == 'z' and @$this->c['ZIPDIR']) {
+        elseif (@$this->form['gm'] == 'z' and @$this->config['ZIPDIR']) {
             $this->prtarchivelist();
         }
         # Search page
@@ -119,7 +119,7 @@ class Getlog extends Webapp
             $this->prtloglist();
         }
 
-        if ($this->c['GZIPU']) {
+        if ($this->config['GZIPU']) {
             ob_end_flush();
         }
     }
@@ -135,9 +135,9 @@ class Getlog extends Webapp
     public function prtloglist()
     {
 
-        $dir = $this->c['OLDLOGFILEDIR'];
+        $dir = $this->config['OLDLOGFILEDIR'];
 
-        if ($this->c['OLDLOGFMT']) {
+        if ($this->config['OLDLOGFMT']) {
             $oldlogext = 'dat';
         } else {
             $oldlogext = 'html';
@@ -169,15 +169,15 @@ class Getlog extends Webapp
             }
         }
 
-        if ($this->c['ZIPDIR'] and function_exists("gzcompress")) {
-            $this->t->setAttribute("ziplink", "visibility", "visible");
+        if ($this->config['ZIPDIR'] and function_exists("gzcompress")) {
+            $this->template->setAttribute("ziplink", "visibility", "visible");
         }
 
-        if (!$this->c['OLDLOGFMT']) {
-            $this->t->setAttribute("topiclink", "visibility", "hidden");
+        if (!$this->config['OLDLOGFMT']) {
+            $this->template->setAttribute("topiclink", "visibility", "hidden");
         }
         if (!$this->dlchk()) {
-            $this->t->setAttribute("dllink", "visibility", "hidden");
+            $this->template->setAttribute("dllink", "visibility", "hidden");
         }
 
         foreach ($files as $filename) {
@@ -199,44 +199,44 @@ class Getlog extends Webapp
                 $checked = ' checked="checked"';
             }
             $checkbox = '';
-            if (@$this->c['MULTIPLESEARCH']) {
+            if (@$this->config['MULTIPLESEARCH']) {
                 $checkbox = "<input type=\"checkbox\" name=\"f[]\" value=\"$filename\"$checked />";
             } else {
                 $checkbox = "<input type=\"radio\" name=\"f\" value=\"$filename\"$checked />";
             }
 
-            $this->t->clearTemplate('topiclink');
-            $this->t->clearTemplate('dllink');
-            $this->t->addVar('topiclink', 'FILENAME', $filename);
-            $this->t->addVar('dllink', 'FILENAME', $filename);
-            $this->t->addVars('filelist', [
+            $this->template->clearTemplate('topiclink');
+            $this->template->clearTemplate('dllink');
+            $this->template->addVar('topiclink', 'FILENAME', $filename);
+            $this->template->addVar('dllink', 'FILENAME', $filename);
+            $this->template->addVars('filelist', [
                 'FCHECK' => $checkbox,
                 'FILENAME' => $filename,
                 'FTITLE' => $ftitle,
                 'FTIME' => $ftime,
                 'FSIZE' => $fsize,
             ]);
-            $this->t->parseTemplate('filelist', 'a');
+            $this->template->parseTemplate('filelist', 'a');
         }
 
-        $this->t->addVar('dateform', 'OLDLOGSAVESW', $this->c['OLDLOGSAVESW']);
-        if ($this->c['BBSMODE_IMAGE'] == 1) {
-            if ($this->c['SHOWIMG']) {
-                $this->t->addVar('sicheck', 'CHK_SI', ' checked="checked"');
+        $this->template->addVar('dateform', 'OLDLOGSAVESW', $this->config['OLDLOGSAVESW']);
+        if ($this->config['BBSMODE_IMAGE'] == 1) {
+            if ($this->config['SHOWIMG']) {
+                $this->template->addVar('sicheck', 'CHK_SI', ' checked="checked"');
             }
-            $this->t->setAttribute('sicheck', 'visibility', 'visible');
+            $this->template->setAttribute('sicheck', 'visibility', 'visible');
         }
-        if (!$this->c['OLDLOGFMT'] or !$this->c['OLDLOGBTN']) {
-            $this->t->setAttribute("check_bt", "visibility", "hidden");
+        if (!$this->config['OLDLOGFMT'] or !$this->config['OLDLOGBTN']) {
+            $this->template->setAttribute("check_bt", "visibility", "hidden");
         }
-        if ($this->c['GZIPU']) {
-            $this->t->addVar('loglist', 'CHK_G', ' checked="checked"');
+        if ($this->config['GZIPU']) {
+            $this->template->addVar('loglist', 'CHK_G', ' checked="checked"');
         }
 
         # Output
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Message log search');
-        $this->t->displayParsedTemplate('loglist');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log search');
+        $this->template->displayParsedTemplate('loglist');
         print $this->prthtmlfoot();
 
     }
@@ -255,29 +255,29 @@ class Getlog extends Webapp
         $conditions = [];
 
         $conditions['showall'] = true;
-        if (@$this->f['q']) {
+        if (@$this->form['q']) {
             $conditions['showall'] = false;
         }
 
         foreach (['q', 't', 'b', 'ci',] as $formvalue) {
-            $conditions[$formvalue] = @$this->f[$formvalue];
+            $conditions[$formvalue] = @$this->form[$formvalue];
         }
         foreach (['sd', 'sh', 'si', 'ed', 'eh', 'ei',] as $formvalue) {
-            if ($conditions['showall'] and @$this->f[$formvalue]) {
+            if ($conditions['showall'] and @$this->form[$formvalue]) {
                 $conditions['showall'] = false;
             }
-            $conditions[$formvalue] = str_pad((string) @$this->f[$formvalue], 2, "0", STR_PAD_LEFT);
+            $conditions[$formvalue] = str_pad((string) @$this->form[$formvalue], 2, "0", STR_PAD_LEFT);
         }
 
         if ($conditions['q']) {
             $conditions['q'] = trim((string) $conditions['q']);
             $conditions['keywords'] = preg_split("/\s+/", $conditions['q']);
-            if (count($conditions['keywords']) > $this->c['MAXKEYWORDS']) {
+            if (count($conditions['keywords']) > $this->config['MAXKEYWORDS']) {
                 $this->prterror('There are too many search keywords.');
             }
         }
 
-        $conditions['savesw'] = $this->c['OLDLOGSAVESW'];
+        $conditions['savesw'] = $this->config['OLDLOGSAVESW'];
 
         return $conditions;
     }
@@ -296,25 +296,25 @@ class Getlog extends Webapp
     {
 
         $formf = [];
-        if (is_array($this->f['f'])) {
-            $formf = $this->f['f'];
+        if (is_array($this->form['f'])) {
+            $formf = $this->form['f'];
         } else {
-            $formf[] = $this->f['f'];
+            $formf[] = $this->form['f'];
         }
-        if (!@$this->c['MULTIPLESEARCH'] and count($formf) > 1) {
+        if (!@$this->config['MULTIPLESEARCH'] and count($formf) > 1) {
             array_splice($formf, 1);
         }
         $files = [];
         foreach ($formf as $filename) {
-            if (preg_match("/^\d+\./", (string) $filename) and is_file($this->c['OLDLOGFILEDIR'] . $filename)) {
+            if (preg_match("/^\d+\./", (string) $filename) and is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
                 $files[] = $filename;
             }
         }
 
         $this->sethttpheader();
-        $customstyle = "  .sq { color: #{$this->c['C_QUERY']}; }\n";
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Message log search results', '', $customstyle);
-        $this->t->displayParsedTemplate('searchresult');
+        $customstyle = "  .sq { color: #{$this->config['C_QUERY']}; }\n";
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log search results', '', $customstyle);
+        $this->template->displayParsedTemplate('searchresult');
 
         foreach ($files as $filename) {
             $conditions = $this->getconditions($filename);
@@ -338,7 +338,7 @@ class Getlog extends Webapp
     public function prthtmldownload($filename)
     {
 
-        if ($this->c['OLDLOGFMT']) {
+        if ($this->config['OLDLOGFMT']) {
             $oldlogext = 'dat';
         } else {
             $oldlogext = 'html';
@@ -347,7 +347,7 @@ class Getlog extends Webapp
         # Illegal file name
         if (!preg_match("/^\d+\.$oldlogext$/", (string) $filename)) {
             return 1;
-        } elseif (!is_file($this->c['OLDLOGFILEDIR'] . $filename)) {
+        } elseif (!is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
             return 1;
         }
 
@@ -356,16 +356,16 @@ class Getlog extends Webapp
         header("Content-Type: application/octet-stream");
         header("Content-Disposition: attachment; filename=".$dlfilename);
 
-        if ($this->c['OLDLOGFMT']) {
+        if ($this->config['OLDLOGFMT']) {
             $this->sethttpheader();
-            print $this->prthtmlhead($this->c['BBSTITLE'] . ' Message log');
-            $this->t->displayParsedTemplate('htmldownload');
+            print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log');
+            $this->template->displayParsedTemplate('htmldownload');
         }
 
         $conditions = $this->getconditions($filename);
         $resultcode = $this->prtoldlog($filename, $conditions, true);
 
-        if ($this->c['OLDLOGFMT']) {
+        if ($this->config['OLDLOGFMT']) {
             print $this->prthtmlfoot();
         }
 
@@ -384,9 +384,9 @@ class Getlog extends Webapp
     public function prtoldlog($filename, $conditions = "", $isdownload = false)
     {
 
-        $dir = $this->c['OLDLOGFILEDIR'];
+        $dir = $this->config['OLDLOGFILEDIR'];
 
-        if ($this->c['OLDLOGFMT']) {
+        if ($this->config['OLDLOGFMT']) {
             $oldlogext = 'dat';
         } else {
             $oldlogext = 'html';
@@ -399,20 +399,20 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $this->t->clearTemplate('oldlog_upper');
-        $this->t->clearTemplate('oldlog_lower');
-        $this->t->addVar('oldlog_upper', 'FILENAME', $filename);
+        $this->template->clearTemplate('oldlog_upper');
+        $this->template->clearTemplate('oldlog_lower');
+        $this->template->addVar('oldlog_upper', 'FILENAME', $filename);
 
         $fh = @fopen($dir . $filename, "rb");
         if (!$fh) {
-            $this->t->addVar('oldlog_upper', 'success', 'false');
-            $this->t->displayParsedTemplate('oldlog_upper');
+            $this->template->addVar('oldlog_upper', 'success', 'false');
+            $this->template->displayParsedTemplate('oldlog_upper');
             return 2;
         }
         flock($fh, 1);
 
         $timerangestr = '';
-        if (!(!$this->c['OLDLOGFMT'] and !$conditions)) {
+        if (!(!$this->config['OLDLOGFMT'] and !$conditions)) {
             if (!@$conditions['showall']) {
                 if (@$conditions['savesw']) {
                     if ($conditions['sd'] > 1 or $conditions['sh'] > 0 or $conditions['ed'] < 31 or $conditions['eh'] < 24) {
@@ -424,22 +424,22 @@ class Getlog extends Webapp
                     }
                 }
             }
-            $this->t->addVar('oldlog_upper', 'TIMERANGE', $timerangestr);
-            $this->t->displayParsedTemplate('oldlog_upper');
+            $this->template->addVar('oldlog_upper', 'TIMERANGE', $timerangestr);
+            $this->template->displayParsedTemplate('oldlog_upper');
         }
 
 
         $msgmode = 2;
-        if (@$this->f['bt']) {
+        if (@$this->form['bt']) {
             $msgmode = 1;
         }
         $resultcount = 0;
 
         # dat search
-        if ($this->c['OLDLOGFMT']) {
+        if ($this->config['OLDLOGFMT']) {
             if (!@$conditions['showall']) {
                 $result = 0;
-                while (($logline = \App\Utils\FileHelper::getLine($fh)) !== false) {
+                while (($logline = FileHelper::getLine($fh)) !== false) {
                     $message = $this->getmessage($logline);
                     $result = $this->msgsearch($message, $conditions);
                     # Search hit
@@ -474,7 +474,7 @@ class Getlog extends Webapp
             }
             # Show all
             else {
-                while (($logline = \App\Utils\FileHelper::getLine($fh)) !== false) {
+                while (($logline = FileHelper::getLine($fh)) !== false) {
                     $messagestr = $this->prtmessage($this->getmessage($logline), $msgmode, $filename);
                     print $messagestr;
                 }
@@ -487,7 +487,7 @@ class Getlog extends Webapp
                 $buffer = "";
                 $flgbuffer = false;
                 $result = 0;
-                while (($htmlline = \App\Utils\FileHelper::getLine($fh)) !== false) {
+                while (($htmlline = FileHelper::getLine($fh)) !== false) {
                     # Start message
                     if (!$flgbuffer and preg_match("/<div [^>]*id=\"m\d+\"[^>]*>/", $htmlline)) {
                         $buffer = $htmlline;
@@ -535,7 +535,7 @@ class Getlog extends Webapp
                     }
                 }
             } else {
-                while (($htmlline = \App\Utils\FileHelper::getLine($fh)) !== false) {
+                while (($htmlline = FileHelper::getLine($fh)) !== false) {
                     print $htmlline;
                 }
             }
@@ -543,7 +543,7 @@ class Getlog extends Webapp
         flock($fh, 3);
         fclose($fh);
 
-        if (!(!$this->c['OLDLOGFMT'] and !$conditions)) {
+        if (!(!$this->config['OLDLOGFMT'] and !$conditions)) {
             $resultmsg = '';
             if (!$conditions['showall']) {
                 #$resultmsg = "{$filename}：&nbsp;{$timerangestr}&nbsp;";
@@ -561,8 +561,8 @@ class Getlog extends Webapp
                     $resultmsg .= 'no results found.';
                 }
                 #print $resultmsg;
-                $this->t->addVar('oldlog_lower', 'RESULTMSG', $resultmsg);
-                $this->t->displayParsedTemplate('oldlog_lower');
+                $this->template->addVar('oldlog_lower', 'RESULTMSG', $resultmsg);
+                $this->template->displayParsedTemplate('oldlog_lower');
             }
         }
 
@@ -712,11 +712,11 @@ class Getlog extends Webapp
         # Illegal file name
         if (!preg_match("/^\d+\.dat$/", (string) $filename)) {
             return 1;
-        } elseif (!is_file($this->c['OLDLOGFILEDIR'] . $filename)) {
+        } elseif (!is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
             return 1;
         }
 
-        $fh = @fopen($this->c['OLDLOGFILEDIR'] . $filename, "rb");
+        $fh = @fopen($this->config['OLDLOGFILEDIR'] . $filename, "rb");
         if (!$fh) {
             $this->prterror($filename . ' was unable to be opened.');
         }
@@ -727,7 +727,7 @@ class Getlog extends Webapp
         $ttitle = [];
         $ttime = [];
         $tindex = 0;
-        while (($logline = \App\Utils\FileHelper::getLine($fh)) !== false) {
+        while (($logline = FileHelper::getLine($fh)) !== false) {
             $message = $this->getmessage($logline);
             if (!$message['THREAD'] or $message['THREAD'] == $message['POSTID'] or !@$ttitle[$message['THREAD']]) {
                 $tid[$tindex] = $message['POSTID'];
@@ -763,7 +763,7 @@ class Getlog extends Webapp
         flock($fh, 3);
         fclose($fh);
 
-        $this->t->addVar('topiclist', 'FILENAME', $filename);
+        $this->template->addVar('topiclist', 'FILENAME', $filename);
 
         $tidcount = count($tid);
         $i = 0;
@@ -771,21 +771,21 @@ class Getlog extends Webapp
             if ($tid[$i]) {
                 $tc = sprintf("%02d", $tcount[$tid[$i]]);
                 $tt = date("m/d H:i:s", $ttime[$tid[$i]]);
-                $this->t->addVars('topic', [
+                $this->template->addVars('topic', [
                     'TID' => $tid[$i],
                     'TC' => $tc,
                     'TT' => $tt,
                     'TTITLE' => $ttitle[$tid[$i]],
                     'FILENAME' => $filename,
                 ]);
-                $this->t->parseTemplate('topic', 'a');
+                $this->template->parseTemplate('topic', 'a');
             }
             $i++;
         }
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Topic list ' . $filename);
-        $this->t->displayParsedTemplate('topiclist');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Topic list ' . $filename);
+        $this->template->displayParsedTemplate('topiclist');
         print $this->prthtmlfoot();
 
     }
@@ -801,7 +801,7 @@ class Getlog extends Webapp
     public function prtarchivelist()
     {
 
-        $dir = $this->c['ZIPDIR'];
+        $dir = $this->config['ZIPDIR'];
 
         $dh = opendir($dir);
         if (!$dh) {
@@ -823,19 +823,19 @@ class Getlog extends Webapp
             $fsize = $fstat[7];
             $ftime = date("Y/m/d H:i:s", $fstat[9]);
 
-            $this->t->setAttribute('archive', 'visibility', 'visible');
-            $this->t->addVars('archive', [
+            $this->template->setAttribute('archive', 'visibility', 'visible');
+            $this->template->addVars('archive', [
                 'DIR' => $dir,
                 'FILENAME' => $filename,
                 'FTIME' => $ftime,
                 'FSIZE' => $fsize,
             ]);
-            $this->t->parseTemplate('archive', 'a');
+            $this->template->parseTemplate('archive', 'a');
         }
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Message log archive');
-        $this->t->displayParsedTemplate('archivelist');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message log archive');
+        $this->template->displayParsedTemplate('archivelist');
         print $this->prthtmlfoot();
 
     }

@@ -51,7 +51,7 @@ class Bbsadmin extends Webapp
             $this->f = &$this->bbs->f;
             $this->t = &$this->bbs->t;
         }
-        $this->t->readTemplatesFromFile($this->c['TEMPLATE_ADMIN']);
+        $this->template->readTemplatesFromFile($this->config['TEMPLATE_ADMIN']);
     }
 
 
@@ -74,36 +74,36 @@ class Bbsadmin extends Webapp
             $this->setusersession();
 
             # gzip compressed transfer
-            if ($this->c['GZIPU']) {
+            if ($this->config['GZIPU']) {
                 ob_start("ob_gzhandler");
             }
         }
 
         # Log file viewer
-        if (@$this->f['ad'] == 'l') {
+        if (@$this->form['ad'] == 'l') {
             $this->prtlogview(true);
         }
         # Message deletion mode
-        elseif (@$this->f['ad'] == 'k') {
+        elseif (@$this->form['ad'] == 'k') {
             $this->prtkilllist();
         }
         # Message deletion process
-        elseif (@$this->f['ad'] == 'x') {
-            if (isset($this->f['x'])) {
-                $this->killmessage($this->f['x']);
+        elseif (@$this->form['ad'] == 'x') {
+            if (isset($this->form['x'])) {
+                $this->killmessage($this->form['x']);
             }
             $this->prtkilllist();
         }
         # Encrypted password generation page
-        elseif (@$this->f['ad'] == 'p') {
+        elseif (@$this->form['ad'] == 'p') {
             $this->prtsetpass();
         }
         # Encrypted password generation & display
-        elseif (@$this->f['ad'] == 'ps') {
-            $this->prtpass(@$this->f['ps']);
+        elseif (@$this->form['ad'] == 'ps') {
+            $this->prtpass(@$this->form['ps']);
         }
         # Display server PHP configuration information
-        elseif (@$this->f['ad'] == 'phpinfo') {
+        elseif (@$this->form['ad'] == 'phpinfo') {
             phpinfo();
         }
         # Admin menu page
@@ -112,7 +112,7 @@ class Bbsadmin extends Webapp
         }
 
 
-        if (!defined('BBS_ACTIVATED') and $this->c['GZIPU']) {
+        if (!defined('BBS_ACTIVATED') and $this->config['GZIPU']) {
             ob_end_flush();
         }
     }
@@ -128,11 +128,11 @@ class Bbsadmin extends Webapp
     public function prtadminmenu()
     {
 
-        $this->t->addVar('adminmenu', 'V', trim((string) $this->f['v']));
+        $this->template->addVar('adminmenu', 'V', trim((string) $this->form['v']));
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Administration menu');
-        $this->t->displayParsedTemplate('adminmenu');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Administration menu');
+        $this->template->displayParsedTemplate('adminmenu');
         print $this->prthtmlfoot();
 
     }
@@ -148,12 +148,12 @@ class Bbsadmin extends Webapp
     public function prtkilllist()
     {
 
-        if (!file_exists($this->c['LOGFILENAME'])) {
+        if (!file_exists($this->config['LOGFILENAME'])) {
             $this->prterror('Failed to load message');
         }
-        $logdata = file($this->c['LOGFILENAME']);
+        $logdata = file($this->config['LOGFILENAME']);
 
-        $this->t->addVar('killlist', 'V', trim((string) $this->f['v']));
+        $this->template->addVar('killlist', 'V', trim((string) $this->form['v']));
 
         $messages = [];
         foreach ($logdata as $logline) {
@@ -172,11 +172,11 @@ class Bbsadmin extends Webapp
             $messages[] = $message;
         }
 
-        $this->t->addRows('killmessage', $messages);
+        $this->template->addRows('killmessage', $messages);
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Message deletion mode');
-        $this->t->displayParsedTemplate('killlist');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Message deletion mode');
+        $this->template->displayParsedTemplate('killlist');
         print $this->prthtmlfoot();
     }
 
@@ -200,7 +200,7 @@ class Bbsadmin extends Webapp
             $killids[] = $tmp;
         }
 
-        $fh = @fopen($this->c['LOGFILENAME'], "r+");
+        $fh = @fopen($this->config['LOGFILENAME'], "r+");
         if (!$fh) {
             $this->prterror('Failed to load message');
         }
@@ -242,20 +242,20 @@ class Bbsadmin extends Webapp
         }
 
         # Message log line deletion
-        if ($this->c['OLDLOGFILEDIR']) {
+        if ($this->config['OLDLOGFILEDIR']) {
             foreach (array_keys($killntimes) as $killid) {
                 $oldlogfilename = '';
-                if ($this->c['OLDLOGFMT']) {
+                if ($this->config['OLDLOGFMT']) {
                     $oldlogext = 'dat';
                 } else {
                     $oldlogext = 'html';
                 }
-                if ($this->c['OLDLOGSAVESW']) {
+                if ($this->config['OLDLOGSAVESW']) {
                     $oldlogfilename = date("Ym", $killntimes[$killid]) . ".$oldlogext";
                 } else {
                     $oldlogfilename = date("Ymd", $killntimes[$killid]) . ".$oldlogext";
                 }
-                $fh = @fopen($this->c['OLDLOGFILEDIR'] . $oldlogfilename, "r+");
+                $fh = @fopen($this->config['OLDLOGFILEDIR'] . $oldlogfilename, "r+");
                 if ($fh) {
                     flock($fh, 2);
                     fseek($fh, 0, 0);
@@ -263,7 +263,7 @@ class Bbsadmin extends Webapp
                     $newlogdata = [];
                     $hit = false;
 
-                    if ($this->c['OLDLOGFMT']) {
+                    if ($this->config['OLDLOGFMT']) {
                         $needle = $killntimes[$killid] . "," . $killid . ",";
                         while (($logline = Func::fgetline($fh)) !== false) {
                             if (!$hit and str_contains($logline, $needle) and str_starts_with($logline, $needle)) {
@@ -320,11 +320,11 @@ class Bbsadmin extends Webapp
     public function prtsetpass()
     {
 
-        $this->t->addVar('setpass', 'V', trim((string) $this->f['v']));
+        $this->template->addVar('setpass', 'V', trim((string) $this->form['v']));
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Password settings page');
-        $this->t->displayParsedTemplate('setpass');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Password settings page');
+        $this->template->displayParsedTemplate('setpass');
         print $this->prthtmlfoot();
     }
 
@@ -347,14 +347,14 @@ class Bbsadmin extends Webapp
         $cryptpass = crypt($inputpass, $salt);
         $inputsize = strlen($cryptpass) + 10;
 
-        $this->t->addVars('pass', [
+        $this->template->addVars('pass', [
             'CRYPTPASS' => $cryptpass,
             'INPUTSIZE' => $inputsize,
         ]);
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->c['BBSTITLE'] . ' Password settings page');
-        $this->t->displayParsedTemplate('pass');
+        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Password settings page');
+        $this->template->displayParsedTemplate('pass');
         print $this->prthtmlfoot();
     }
 
@@ -370,8 +370,8 @@ class Bbsadmin extends Webapp
     {
         if ($htmlescape) {
             header("Content-type: text/html");
-            $logdata = file($this->c['LOGFILENAME']);
-            print "<html><head><title>{$this->c['LOGFILENAME']}</title></head><body><pre>\n";
+            $logdata = file($this->config['LOGFILENAME']);
+            print "<html><head><title>{$this->config['LOGFILENAME']}</title></head><body><pre>\n";
             foreach ($logdata as $logline) {
                 if (!preg_match("/^\w+$/", $logline)) {
                     #$value_euc = JcodeConvert($logline, 2, 1);
@@ -385,7 +385,7 @@ class Bbsadmin extends Webapp
             print "\n</pre></body></html>";
         } else {
             header("Content-type: text/plain");
-            readfile($this->c['LOGFILENAME']);
+            readfile($this->config['LOGFILENAME']);
         }
     }
 
