@@ -59,5 +59,12 @@
   "log.search_results": "過去ログ検索結果",
   "log.unable_to_open": "{filename}を開けませんでした。",
   "log.results_found": "\"{query}\"の検索結果は{count}件でした。",
-  "log.no_results": "\"{query}\"の検索結果は見つかりませんでした。"
+  "log.no_results": "\"{query}\"の検索結果は見つかりませんでした。",
+  "log.topic_list_title": "話題一覧",
+  "log.thread_view": "スレッド表示",
+  "log.tree_view": "ツリー表示",
+  "log.replies": "返信数",
+  "log.last_updated": "最終更新",
+  "log.contents": "内容",
+  "log.message_log_search": "過去ログ検索"
 }

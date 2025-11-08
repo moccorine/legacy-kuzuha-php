@@ -828,30 +828,38 @@ class Getlog extends Webapp
         flock($fh, 3);
         fclose($fh);
 
-        $this->template->addVar('topiclist', 'FILENAME', $filename);
-
+        $topics = [];
         $tidcount = count($tid);
         $i = 0;
         while ($i < $tidcount) {
             if ($tid[$i]) {
                 $tc = sprintf("%02d", $tcount[$tid[$i]]);
                 $tt = date("m/d H:i:s", $ttime[$tid[$i]]);
-                $this->template->addVars('topic', [
+                $topics[] = [
                     'TID' => $tid[$i],
                     'TC' => $tc,
                     'TT' => $tt,
                     'TTITLE' => $ttitle[$tid[$i]],
-                    'FILENAME' => $filename,
-                ]);
-                $this->template->parseTemplate('topic', 'a');
+                ];
             }
             $i++;
         }
 
         $this->sethttpheader();
-        print $this->prthtmlhead($this->config['BBSTITLE'] . ' Topic list ' . $filename);
-        $this->template->displayParsedTemplate('topiclist');
-        print $this->prthtmlfoot();
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.topic_list_title') . ' ' . $filename,
+            'FILENAME' => $filename,
+            'topics' => $topics,
+            'TRANS_TOPIC_LIST' => Translator::trans('log.topic_list_title'),
+            'TRANS_THREAD_VIEW' => Translator::trans('log.thread_view'),
+            'TRANS_TREE_VIEW' => Translator::trans('log.tree_view'),
+            'TRANS_REPLIES' => Translator::trans('log.replies'),
+            'TRANS_LAST_UPDATED' => Translator::trans('log.last_updated'),
+            'TRANS_CONTENTS' => Translator::trans('log.contents'),
+            'TRANS_MESSAGE_LOG_SEARCH' => Translator::trans('log.message_log_search'),
+            'TRANS_BULLETIN_BOARD' => Translator::trans('admin.bulletin_board'),
+        ]);
+        echo $this->renderTwig('log/topiclist.twig', $data);
 
     }
 

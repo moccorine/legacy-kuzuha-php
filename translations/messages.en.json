@@ -59,5 +59,12 @@
   "log.search_results": "Message log search results",
   "log.unable_to_open": "Unable to open {filename}.",
   "log.results_found": "For \"{query}\" there were {count} results found.",
-  "log.no_results": "For \"{query}\" there were no results found."
+  "log.no_results": "For \"{query}\" there were no results found.",
+  "log.topic_list_title": "Topic list",
+  "log.thread_view": "Thread view",
+  "log.tree_view": "Tree view",
+  "log.replies": "Replies",
+  "log.last_updated": "Last updated",
+  "log.contents": "Contents",
+  "log.message_log_search": "Message log search"
 }
