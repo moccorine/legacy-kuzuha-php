@@ -1,2 +1,5 @@
 bbs.cnt
 bbs.log
+vendor/
+composer.lock
+.php-cs-fixer.cache

@@ -25,7 +25,7 @@ if(!defined("INCLUDED_FROM_BBS")) {
  *
  * They will be added to/overwritten by $CONF.
  */
-$GLOBALS['CONF_TREEVIEW'] = array(
+$GLOBALS['CONF_TREEVIEW'] = [
 
     # Branch color
     'C_BRANCH' => '5ff',
@@ -39,7 +39,7 @@ $GLOBALS['CONF_TREEVIEW'] = array(
     # Number of trees displayed
     'TREEDISP' => 32,
 
-);
+];
 
 
 
@@ -69,6 +69,7 @@ class Treeview extends Bbs {
     /**
      * Main processing
      */
+    #[\Override]
     function main() {
 
         # Start measuring execution time
@@ -90,7 +91,7 @@ class Treeview extends Bbs {
         }
 
         # Post operation
-        if (@$this->f['treem'] == 'p' and trim(@$this->f['v'])) {
+        if (@$this->f['treem'] == 'p' and trim((string) @$this->f['v'])) {
 
             # Get environment variables
             $this->setuserenv();
@@ -161,7 +162,7 @@ class Treeview extends Bbs {
     function prttreeview($retry = FALSE) {
 
         # Get display message
-        list ($logdata, $bindex, $eindex, $lastindex) = $this->getdispmessage();
+        [$logdata, $bindex, $eindex, $lastindex] = $this->getdispmessage();
 
         $isreadnew = FALSE;
 #20200210 Gikoneko: unread pointer fix
@@ -202,7 +203,7 @@ class Treeview extends Bbs {
             }
 
             # Extract threads from $logdata and create message array $thread
-            $thread = array($msgcurrent);
+            $thread = [$msgcurrent];
             $i = 0;
             while ($i < count($logdata)) {
                 $message = $this->getmessage($logdata[$i]);
@@ -245,10 +246,10 @@ class Treeview extends Bbs {
             # Extract reference IDs from "reference"
             foreach ($thread as $message) {
                 if (!@$message['REFID']) {
-                    if (preg_match("/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i", $message['MSG'], $matches)) {
+                    if (preg_match("/<a href=\"m=f&s=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
                         $message['REFID'] = $matches[1];
                     }
-                    else if (preg_match("/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i", $message['MSG'], $matches)) {
+                    else if (preg_match("/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i", (string) $message['MSG'], $matches)) {
                         $message['REFID'] = $matches[1];
                     }
                 }
@@ -370,7 +371,7 @@ class Treeview extends Bbs {
             if ($treemsg['POSTID'] == $parentid) {
 
                 # Delete reference
-                $treemsg['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", $treemsg['MSG'], 1);
+                $treemsg['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", (string) $treemsg['MSG'], 1);
 
                 # Delete quotes
                 $treemsg['MSG'] = preg_replace("/(^|\r)&gt;[^\r]*/", "", $treemsg['MSG']);
@@ -385,7 +386,7 @@ class Treeview extends Bbs {
 
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->c['ANONY_NAME']) {
-                    $treeprint .= "User: ".preg_replace("/<[^>]*>/", '', $treemsg['USER'])."\r";
+                    $treeprint .= "User: ".preg_replace("/<[^>]*>/", '', (string) $treemsg['USER'])."\r";
                 }
 
                 # Display new arrivals
@@ -405,7 +406,7 @@ class Treeview extends Bbs {
         }
 
         # Enumerate child IDs
-        $childids = array();
+        $childids = [];
         reset($treemsgs);
         foreach ($treemsgs as $treemsg) {
             if ($treemsg['REFID'] == $parentid) {
@@ -457,12 +458,13 @@ class Treeview extends Bbs {
      * @return  Integer $lastindex    Last index for all logs
      * @return  Integer $msgdisp      Display results
      */
+    #[\Override]
     function getdispmessage() {
 
         $logdata = $this->loadmessage();
 
         # Unread pointer (latest POSTID)
-        $items = @explode (',', $logdata[0], 3);
+        $items = @explode (',', (string) $logdata[0], 3);
         $toppostid = @$items[1];
 
         # Display results
@@ -514,11 +516,11 @@ class Treeview extends Bbs {
         $this->s['MSGDISP'] = $msgdisp;
 
 #20200210 Gikoneko: unread pointer fix
-    $this->t->addGlobalVars(array(
+    $this->t->addGlobalVars([
       'TOPPOSTID' => $this->s['TOPPOSTID'],
       'MSGDISP' => $this->s['MSGDISP']
-    ));
-        return array($logdata, $bindex + 1, $eindex, $lastindex);
+    ]);
+        return [$logdata, $bindex + 1, $eindex, $lastindex];
     }
 
 

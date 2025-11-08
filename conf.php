@@ -3,7 +3,7 @@
   # Items marked "*" need to be changed or confirmed
 
 /* Common settings */
-$CONF = array(
+$CONF = [
 
   #------------------------- URLs, etc. -------------------------
 
@@ -291,30 +291,30 @@ $CONF = array(
   #------------------------- Access restrictions, etc. -------------------------
 
   # List of hostname patterns prohibited from posting (Perl5 compatible regular expression)
-  'HOSTNAME_POSTDENIED' => array(
+  'HOSTNAME_POSTDENIED' => [
     #Example: 'npa\.go\.jp$', */
       '.example.com',
       '.example.net'
-  ),
+  ],
 
   # List of hostname patterns prohibited from access (Perl5 compatible regular expression)
-  'HOSTNAME_BANNED' => array(
+  'HOSTNAME_BANNED' => [
     #Example: '\.npa\.go\.jp$',
-  ),
+  ],
 
   # アクセス禁止エージェント名パターンリスト(Perl5互換正規表現) 20230818 猫・新規追加
-  'HOSTAGENT_BANNED' => array(
+  'HOSTAGENT_BANNED' => [
     #例# 'iPad$',
   'dummy',
-  ),
+  ],
 
   # Prohibited words
-  'NGWORD' => array(
+  'NGWORD' => [
   # Example: 'Viagra','casino'
     'viagra',
     'Viagra',
     'スーパーコピー'
-  ),
+  ],
 
   # Whether or not to restrict posting from the mobile module by the IP of the mobile device
   # Since the posting function of the mobile version does not check the same IP address for the protect code,
@@ -328,10 +328,10 @@ $CONF = array(
   # Please enter the password exactly how it is.
   # If you then put this password into the username field and post, it will get converted to your handle name.
   # If you attempt to write the handle name into the username field, "(fraudster)" will be added to the post.
-  'HANDLENAMES' => array(
+  'HANDLENAMES' => [
     'Shiba' => 'Shiba',
     'Fraudster' => 'Administrator'
-  ),
+  ],
 
   #------------------------- Advanced settings (usually don't require changing) -------------------------
 
@@ -341,5 +341,5 @@ $CONF = array(
   #------------------------- Debugging -------------------------
 
   'SHOW_PRCTIME' => 1,  # Show processing time
-);
+];
 ?>

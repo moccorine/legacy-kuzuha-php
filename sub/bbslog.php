@@ -20,7 +20,7 @@ if(!defined("INCLUDED_FROM_BBS")) {
  *
  * They will be added to/overwritten by $CONF.
  */
-$GLOBALS['CONF_GETLOG'] = array(
+$GLOBALS['CONF_GETLOG'] = [
 
     # Whether or not multiple logs can be searched
     'MULTIPLESEARCH' => 1,
@@ -31,7 +31,7 @@ $GLOBALS['CONF_GETLOG'] = array(
     # Maximum number of keywords that can be searched
     'MAXKEYWORDS' => 10,
 
-);
+];
 
 
 /**
@@ -127,7 +127,7 @@ class Getlog extends Webapp {
             $oldlogext = 'html';
         }
 
-        $files = array();
+        $files = [];
 
         $dh = opendir($dir);
         if (!$dh) {
@@ -169,7 +169,7 @@ class Getlog extends Webapp {
             $fsize = $fstat[7];
             $ftime = date("Y/m/d H:i:s", $fstat[9]);
             $ftitle = '';
-            $matches = array();
+            $matches = [];
             if (preg_match("/^(\d\d\d\d)(\d\d)(\d\d)\.$oldlogext/", $filename, $matches)) {
                 $ftitle = "{$matches[1]}/{$matches[2]}/{$matches[3]}";
             }
@@ -196,13 +196,13 @@ class Getlog extends Webapp {
             $this->t->clearTemplate('dllink');
             $this->t->addVar('topiclink', 'FILENAME', $filename);
             $this->t->addVar('dllink', 'FILENAME', $filename);
-            $this->t->addVars('filelist', array(
+            $this->t->addVars('filelist', [
                 'FCHECK' => $checkbox,
                 'FILENAME' => $filename,
                 'FTITLE' => $ftitle,
                 'FTIME' => $ftime,
                 'FSIZE' => $fsize,
-            ));
+            ]);
             $this->t->parseTemplate('filelist', 'a');
         }
 
@@ -234,25 +234,25 @@ class Getlog extends Webapp {
      * Get search conditions
      */
     function getconditions($filename) {
-        $conditions = array();
+        $conditions = [];
 
         $conditions['showall'] = TRUE;
         if (@$this->f['q']) {
             $conditions['showall'] = FALSE;
         }
 
-        foreach (array ('q', 't', 'b', 'ci',) as $formvalue) {
+        foreach ( ['q', 't', 'b', 'ci',] as $formvalue) {
             $conditions[$formvalue] = @$this->f[$formvalue];
         }
-        foreach (array ('sd', 'sh', 'si', 'ed', 'eh', 'ei',) as $formvalue) {
+        foreach ( ['sd', 'sh', 'si', 'ed', 'eh', 'ei',] as $formvalue) {
             if ($conditions['showall'] and @$this->f[$formvalue]) {
                 $conditions['showall'] = FALSE;
             }
-            $conditions[$formvalue] = str_pad(@$this->f[$formvalue], 2, "0", STR_PAD_LEFT);
+            $conditions[$formvalue] = str_pad((string) @$this->f[$formvalue], 2, "0", STR_PAD_LEFT);
         }
 
         if ($conditions['q']) {
-            $conditions['q'] = trim($conditions['q']);
+            $conditions['q'] = trim((string) $conditions['q']);
             $conditions['keywords'] = preg_split("/\s+/", $conditions['q']);
             if (count($conditions['keywords']) > $this->c['MAXKEYWORDS']) {
                 $this->prterror ('There are too many search keywords.');
@@ -276,7 +276,7 @@ class Getlog extends Webapp {
      */
     function prtsearchresult() {
 
-        $formf = array();
+        $formf = [];
         if (is_array($this->f['f'])) {
             $formf = $this->f['f'];
         }
@@ -286,9 +286,9 @@ class Getlog extends Webapp {
         if (!@$this->c['MULTIPLESEARCH'] and count($formf) > 1) {
             array_splice($formf, 1);
         }
-        $files = array();
+        $files = [];
         foreach ($formf as $filename) {
-            if (preg_match("/^\d+\./", $filename) and is_file($this->c['OLDLOGFILEDIR'] . $filename)) {
+            if (preg_match("/^\d+\./", (string) $filename) and is_file($this->c['OLDLOGFILEDIR'] . $filename)) {
                 $files[] = $filename;
             }
         }
@@ -327,7 +327,7 @@ class Getlog extends Webapp {
         }
 
         # Illegal file name
-        if (!preg_match("/^\d+\.$oldlogext$/", $filename)) {
+        if (!preg_match("/^\d+\.$oldlogext$/", (string) $filename)) {
             return 1;
         }
         else if (!is_file($this->c['OLDLOGFILEDIR'] . $filename)) {
@@ -376,7 +376,7 @@ class Getlog extends Webapp {
         }
 
         # Illegal file name
-        if (!preg_match("/^\d+\.$oldlogext$/", $filename)) {
+        if (!preg_match("/^\d+\.$oldlogext$/", (string) $filename)) {
             return 1;
         }
         else if (!is_file($dir . $filename)) {
@@ -433,7 +433,7 @@ class Getlog extends Webapp {
                         # Highlight search keywords
                         if ($conditions['q']) {
                             $needle = "\Q{$conditions['q']}\E";
-                            $quoteq = preg_quote($conditions['q'], "/");
+                            $quoteq = preg_quote((string) $conditions['q'], "/");
                             if ($conditions['ci']) {
                                 #$prtmessage = preg_replace("/($quoteq)/i", "<span class=\"sq\">$1</span>", $prtmessage);
                                 #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", $prtmessage)) {
@@ -480,7 +480,7 @@ class Getlog extends Webapp {
                         $flgbuffer = TRUE;
                     }
                     # End message
-                    else if ($flgbuffer and strpos($htmlline, "<!--  -->") !== FALSE) {
+                    else if ($flgbuffer and str_contains($htmlline, "<!--  -->")) {
                         $buffer .= $htmlline;
                         {
                             $result = $this->msgsearchhtml($buffer, $conditions);
@@ -488,7 +488,7 @@ class Getlog extends Webapp {
                                 # Search keyword highlighting
                                 if ($conditions['q']) {
                                     $needle = "\Q{$conditions['q']}\E";
-                                    $quoteq = preg_quote($conditions['q'], "/");
+                                    $quoteq = preg_quote((string) $conditions['q'], "/");
                                     if ($conditions['ci']) {
                                         #$buffer = preg_replace("/($quoteq)/i", "<span class=\"sq\">$1</span>", $buffer);
                                         #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", $buffer)) {
@@ -541,7 +541,7 @@ class Getlog extends Webapp {
                     #$value_euc = JcodeConvert($value, 2, 1);
                     #$value_euc = htmlentities($value_euc, ENT_QUOTES, 'EUC-JP');
                     #$value = JcodeConvert($value_euc, 1, 2);
-                    $value = htmlentities($value, ENT_QUOTES);
+                    $value = htmlentities((string) $value, ENT_QUOTES);
                     $resultmsg .= 'For "' . $value . '" there were ';
                 }
                 if ($resultcount > 0) {
@@ -573,23 +573,23 @@ class Getlog extends Webapp {
      * Single message search (HTML format)
      */
     function msgsearchhtml ($buffer, $conditions) {
-        $message = array();
+        $message = [];
 
         $message['USER'] = '';
         $message['TITLE'] = '';
         $message['MSG'] = '';
         $message['NDATESTR'] = '';
 
-        if (preg_match("/<span class=\"mun\">([^<]+)<\/span>/", $buffer, $matches)) {
+        if (preg_match("/<span class=\"mun\">([^<]+)<\/span>/", (string) $buffer, $matches)) {
             $message['USER'] = $matches[1];
         }
-        if (preg_match("/<span class=\"ms\">([^<]+)<\/span>/", $buffer, $matches)) {
+        if (preg_match("/<span class=\"ms\">([^<]+)<\/span>/", (string) $buffer, $matches)) {
             $message['TITLE'] = $matches[1];
         }
-        if (preg_match("/<blockquote>[\r\n\s]*<pre>(.+?)<\/pre>/ms", $buffer, $matches)) {
+        if (preg_match("/<blockquote>[\r\n\s]*<pre>(.+?)<\/pre>/ms", (string) $buffer, $matches)) {
             $message['MSG'] = $matches[1];
         }
-        if (preg_match("/<span class=\"md\">[^<]*投稿日：(\d+)\/(\d+)\/(\d+)[^\d]+(\d+)時(\d+)分(\d+)秒/", $buffer, $matches)) {
+        if (preg_match("/<span class=\"md\">[^<]*投稿日：(\d+)\/(\d+)\/(\d+)[^\d]+(\d+)時(\d+)分(\d+)秒/", (string) $buffer, $matches)) {
             if (@$conditions['savesw']) {
                 $message['NDATESTR'] = $matches[3] . $matches[4];
             }
@@ -654,10 +654,10 @@ class Getlog extends Webapp {
                 $hit = FALSE;
                 foreach ($conditions['keywords'] as $needle) {
                     if ($conditions['ci']) {
-                        $result = stristr ($haystack, $needle);
+                        $result = stristr ((string) $haystack, (string) $needle);
                     }
                     else {
-                        $result = strpos ($haystack, $needle);
+                        $result = strpos ((string) $haystack, (string) $needle);
                     }
                     if ($result !== FALSE) {
                         $hit = TRUE;
@@ -670,10 +670,10 @@ class Getlog extends Webapp {
                 $hit = TRUE;
                 foreach ($conditions['keywords'] as $needle) {
                     if ($conditions['ci']) {
-                        $result = stristr ($haystack, $needle);
+                        $result = stristr ((string) $haystack, (string) $needle);
                     }
                     else {
-                        $result = strpos ($haystack, $needle);
+                        $result = strpos ((string) $haystack, (string) $needle);
                     }
                     if ($result === FALSE) {
                         $hit = FALSE;
@@ -704,7 +704,7 @@ class Getlog extends Webapp {
     function prttopiclist($filename) {
 
         # Illegal file name
-        if (!preg_match("/^\d+\.dat$/", $filename)) {
+        if (!preg_match("/^\d+\.dat$/", (string) $filename)) {
             return 1;
         }
         else if (!is_file($this->c['OLDLOGFILEDIR'] . $filename)) {
@@ -717,10 +717,10 @@ class Getlog extends Webapp {
         }
         flock ($fh, 1);
 
-        $tid = array();
-        $tcount = array();
-        $ttitle = array();
-        $ttime = array();
+        $tid = [];
+        $tcount = [];
+        $ttitle = [];
+        $ttime = [];
         $tindex = 0;
         while (($logline = Func::fgetline($fh)) !== FALSE) {
             $message = $this->getmessage($logline);
@@ -728,10 +728,10 @@ class Getlog extends Webapp {
                 $tid[$tindex] = $message['POSTID'];
                 $tcount[$message['POSTID']] = 0;
 
-                $msg = ltrim($message['MSG']);
+                $msg = ltrim((string) $message['MSG']);
                 $msg = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", $msg, 1);
-                $msg = preg_replace("/<[^>]+>/", "", $msg);
-                $msgsplit = explode("\r", $msg);
+                $msg = preg_replace("/<[^>]+>/", "", (string) $msg);
+                $msgsplit = explode("\r", (string) $msg);
                 $msgdigest = $msgsplit[0];
                 $index = 1;
                 while ($index < count($msgsplit) - 1 and strlen($msgdigest . $msgsplit[$index]) < 50) {
@@ -740,7 +740,7 @@ class Getlog extends Webapp {
                 }
                 $ttitle[$message['POSTID']] = $msgdigest;
 
-                if (strpos($ttitle[$message['POSTID']], "\r") !== FALSE) {
+                if (str_contains($ttitle[$message['POSTID']], "\r")) {
                     $ttitle[$message['POSTID']] = substr($ttitle[$message['POSTID']],
                     0, strpos($ttitle[$message['POSTID']], "\r"));
                 }
@@ -764,13 +764,13 @@ class Getlog extends Webapp {
             if ($tid[$i]) {
                 $tc = sprintf ("%02d", $tcount[$tid[$i]]);
                 $tt = date ("m/d H:i:s", $ttime[$tid[$i]]);
-                $this->t->addVars('topic', array(
+                $this->t->addVars('topic', [
                     'TID' => $tid[$i],
                     'TC' => $tc,
                     'TT' => $tt,
                     'TTITLE' => $ttitle[$tid[$i]],
                     'FILENAME' => $filename,
-                ));
+                ]);
                 $this->t->parseTemplate('topic', 'a');
             }
             $i++;
@@ -799,7 +799,7 @@ class Getlog extends Webapp {
         if (!$dh) {
             $this->prterror ('This directory could not be opened.');
         }
-        $files = array();
+        $files = [];
         while ($entry = readdir($dh)) {
             if (is_file($dir . $entry) and preg_match("/\.(zip|lzh|rar|gz|tar\.gz)$/i", $entry)) {
                 $files[] = $entry;
@@ -816,12 +816,12 @@ class Getlog extends Webapp {
             $ftime = date("Y/m/d H:i:s", $fstat[9]);
 
             $this->t->setAttribute('archive', 'visibility', 'visible');
-            $this->t->addVars('archive', array(
+            $this->t->addVars('archive', [
                 'DIR' => $dir,
                 'FILENAME' => $filename,
                 'FTIME' => $ftime,
                 'FSIZE' => $fsize,
-            ));
+            ]);
             $this->t->parseTemplate('archive', 'a');
         }
 
@@ -843,7 +843,7 @@ class Getlog extends Webapp {
         if (!@$_SERVER['HTTP_USER_AGENT']) {
             return TRUE;
         }
-        if (preg_match ("/^Mozilla\/(\S+)\s(.+)/", @$_SERVER['HTTP_USER_AGENT'], $matches)) {
+        if (preg_match ("/^Mozilla\/(\S+)\s(.+)/", (string) @$_SERVER['HTTP_USER_AGENT'], $matches)) {
             $ver = $matches[1];
             $uos = $matches[2];
             $isie = 0;

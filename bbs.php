@@ -1,5 +1,5 @@
 <?php
-if (strpos(phpversion(), '8') !== 0) {
+if (!str_starts_with(phpversion(), '8')) {
     echo 'Error: PHP version is '.phpversion().'. This script is compatible with PHP 8.0 and above.';
     exit();
 }
@@ -132,7 +132,7 @@ function script_run() {
     # Admin mode (sub/bbsadmin.php)
     elseif ($_POST['m'] == 'ad') {
         if ($CONF['ADMINPOST'] and $CONF['ADMINKEY'] and $_POST['v'] == $CONF['ADMINKEY']
-            and crypt($_POST['u'], $CONF['ADMINPOST']) == $CONF['ADMINPOST']) {
+            and crypt((string) $_POST['u'], (string) $CONF['ADMINPOST']) == $CONF['ADMINPOST']) {
             require_once(PHP_BBSADMIN);
             $bbsadmin = new Bbsadmin();
             $bbsadmin->main();
@@ -178,10 +178,10 @@ function script_run() {
  */
 class Webapp {
 
-    var $c; /* Settings information */
-    var $f; /* Form input */
-    var $s = array(); /* Session-specific information such as the user's host */
-    var $t; /* HTML template object */
+    public $c; /* Settings information */
+    public $f; /* Form input */
+    public $s = []; /* Session-specific information such as the user's host */
+    public $t; /* HTML template object */
 
     /**
      * Constructor
@@ -205,7 +205,7 @@ function tripuse($key) {
     #$tripkey = '#istrip';? // String to be used as password (with #)
             $key = mb_convert_encoding($key, "SJIS", "UTF-8");	// to, from
     #		$key = '#'.substr($key, strpos($key, '#'));
-    
+
     # Trip
     # $trip is used for 0thello
     $trip = '';
@@ -283,7 +283,7 @@ function tripuse($key) {
         $this->s['TOPPOSTID'] = $this->f['p'];
         # Get settings information cookies
         if ($this->c['COOKIE'] and $_COOKIE['c']
-            and preg_match("/u=([^&]*)&i=([^&]*)&c=([^&]*)/", $_COOKIE['c'], $matches)) {
+            and preg_match("/u=([^&]*)&i=([^&]*)&c=([^&]*)/", (string) $_COOKIE['c'], $matches)) {
             if (!isset($this->f['u'])) {
                 $this->s['U'] = urldecode($matches[1]);
             }
@@ -296,7 +296,7 @@ function tripuse($key) {
         }
         # Get cookie for the UNDO button
         if ($this->c['COOKIE'] and $this->c['ALLOW_UNDO'] and $_COOKIE['undo']
-            and preg_match("/p=([^&]*)&k=([^&]*)/", $_COOKIE['undo'], $matches)) {
+            and preg_match("/p=([^&]*)&k=([^&]*)/", (string) $_COOKIE['undo'], $matches)) {
             $this->s['UNDO_P'] = $matches[1];
             $this->s['UNDO_K'] = $matches[2];
         }
@@ -348,11 +348,11 @@ function tripuse($key) {
      */
     function prthtmlhead($title = "", $customhead = "", $customstyle = "") {
         $this->t->clearTemplate('header');
-        $this->t->addVars('header', array(
+        $this->t->addVars('header', [
             'TITLE' => $title,
             'CUSTOMHEAD' => $customhead,
             'CUSTOMSTYLE' => $customstyle,
-        ));
+        ]);
         $htmlstr = $this->t->getParsedTemplate('header');
         return $htmlstr;
     }
@@ -407,7 +407,7 @@ function tripuse($key) {
         }
         $message['WDATE'] = Func::getdatestr($message['NDATE'], $this->c['DATEFORMAT']);
 		#20181102 Gikoneko: Escape special characters
-		$message['MSG'] = preg_replace("/{/i","&#123;", $message['MSG'], -1);
+		$message['MSG'] = preg_replace("/{/i","&#123;", (string) $message['MSG'], -1);
         $message['MSG'] = preg_replace("/}/i","&#125;", $message['MSG'], -1);
 
 	#20241016 Heyuri: Deprecated by ytthumb.js, embedding each video in browser slows stuff down a lot
@@ -456,7 +456,7 @@ function tripuse($key) {
             $message['BTNAUTHOR'] = '';
             if ($message['USER'] != $this->c['ANONY_NAME'] and $this->c['BBSMODE_ADMINONLY'] != 1) {
                 $message['BTNAUTHOR'] = "$spacer<a href=\"{$this->c['CGIURL']}"
-                    ."?m=s&amp;s=". urlencode(preg_replace("/<[^>]*>/", '', $message['USER'])) ."&amp;".$this->s['QUERY'];
+                    ."?m=s&amp;s=". urlencode(preg_replace("/<[^>]*>/", '', (string) $message['USER'])) ."&amp;".$this->s['QUERY'];
                 if ($this->f['w']) {
                     $message['BTNAUTHOR'] .= "&amp;w=".$this->f['w'];
                 }
@@ -500,7 +500,7 @@ function tripuse($key) {
             $message['USER'] = "<a href=\"mailto:{$message['MAIL']}\">{$message['USER']}</a>";
         }
         # Change quote color
-        $message['MSG'] = preg_replace("/(^|\r)(\&gt;[^\r]*)/", "$1<span class=\"q\">$2</span>", $message['MSG']);
+        $message['MSG'] = preg_replace("/(^|\r)(\&gt;[^\r]*)/", "$1<span class=\"q\">$2</span>", (string) $message['MSG']);
         $message['MSG'] = str_replace("</span>\r<span class=\"q\">", "\r", $message['MSG']);
         # Environment variables
         $message['ENVADDR'] = '';
@@ -519,11 +519,11 @@ function tripuse($key) {
             if ($message['ENVADDR'] or $message['ENVUA']) {
                 $this->t->clearTemplate('envlist');
                 $this->t->setAttribute("envlist", "visibility", "visible");
-                $this->t->addVars('envlist', array(
+                $this->t->addVars('envlist', [
                     'ENVADDR' => $message['ENVADDR'],
                     'ENVUA' => $message['ENVUA'],
                     'ENVBR' => $message['ENVBR'],
-                ));
+                ]);
             }
         }
         # Whether or not to display images on the image BBS
@@ -531,7 +531,7 @@ function tripuse($key) {
             $message['MSG'] = Func::conv_imgtag($message['MSG']);
         }
         # Convert img tags even if there is no image file
-        elseif (preg_match("/<a href=[^>]+><img [^>]*?src=\"([^\"]+)\"[^>]+><\/a>/i", $message['MSG'], $matches)) {
+        elseif (preg_match("/<a href=[^>]+><img [^>]*?src=\"([^\"]+)\"[^>]+><\/a>/i", (string) $message['MSG'], $matches)) {
             if (!file_exists($matches[1])) {
                 $message['MSG'] = Func::conv_imgtag($message['MSG']);
             }
@@ -604,8 +604,8 @@ function tripuse($key) {
             $logsplit[$i] = str_replace ("&#44;", ",", $logsplit[$i]);
             $i++;
         }
-        $message = array();
-        $messagekey = array('NDATE', 'POSTID', 'PROTECT', 'THREAD', 'PHOST', 'AGENT', 'USER', 'MAIL', 'TITLE', 'MSG', 'REFID', 'RESERVED1', 'RESERVED2', 'RESERVED3', );
+        $message = [];
+        $messagekey = ['NDATE', 'POSTID', 'PROTECT', 'THREAD', 'PHOST', 'AGENT', 'USER', 'MAIL', 'TITLE', 'MSG', 'REFID', 'RESERVED1', 'RESERVED2', 'RESERVED3', ];
         $logsplitcount = count($logsplit);
         $i = 0;
         while ($i < $logsplitcount) {
@@ -629,7 +629,7 @@ function tripuse($key) {
         }
         $flgcolorchanged = FALSE;
 
-        $colors = array(
+        $colors = [
             'C_BACKGROUND',
             'C_TEXT',
             'C_A_COLOR',
@@ -638,8 +638,8 @@ function tripuse($key) {
             'C_QMSG',
             'C_A_ACTIVE',
             'C_A_HOVER',
-        );
-        $flags = array(
+        ];
+        $flags = [
             'GZIPU',
             'RELTYPE',
             'AUTOLINK',
@@ -648,18 +648,18 @@ function tripuse($key) {
             'LINKOFF',
             'HIDEFORM',
             'SHOWIMG',
-        );
+        ];
         # Update from settings string
         if ($this->f['c']) {
             $strflag = '';
             $formc = $this->f['c'];
-            if (strlen($formc) > 5) {
-                $formclen = strlen($formc);
-                $strflag = substr($formc, 0, 2);
+            if (strlen((string) $formc) > 5) {
+                $formclen = strlen((string) $formc);
+                $strflag = substr((string) $formc, 0, 2);
                 $currentpos = 2;
                 foreach ($colors as $confname) {
-                    $colorval = Func::base64_threebytehex(substr($formc, $currentpos, 4));
-                    if (strlen($colorval) == 6 and strcasecmp($this->c[$confname], $colorval) != 0) {
+                    $colorval = Func::base64_threebytehex(substr((string) $formc, $currentpos, 4));
+                    if (strlen($colorval) == 6 and strcasecmp((string) $this->c[$confname], $colorval) != 0) {
                         $flgcolorchanged = TRUE;
                         $this->c[$confname] = $colorval;
                     }
@@ -669,11 +669,11 @@ function tripuse($key) {
                     }
                 }
             }
-            elseif (strlen($formc) == 2) {
+            elseif (strlen((string) $formc) == 2) {
                 $strflag = $formc;
             }
             if ($strflag) {
-                $flagbin = str_pad(base_convert ($strflag, 32, 2), count($flags), "0", STR_PAD_LEFT);
+                $flagbin = str_pad(base_convert ((string) $strflag, 32, 2), count($flags), "0", STR_PAD_LEFT);
                 $currentpos = 0;
                 foreach ($flags as $confname) {
                     $this->c[$confname] = substr($flagbin, $currentpos, 1);
@@ -707,7 +707,7 @@ function tripuse($key) {
             $flagvalue = str_pad(base_convert ($flagbin, 2, 32), 2, "0", STR_PAD_LEFT);
 
             if ($flgcolorchanged) {
-                $this->f['c'] = $flagvalue . substr($this->f['c'], 2);
+                $this->f['c'] = $flagvalue . substr((string) $this->f['c'], 2);
             }
             else {
                 $this->f['c'] = $flagvalue;
@@ -773,7 +773,7 @@ class Bbs extends Webapp {
             ob_start("ob_gzhandler");
         }
         # Post operation
-        if ($this->f['m'] == 'p' and trim($this->f['v'])) {
+        if ($this->f['m'] == 'p' and trim((string) $this->f['v'])) {
             # Get environment variables
             $this->setuserenv();
             # Parameter check
@@ -855,7 +855,7 @@ class Bbs extends Webapp {
      */
     function prtmain($retry = FALSE) {
         # Get display message
-        list ($logdatadisp, $bindex, $eindex, $lastindex) = $this->getdispmessage();
+        [$logdatadisp, $bindex, $eindex, $lastindex] = $this->getdispmessage();
         # Form section settings
         $dtitle = "";
         $dmsg = "";
@@ -923,7 +923,7 @@ class Bbs extends Webapp {
 
         $logdata = $this->loadmessage();
         # Unread pointer (latest POSTID)
-        $items = @explode (',', $logdata[0], 3);
+        $items = @explode (',', (string) $logdata[0], 3);
         $toppostid = $items[1];
         # Number of posts displayed
         $msgdisp = Func::fixnumberstr($this->f['d']);
@@ -972,7 +972,7 @@ class Bbs extends Webapp {
         }
         # Display messages
         if ($bindex == 0 and $eindex == 0) {
-            $logdatadisp = array();
+            $logdatadisp = [];
         }
         else {
             $logdatadisp = array_splice ($logdata, $bindex, ($eindex - $bindex));
@@ -982,11 +982,11 @@ class Bbs extends Webapp {
         }
         $this->s['TOPPOSTID'] = $toppostid;
         $this->s['MSGDISP'] = $msgdisp;
-        $this->t->addGlobalVars(array(
+        $this->t->addGlobalVars([
             'TOPPOSTID' => $this->s['TOPPOSTID'],
             'MSGDISP' => $this->s['MSGDISP']
-        ));
-        return array($logdatadisp, $bindex + 1, $eindex, $lastindex);
+        ]);
+        return [$logdatadisp, $bindex + 1, $eindex, $lastindex];
     }
 
     /**
@@ -1003,20 +1003,20 @@ class Bbs extends Webapp {
         if (!$mode) {
             $mode = '<input type="hidden" name="m" value="p" />';
         }
-        $this->t->addVars('form', array(
+        $this->t->addVars('form', [
             'MODE' => $mode,
             'PCODE' => $pcode,
-        ));
+        ]);
         # Hide post form
         if ($this->c['HIDEFORM'] and $this->f['m'] != 'f' and !$this->f['write']) {
             $this->t->addVar('postform', 'mode', 'hide');
         }
         else {
-            $this->t->addVars('postform', array(
+            $this->t->addVars('postform', [
                 'DTITLE' => $dtitle,
                 'DMSG' => $dmsg,
                 'DLINK' => $dlink,
-            ));
+            ]);
         }
         # Settings and links lines
         if ($this->f['m'] != 'f' and !isset($this->f['f']) and !$this->f['write']) {
@@ -1084,12 +1084,12 @@ class Bbs extends Webapp {
 
         # Administrator authentication
         if ($this->c['BBSMODE_ADMINONLY'] == 1
-            and crypt($this->f['u'], $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
+            and crypt((string) $this->f['u'], (string) $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
             $this->prterror('The password is incorrect.');
         }
         $filename = '';
         if ($this->f['ff']) {
-            $filename = trim($this->f['ff']);
+            $filename = trim((string) $this->f['ff']);
         }
         $result = $this->searchmessage('POSTID', $this->f['s'], FALSE, $filename);
         if (!$result) {
@@ -1100,21 +1100,21 @@ class Bbs extends Webapp {
 
         if (!$retry) {
             $formmsg = $message['MSG'];
-            $formmsg = preg_replace ("/&gt; &gt;[^\r]+\r/", "", $formmsg);
+            $formmsg = preg_replace ("/&gt; &gt;[^\r]+\r/", "", (string) $formmsg);
             $formmsg = preg_replace ("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", "", $formmsg);
             $formmsg = preg_replace ("/<a href=\"[^>]+>([^<]+)<\/a>/i", "$1", $formmsg);
             $formmsg = preg_replace ("/\r*<a href=[^>]+><img [^>]+><\/a>/i", "", $formmsg);
             $formmsg = preg_replace ("/\r/", "\r> ", $formmsg);
             $formmsg = "> $formmsg\r";
             $formmsg = preg_replace ("/\r>\s+\r/", "\r", $formmsg);
-            $formmsg = preg_replace ("/\r>\s+\r$/", "\r", $formmsg);
+            $formmsg = preg_replace ("/\r>\s+\r$/", "\r", (string) $formmsg);
         } else {
             $formmsg = $this->f['v'];
-            $formmsg = preg_replace ("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", "", $formmsg);
+            $formmsg = preg_replace ("/<a href=\"m=f\S+\"[^>]*>[^<]+<\/a>/i", "", (string) $formmsg);
         }
         $formmsg .= "\r";
 
-        $this->setform ( "＞" . preg_replace("/<[^>]*>/", '', $message['USER']) . $this->c['FSUBJ'], $formmsg, '');
+        $this->setform ( "＞" . preg_replace("/<[^>]*>/", '', (string) $message['USER']) . $this->c['FSUBJ'], $formmsg, '');
 
         if (!$message['THREAD']) {
             $message['THREAD'] = $message['POSTID'];
@@ -1143,7 +1143,7 @@ class Bbs extends Webapp {
 
         # Administrator authentication
         if ($this->c['BBSMODE_ADMINONLY'] != 0
-            and crypt($this->f['u'], $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
+            and crypt((string) $this->f['u'], (string) $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
             $this->prterror('The password is incorrect.');
         }
         # Form section
@@ -1202,7 +1202,7 @@ class Bbs extends Webapp {
 
         $fh = NULL;
         if ($this->f['ff']) {
-            if (preg_match("/^[\w.]+$/", $this->f['ff'])) {
+            if (preg_match("/^[\w.]+$/", (string) $this->f['ff'])) {
                 $fh = @fopen($this->c['OLDLOGFILEDIR'] . $this->f['ff'], "rb");
             }
             if (!$fh) {
@@ -1211,7 +1211,7 @@ class Bbs extends Webapp {
             flock ($fh, 1);
         }
 
-        $result = array();
+        $result = [];
 
         if ($fh) {
             $linecount = 0;
@@ -1225,7 +1225,7 @@ class Bbs extends Webapp {
                 }
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and preg_replace("/<[^>]*>/", '', $message['USER']) == $this->f['s']) {
+                if ($mode == 's' and preg_replace("/<[^>]*>/", '', (string) $message['USER']) == $this->f['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
@@ -1245,7 +1245,7 @@ class Bbs extends Webapp {
             foreach ($logdata as $logline) {
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and preg_replace("/<[^>]*>/", '', $message['USER']) == $this->f['s']) {
+                if ($mode == 's' and preg_replace("/<[^>]*>/", '', (string) $message['USER']) == $this->f['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
@@ -1316,7 +1316,7 @@ class Bbs extends Webapp {
             $this->s['UNDO_K'] = '';
         }
         else {
-            $colors = array(
+            $colors = [
                 'C_BACKGROUND',
                 'C_TEXT',
                 'C_A_COLOR',
@@ -1325,12 +1325,12 @@ class Bbs extends Webapp {
                 'C_QMSG',
                 'C_A_ACTIVE',
                 'C_A_HOVER',
-            );
+            ];
 
             $flgchgindex = -1;
             $cindex = 0;
             foreach ($colors as $confname) {
-                if (strlen($this->f[$confname]) == 6 and preg_match("/^[0-9a-fA-F]{6}$/", $this->f[$confname])
+                if (strlen((string) $this->f[$confname]) == 6 and preg_match("/^[0-9a-fA-F]{6}$/", (string) $this->f[$confname])
                     and $this->f[$confname] != $this->c[$confname]) {
                     $this->c[$confname] = $this->f[$confname];
                     $flgchgindex = $cindex;
@@ -1344,10 +1344,10 @@ class Bbs extends Webapp {
             }
             $this->refcustom();
 
-            $this->f['c'] = substr($this->f['c'], 0, 2) . $cbase64str;
+            $this->f['c'] = substr((string) $this->f['c'], 0, 2) . $cbase64str;
 
             $redirecturl .= "?c=".$this->f['c'];
-            foreach (array('w', 'd',) as $key) {
+            foreach (['w', 'd',] as $key) {
                 if ($this->f[$key] != '') {
                     $redirecturl .= "&{$key}=".$this->f[$key];
                 }
@@ -1360,11 +1360,11 @@ class Bbs extends Webapp {
             }
         }
         # Redirect
-        if (preg_match("/^(https?):\/\//", $this->c['CGIURL'])) {
+        if (preg_match("/^(https?):\/\//", (string) $this->c['CGIURL'])) {
             header ("Location: {$redirecturl}");
         }
         else {
-            $this->prtredirect(htmlentities($redirecturl));
+            $this->prtredirect(htmlentities((string) $redirecturl));
         }
     }
 
@@ -1381,7 +1381,7 @@ class Bbs extends Webapp {
                 $this->prterror ('The corresponding post was not found.');
             }
             $message = $this->getmessage($loglines[0]);
-            $undokey = substr (preg_replace("/\W/", "", crypt($message['PROTECT'], $this->c['ADMINPOST'])), -8);
+            $undokey = substr ((string) preg_replace("/\W/", "", crypt((string) $message['PROTECT'], (string) $this->c['ADMINPOST'])), -8);
             if ($undokey != $this->s['UNDO_K']) {
                 $this->prterror ('The deletion of the corresponding post is not permitted.');
             }
@@ -1413,7 +1413,7 @@ class Bbs extends Webapp {
      * @return  Array   Log line array
      */
     function searchmessage($varname, $searchvalue, $ismultiple = FALSE, $filename = "") {
-        $result = array();
+        $result = [];
         $logdata = $this->loadmessage($filename);
         foreach ($logdata as $logline) {
             $message = $this->getmessage($logline);
@@ -1444,36 +1444,36 @@ class Bbs extends Webapp {
             $this->prterror ( 'The posting function of this bulletin board is currently suspended.');
         }
         if ($this->c['BBSMODE_ADMINONLY'] == 1 or ($this->c['BBSMODE_ADMINONLY'] == 2 and !$this->f['f'])) {
-            if (crypt($this->f['u'], $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
+            if (crypt((string) $this->f['u'], (string) $this->c['ADMINPOST']) != $this->c['ADMINPOST']) {
                 $this->prterror ( 'Only administrators are allowed to post to the bulletin board.');
             }
         }
         if ($_SERVER['HTTP_REFERER'] and $this->c['REFCHECKURL']
-            and (strpos($_SERVER['HTTP_REFERER'], $this->c['REFCHECKURL']) === FALSE
-            or strpos($_SERVER['HTTP_REFERER'], $this->c['REFCHECKURL']) > 0)) {
+            and (!str_contains((string) $_SERVER['HTTP_REFERER'], (string) $this->c['REFCHECKURL'])
+            or strpos((string) $_SERVER['HTTP_REFERER'], (string) $this->c['REFCHECKURL']) > 0)) {
             $this->prterror ( "Posts cannot be made from any URLs besides <br>{$this->c['REFCHECKURL']}." );
         }
-        foreach (explode ("\r", $this->f['v']) as $line) {
+        foreach (explode ("\r", (string) $this->f['v']) as $line) {
             if (strlen ($line) > $this->c['MAXMSGCOL']) {
                 $this->prterror ('The are too many characters in the post contents.');
             }
         }
-        if (substr_count ($this->f['v'], "\r") > $this->c['MAXMSGLINE'] - 1) {
+        if (substr_count ((string) $this->f['v'], "\r") > $this->c['MAXMSGLINE'] - 1) {
             $this->prterror ('There are too many line breaks in the post contents.');
         }
-        if (strlen ($this->f['v']) > $this->c['MAXMSGSIZE']) {
+        if (strlen ((string) $this->f['v']) > $this->c['MAXMSGSIZE']) {
             $this->prterror ('The overall file size of the post contents is too large.');
         }
-        if (strlen ($this->f['u']) > $this->c['MAXNAMELENGTH']) {
+        if (strlen ((string) $this->f['u']) > $this->c['MAXNAMELENGTH']) {
             $this->prterror ('There are too many characters in the name field. (Up to {MAXNAMELENGTH} characters)');
         }
-        if (strlen ($this->f['i']) > $this->c['MAXMAILLENGTH']) {
+        if (strlen ((string) $this->f['i']) > $this->c['MAXMAILLENGTH']) {
             $this->prterror ('There are too many characters in the email field. (Up to {MAXMAILLENGTH} characters)');
         }
         if ($this->f['i']) { ## mod
             $this->prterror ('SPAM-KUN GTFO!!!'); ## mod
         } ## mod
-        if (strlen ($this->f['t']) > $this->c['MAXTITLELENGTH']) {
+        if (strlen ((string) $this->f['t']) > $this->c['MAXTITLELENGTH']) {
             $this->prterror ('There are too many characters in the title field. (Up to {MAXTITLELENGTH} characters)');
         }
         {
@@ -1489,7 +1489,7 @@ class Bbs extends Webapp {
             } */
         }
 
-        if (trim($this->f['v']) == '') {
+        if (trim((string) $this->f['v']) == '') {
             $posterr = 2;
             return $posterr;
         }
@@ -1507,13 +1507,13 @@ class Bbs extends Webapp {
         ## }
         if ($this->c['NGWORD']) { ## mod
             foreach ($this->c['NGWORD'] as $ngword) {
-                $ngword = strtolower($ngword); // Convert prohibited word to lowercase
+                $ngword = strtolower((string) $ngword); // Convert prohibited word to lowercase
                 if (
-                    strpos(strtolower($this->f['v']), $ngword) !== FALSE ||
-                    strpos(strtolower($this->f['l']), $ngword) !== FALSE ||
-                    strpos(strtolower($this->f['t']), $ngword) !== FALSE ||
-                    strpos(strtolower($this->f['u']), $ngword) !== FALSE ||
-                    strpos(strtolower($this->f['i']), $ngword) !== FALSE
+                    str_contains(strtolower((string) $this->f['v']), $ngword) ||
+                    str_contains(strtolower((string) $this->f['l']), $ngword) ||
+                    str_contains(strtolower((string) $this->f['t']), $ngword) ||
+                    str_contains(strtolower((string) $this->f['u']), $ngword) ||
+                    str_contains(strtolower((string) $this->f['i']), $ngword)
                 ) {
                     $this->prterror('The post contains prohibited words.');
                 }
@@ -1546,7 +1546,7 @@ class Bbs extends Webapp {
      */
     function getformmessage() {
 
-        $message = array();
+        $message = [];
         $message['PCODE'] = $this->f['pc'];
         $message['USER'] = $this->f['u'];
         $message['MAIL'] = $this->f['i'];
@@ -1563,7 +1563,7 @@ class Bbs extends Webapp {
             $message['REFID'] = '';
         }
         # Protect code
-        $message['PCODE'] = substr($message['PCODE'], 8, 4);
+        $message['PCODE'] = substr((string) $message['PCODE'], 8, 4);
         # Title
         if (!$message['TITLE']) {
             $message['TITLE'] = ' ';
@@ -1574,51 +1574,51 @@ class Bbs extends Webapp {
         }
         else {
             # Admin check
-            if ($this->c['ADMINPOST'] and crypt($message['USER'], $this->c['ADMINPOST']) == $this->c['ADMINPOST']) {
+            if ($this->c['ADMINPOST'] and crypt((string) $message['USER'], (string) $this->c['ADMINPOST']) == $this->c['ADMINPOST']) {
                 $message['USER'] = "<span class=\"muh\">{$this->c['ADMINNAME']}</span>";
                 # Enter admin mode
-                if ($this->c['ADMINKEY'] and trim($message['MSG']) == $this->c['ADMINKEY']) {
+                if ($this->c['ADMINKEY'] and trim((string) $message['MSG']) == $this->c['ADMINKEY']) {
                     return 3;
                 }
             }
             elseif ($this->c['ADMINPOST'] and $message['USER'] == $this->c['ADMINPOST']) {
                 $message['USER'] = $this->c['ADMINNAME'] . '<span class="muh"> (hacker)</span>';
             }
-            elseif (!(strpos($message['USER'], $this->c['ADMINNAME']) === FALSE)) {
+            elseif (!(!str_contains((string) $message['USER'], (string) $this->c['ADMINNAME']))) {
                 $message['USER'] = $this->c['ADMINNAME'] . '<span class="muh"> (fraudster)</span>';
             }
             # Fixed handle name check
-            elseif ($this->c['HANDLENAMES'][trim($message['USER'])]) {
+            elseif ($this->c['HANDLENAMES'][trim((string) $message['USER'])]) {
                 $message['USER'] .= '<span class="muh"> (fraudster)</span>';
             }
             # Trip function (simple deception prevention function)
-            else if (strpos($message['USER'], '#') !== FALSE) {
+            else if (str_contains((string) $message['USER'], '#')) {
                 #20210702 猫・管理パスばれ防止
-                if ($this->c['ADMINPOST'] and crypt(substr($message['USER'], 0, strpos($message['USER'], '#')), $this->c['ADMINPOST']) == $this->c['ADMINPOST']) {
-                    $message['USER'] = "<span class=\"muh\"><a href=\"mailto:{$this->c['ADMINMAIL']}\">{$this->c['ADMINNAME']}</a></span>".substr($message['USER'], strpos($message['USER'], '#'));
+                if ($this->c['ADMINPOST'] and crypt(substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#')), (string) $this->c['ADMINPOST']) == $this->c['ADMINPOST']) {
+                    $message['USER'] = "<span class=\"muh\"><a href=\"mailto:{$this->c['ADMINMAIL']}\">{$this->c['ADMINNAME']}</a></span>".substr((string) $message['USER'], strpos((string) $message['USER'], '#'));
                 }
                 #20210923 猫・固定ハンドル名 パスばれ防止
                 # 固定ハンドル名変換
                 else if (isset($this->c['HANDLENAMES'])) {
-                    $handlename = array_search(trim(substr($message['USER'], 0, strpos($message['USER'], '#'))), $this->c['HANDLENAMES']);
+                    $handlename = array_search(trim(substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#'))), $this->c['HANDLENAMES']);
                     if ($handlename !== FALSE) {
-                        $message['USER'] = "<span class=\"muh\">{$handlename}</span>".substr($message['USER'], strpos($message['USER'], '#'));
+                        $message['USER'] = "<span class=\"muh\">{$handlename}</span>".substr((string) $message['USER'], strpos((string) $message['USER'], '#'));
                     }
                 }
-                $message['USER'] = substr($message['USER'], 0, strpos($message['USER'], '#')) . ' <span class="mut">◆' . substr(preg_replace("/\W/", '', crypt(substr($message['USER'], strpos($message['USER'], '#')), '00')), -7) .$this->tripuse($message['USER']). '</span>';
+                $message['USER'] = substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#')) . ' <span class="mut">◆' . substr((string) preg_replace("/\W/", '', crypt(substr((string) $message['USER'], strpos((string) $message['USER'], '#')), '00')), -7) .$this->tripuse($message['USER']). '</span>';
             }
-            else if (strpos($message['USER'], '◆') !== FALSE) {
+            else if (str_contains((string) $message['USER'], '◆')) {
                 $message['USER'] .= ' (fraudster)';
             }
             # Fixed handle name conversion
             elseif (isset($this->c['HANDLENAMES'])) {
-                $handlename = array_search(trim($message['USER']), $this->c['HANDLENAMES']);
+                $handlename = array_search(trim((string) $message['USER']), $this->c['HANDLENAMES']);
                 if ($handlename !== FALSE) {
                     $message['USER'] = "<span class=\"muh\">{$handlename}</span>";
                 }
             }
         }
-        $message['MSG'] = rtrim ($message['MSG']);
+        $message['MSG'] = rtrim ((string) $message['MSG']);
 
         # Auto-link URLs
         if ( $this->c['AUTOLINK'] ) {
@@ -1626,7 +1626,7 @@ class Bbs extends Webapp {
                 "<a href=\"$1\" target=\"link\">$1</a>", $message['MSG']);
         }
         # URL field
-        $message['URL'] = trim($message['URL']);
+        $message['URL'] = trim((string) $message['URL']);
         if ($message['URL']) {
             $message['MSG'] .= "\r\r<a href=\"".Func::escape_url($message['URL'])."\" target=\"link\">{$message['URL']}</a>";
         }
@@ -1646,7 +1646,7 @@ class Bbs extends Webapp {
             }
         }
         # Check
-        if (strlen ($message['MSG']) > $this->c['MAXMSGSIZE']) {
+        if (strlen ((string) $message['MSG']) > $this->c['MAXMSGSIZE']) {
             $this->prterror ( 'The post contents are too large.' );
         }
         return $message;
@@ -1669,7 +1669,7 @@ class Bbs extends Webapp {
         flock ($fh, 2);
         fseek ($fh, 0, 0);
 
-        $logdata = array();
+        $logdata = [];
         while (($logline = Func::fgetline($fh)) !== FALSE) {
                 $logdata[] = $logline;
         }
@@ -1727,7 +1727,7 @@ class Bbs extends Webapp {
             if (!$message['REFID']) {
                 $message['THREAD'] = $message['POSTID'];
             }
-            $msgdata = implode (',', array(
+            $msgdata = implode (',', [
                 CURRENT_TIME,
                 $message['POSTID'],
                 $message['PCODE'],
@@ -1739,7 +1739,7 @@ class Bbs extends Webapp {
                 $message['TITLE'],
                 $message['MSG'],
                 $message['REFID'],
-            ));
+            ]);
             $msgdata = strtr ($msgdata, "\n", "") . "\n";
             if (count($logdata) >= $this->c['LOGSAVE']) {
                 $logdata = array_slice($logdata, 0, $this->c['LOGSAVE'] - 2);
@@ -1814,7 +1814,7 @@ class Bbs extends Webapp {
                     $limitdate = date("Ymd", $limitdate);
                     $dh = opendir($dir);
                     while ($entry = readdir($dh)) {
-                        $matches = array();
+                        $matches = [];
                         if (is_file($dir . $entry)
                             and preg_match("/(\d+)\.$oldlogext$/", $entry, $matches)) {
                             $timestamp = $matches[1];
@@ -1864,7 +1864,7 @@ class Bbs extends Webapp {
                         $currentfile = date("Ymd", CURRENT_TIME) . ".html";
                     }
 
-                    $files = array();
+                    $files = [];
                     $dh = opendir($tmpdir);
                     if (!$dh) {
                         return;
@@ -1919,7 +1919,7 @@ class Bbs extends Webapp {
         if (!$this->c['IPREC']) {
             return;
         }
-        list ($addr, $host, $proxyflg, $realaddr, $realhost) = Func::getuserenv();
+        [$addr, $host, $proxyflg, $realaddr, $realhost] = Func::getuserenv();
 
         $this->s['ADDR'] = $addr;
         $this->s['HOST'] = $host;
@@ -1932,8 +1932,8 @@ class Bbs extends Webapp {
      * Bulletin board cookie registration
      */
     function setbbscookie() {
-        $cookiestr = "u=" . urlencode($this->f['u']);
-        $cookiestr .= "&i=" . urlencode($this->f['i']);
+        $cookiestr = "u=" . urlencode((string) $this->f['u']);
+        $cookiestr .= "&i=" . urlencode((string) $this->f['i']);
         $cookiestr .= "&c=" . $this->f['c'];
         setcookie('c', $cookiestr, CURRENT_TIME + 7776000); // expires in 90 days
     }
@@ -1942,7 +1942,7 @@ class Bbs extends Webapp {
      * Register cookie for post UNDO
      */
     function setundocookie($undoid, $pcode) {
-        $undokey = substr (preg_replace("/\W/", "", crypt($pcode, $this->c['ADMINPOST'])), -8);
+        $undokey = substr ((string) preg_replace("/\W/", "", crypt((string) $pcode, (string) $this->c['ADMINPOST'])), -8);
         $cookiestr = "p=$undoid&k=$undokey";
         $this->s['UNDO_P'] = $undoid;
         $this->s['UNDO_K'] = $undokey;
@@ -1965,7 +1965,7 @@ class Bbs extends Webapp {
                 $countlevel = 1;
             }
         }
-        $count = array();
+        $count = [];
         for ($i = 0; $i < $countlevel; $i++) {
             $filename = "{$this->c['COUNTFILE']}{$i}.dat";
             if (is_writable ($filename) and $fh = @fopen ($filename, "r")) {
@@ -2006,14 +2006,14 @@ class Bbs extends Webapp {
             if ($_SERVER['REMOTE_ADDR']) {
                 $remoteaddr = $_SERVER['REMOTE_ADDR'];
             }
-            $ukey = hexdec(substr(md5($remoteaddr), 0, 8));
-            $newcntdata = array();
+            $ukey = hexdec(substr(md5((string) $remoteaddr), 0, 8));
+            $newcntdata = [];
             if (is_writable ($cntfilename)) {
                 $cntdata = file ($cntfilename);
                 $cadd = 0;
                 foreach ($cntdata as $cntvalue) {
                     if (strrpos($cntvalue, ',') !== FALSE) {
-                        list ($cuser, $ctime,) = @explode (',', trim ($cntvalue));
+                        [$cuser, $ctime, ] = @explode (',', trim ($cntvalue));
                         if ($cuser == $ukey) {
                             $newcntdata[] = "$ukey,".CURRENT_TIME."\n";
                             $cadd = 1;
@@ -2093,10 +2093,10 @@ class Func {
         if ($_SERVER['HTTP_VIA']) { $proxyflg += 256; }
         if ($_SERVER['HTTP_X_FORWARDED_FOR']) { $proxyflg += 512; }
         if ($_SERVER['HTTP_X_LOCKING']) { $proxyflg += 1024; }
-        if (preg_match ("/cache|delegate|gateway|httpd|proxy|squid|www|via/i", $agent)) {
+        if (preg_match ("/cache|delegate|gateway|httpd|proxy|squid|www|via/i", (string) $agent)) {
             $proxyflg += 2048;
         }
-        if (preg_match ("/cache|^dns|dummy|^ns|firewall|gate|keep|mail|^news|pop|proxy|smtp|w3|^web|www/i", $host)) {
+        if (preg_match ("/cache|^dns|dummy|^ns|firewall|gate|keep|mail|^news|pop|proxy|smtp|w3|^web|www/i", (string) $host)) {
             $proxyflg += 4096;
         }
         if ($host == $addr) {
@@ -2105,33 +2105,33 @@ class Func {
         $realaddr = '';
         $realhost = '';
         if ( $proxyflg > 0 ) {
-            $matches = array();
-            if (preg_match ("/^(\d+)\.(\d+)\.(\d+)\.(\d+)/", $_SERVER['HTTP_X_FORWARDED_FOR'], $matches)) {
+            $matches = [];
+            if (preg_match ("/^(\d+)\.(\d+)\.(\d+)\.(\d+)/", (string) $_SERVER['HTTP_X_FORWARDED_FOR'], $matches)) {
                 $realaddr = "{$matches[1]}.{$matches[2]}.{$matches[3]}.{$matches[4]}";
             }
-            elseif (preg_match ("/(\d+)\.(\d+)\.(\d+)\.(\d+)/", $_SERVER['HTTP_FORWARDED'], $matches)) {
+            elseif (preg_match ("/(\d+)\.(\d+)\.(\d+)\.(\d+)/", (string) $_SERVER['HTTP_FORWARDED'], $matches)) {
                 $realaddr = "{$matches[1]}.{$matches[2]}.{$matches[3]}.{$matches[4]}";
             }
-            elseif (preg_match ("/(\d+)\.(\d+)\.(\d+)\.(\d+)/", $_SERVER['HTTP_VIA'], $matches)) {
+            elseif (preg_match ("/(\d+)\.(\d+)\.(\d+)\.(\d+)/", (string) $_SERVER['HTTP_VIA'], $matches)) {
                 $realaddr = "{$matches[1]}.{$matches[2]}.{$matches[3]}.{$matches[4]}";
             }
-            elseif (preg_match ("/(\d+)\.(\d+)\.(\d+)\.(\d+)/", $_SERVER['HTTP_CLIENT_IP'], $matches)) {
+            elseif (preg_match ("/(\d+)\.(\d+)\.(\d+)\.(\d+)/", (string) $_SERVER['HTTP_CLIENT_IP'], $matches)) {
                 $realaddr = "{$matches[1]}.{$matches[2]}.{$matches[3]}.{$matches[4]}";
             }
-            elseif (preg_match ("/(\d+)\.(\d+)\.(\d+)\.(\d+)/", $_SERVER['HTTP_SP_HOST'], $matches)) {
+            elseif (preg_match ("/(\d+)\.(\d+)\.(\d+)\.(\d+)/", (string) $_SERVER['HTTP_SP_HOST'], $matches)) {
                 $realaddr = "{$matches[1]}.{$matches[2]}.{$matches[3]}.{$matches[4]}";
             }
-            elseif (preg_match ("/.*\sfor\s(.+)/", $_SERVER['HTTP_FORWARDED'], $matches)) {
+            elseif (preg_match ("/.*\sfor\s(.+)/", (string) $_SERVER['HTTP_FORWARDED'], $matches)) {
                 $realhost = $matches[1];
             }
-            elseif (preg_match ("/\-\@(.+)/", $_SERVER['HTTP_FROM'], $matches)) {
+            elseif (preg_match ("/\-\@(.+)/", (string) $_SERVER['HTTP_FROM'], $matches)) {
                 $realhost = $matches[1];
             }
             if (!$realaddr and $realhost) {
                 $realaddr = gethostbyname ($realhost);
             }
         }
-        return array($addr, $host, $proxyflg, $realaddr, $realhost);
+        return [$addr, $host, $proxyflg, $realaddr, $realhost];
     }
 
     /**
@@ -2152,12 +2152,12 @@ class Func {
             if ($_SERVER['REMOTE_ADDR']) {
                 $remoteaddr = $_SERVER['REMOTE_ADDR'];
             }
-            $ukey = hexdec(substr(md5($remoteaddr), 0, 8));
+            $ukey = hexdec(substr(md5((string) $remoteaddr), 0, 8));
         }
 
         $basecode =  dechex ($timestamp + $ukey);
-        $cryptcode = crypt ($basecode . substr($GLOBALS['CONF']['ADMINPOST'], -4), substr($GLOBALS['CONF']['ADMINPOST'], -4) . $basecode);
-        $cryptcode = substr (preg_replace ("/\W/", "", $cryptcode), -4);
+        $cryptcode = crypt ($basecode . substr((string) $GLOBALS['CONF']['ADMINPOST'], -4), substr((string) $GLOBALS['CONF']['ADMINPOST'], -4) . $basecode);
+        $cryptcode = substr ((string) preg_replace ("/\W/", "", $cryptcode), -4);
         $pcode = dechex ($timestamp) . $cryptcode;
         return $pcode;
     }
@@ -2184,13 +2184,13 @@ class Func {
             if ($_SERVER['REMOTE_ADDR']) {
                 $remoteaddr = $_SERVER['REMOTE_ADDR'];
             }
-            $ukey = hexdec(substr(md5($remoteaddr), 0, 8));
+            $ukey = hexdec(substr(md5((string) $remoteaddr), 0, 8));
         }
 
         $timestamp = hexdec ($timestamphex);
         $basecode = dechex ($timestamp + $ukey);
-        $verifycode = crypt ($basecode . substr($GLOBALS['CONF']['ADMINPOST'], -4), substr($GLOBALS['CONF']['ADMINPOST'], -4) . $basecode);
-        $verifycode = substr (preg_replace ("/\W/", "", $verifycode), -4);
+        $verifycode = crypt ($basecode . substr((string) $GLOBALS['CONF']['ADMINPOST'], -4), substr((string) $GLOBALS['CONF']['ADMINPOST'], -4) . $basecode);
+        $verifycode = substr ((string) preg_replace ("/\W/", "", $verifycode), -4);
         if ($cryptcode != $verifycode) {
             return;
         }
@@ -2251,7 +2251,7 @@ class Func {
 
         if (!preg_match("/^\w+$/", $value)) {
             $value = strtr($value, array_flip(get_html_translation_table(HTML_ENTITIES)));
-            $value = preg_replace("/&#([0-9]+);/me", "chr('\\1')", $value);
+            $value = preg_replace_callback("/&#([0-9]+);/m", fn($matches) => chr($matches[1]), $value);
         }
         return $value;
     }
@@ -2268,9 +2268,9 @@ class Func {
             $format = "Y/m/d(-) H:i:s";
         }
         $datestr = date($format, $timestamp);
-        if (strrpos($format, '-') !== FALSE) {
+        if (strrpos((string) $format, '-') !== FALSE) {
             if (!isset($wdays)) {
-                static $wdays = array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat');
+                static $wdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             }
             $datestr = str_replace('-', $wdays[date("w", $timestamp)], $datestr);
         }
@@ -2286,7 +2286,7 @@ class Func {
      */
     public static function fixnumberstr($numberstr) {
         $numberstr = trim($numberstr);
-        $twobytenumstr = array ('０', '１', '２', '３', '４', '５', '６', '７', '８', '９', );
+        $twobytenumstr =  ['０', '１', '２', '３', '４', '５', '６', '７', '８', '９', ];
         for ($i = 0; $i < count($twobytenumstr); $i++) {
             $numberstr = str_replace($twobytenumstr[$i], "$i", $numberstr);
         }
@@ -2308,7 +2308,7 @@ class Func {
      * @return  String  Character string after escaping
      */
     public static function escape_url($src_url) {
-        $src_url = preg_replace("/script:/i", "script", $src_url);
+        $src_url = preg_replace("/script:/i", "script", (string) $src_url);
         $src_url = urlencode($src_url);
         $src_url = str_replace ("%2F", "/", $src_url);
         $src_url = str_replace ("%3A", ":", $src_url);
@@ -2397,8 +2397,8 @@ class Func {
      * @return  String  Time difference string
      */
     public static function microtime_diff($a, $b) {
-        list($a_dec, $a_sec) = explode(" ", $a);
-        list($b_dec, $b_sec) = explode(" ", $b);
+        [$a_dec, $a_sec] = explode(" ", $a);
+        [$b_dec, $b_sec] = explode(" ", $b);
         return $b_sec - $a_sec + $b_dec - $a_dec;
     }
 
@@ -2426,9 +2426,9 @@ class Func {
      * @return  Boolean Result
      */
     public static function checkiprange($cidraddr, $checkaddr) {
-        list($netaddr, $cidrmask) = explode("/", $cidraddr);
+        [$netaddr, $cidrmask] = explode("/", $cidraddr);
         $netaddr_long = ip2long($netaddr);
-        $cidrmask = pow(2, 32 - $cidrmask) - 1;
+        $cidrmask = 2 ** (32 - $cidrmask) - 1;
         $bits1 = str_pad(decbin($netaddr_long), 32, "0", "STR_PAD_LEFT");
         $bits2 = str_pad(decbin($cidrmask), 32, "0", "STR_PAD_LEFT");
         $final = '';
@@ -2465,11 +2465,11 @@ class Func {
             return;
         }
         $hit = FALSE;
-        list ($addr, $host, $proxyflg, $realaddr, $realhost) = Func::getuserenv();
+        [$addr, $host, $proxyflg, $realaddr, $realhost] = Func::getuserenv();
         $agent = $_SERVER['HTTP_USER_AGENT'];
         foreach ($hostlist as $hostpattern) {
             foreach ($hostagent as $hostagentpattern) {
-                if ((preg_match("/$hostpattern/", $host) or preg_match("/$hostpattern/", $realhost)) or preg_match("/$hostagentpattern/", $agent)) {
+                if ((preg_match("/$hostpattern/", (string) $host) or preg_match("/$hostpattern/", (string) $realhost)) or preg_match("/$hostagentpattern/", (string) $agent)) {
                     $hit = TRUE;
                     break;
                 }

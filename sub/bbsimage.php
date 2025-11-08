@@ -23,7 +23,7 @@ if(!defined("INCLUDED_FROM_BBS")) {
  *
  * They will be added to/overwritten by $CONF.
  */
-$GLOBALS['CONF_IMAGEBBS'] = array(
+$GLOBALS['CONF_IMAGEBBS'] = [
 
     # Image upload directory (please set it to be writable)
     'UPLOADDIR' => './upload/',
@@ -49,7 +49,7 @@ $GLOBALS['CONF_IMAGEBBS'] = array(
     # Image scale factor when displayed on the bulletin board (％)
     'IMAGE_PREVIEW_RESIZE' => 100,
 
-);
+];
 
 
 
@@ -98,6 +98,7 @@ class Imagebbs extends Bbs {
     /**
      * Reflect personal settings
      */
+    #[\Override]
     function refcustom() {
         $this->c['SHOWIMG'] = 1;
 
@@ -117,6 +118,7 @@ class Imagebbs extends Bbs {
      * @param   String  $dlink      Initial value of the link form
      * @return  String  Form HTML data
      */
+    #[\Override]
     function setform($dtitle, $dmsg, $dlink, $mode = '') {
         if ($this->c['SHOWIMG']) $this->t->addVar('sicheck', 'CHK_SI', ' checked="checked"');
         $this->t->addVar('postform', 'MAX_FILE_SIZE', $this->c['MAX_IMAGESIZE'] * 1024);
@@ -135,6 +137,7 @@ class Imagebbs extends Bbs {
      * @access  public
      * @return  Array  Message array
      */
+    #[\Override]
     function getformmessage() {
 
         $message = parent::getformmessage();
@@ -210,13 +213,13 @@ class Imagebbs extends Bbs {
             . "<img src=\"{$filename}\" width=\"{$imageinfo[0]}\" height=\"{$imageinfo[1]}\" border=\"0\" alt=\"{$message['FILEMSG']}\" /></a>";
 
             # Embedding tags in messages.
-            if (strpos($message['MSG'], $this->c['IMAGETEXT']) !== FALSE) {
-                $message['MSG'] = preg_replace("/\Q{$this->c['IMAGETEXT']}\E/", $message['FILETAG'], $message['MSG'], 1);
+            if (str_contains((string) $message['MSG'], (string) $this->c['IMAGETEXT'])) {
+                $message['MSG'] = preg_replace("/\Q{$this->c['IMAGETEXT']}\E/", $message['FILETAG'], (string) $message['MSG'], 1);
                 $message['MSG'] = preg_replace("/\Q{$this->c['IMAGETEXT']}\E/", '', $message['MSG']);
             }
             else {
-                if (preg_match("/\r\r<a href=[^<]+>Reference: [^<]+<\/a>$/", $message['MSG'])) {
-                    $message['MSG'] = preg_replace("/(\r\r<a href=[^<]+>Reference: [^<]+<\/a>)$/", "\r\r{$message['FILETAG']}$1", $message['MSG'], 1);
+                if (preg_match("/\r\r<a href=[^<]+>Reference: [^<]+<\/a>$/", (string) $message['MSG'])) {
+                    $message['MSG'] = preg_replace("/(\r\r<a href=[^<]+>Reference: [^<]+<\/a>)$/", "\r\r{$message['FILETAG']}$1", (string) $message['MSG'], 1);
                 }
                 else {
                     $message['MSG'] .= "\r\r" . $message['FILETAG'];
@@ -244,6 +247,7 @@ class Imagebbs extends Bbs {
      * @access  public
      * @return  Integer  Error code
      */
+    #[\Override]
     function putmessage($message) {
 
         $posterr = parent::putmessage($message);
@@ -256,7 +260,7 @@ class Imagebbs extends Bbs {
             $dirspace = 0;
             $maxspace = $this->c['MAX_UPLOADSPACE'] * 1024;
 
-            $files = array();
+            $files = [];
             $dh = opendir($this->c['UPLOADDIR']);
             if (!$dh) {
                 return;

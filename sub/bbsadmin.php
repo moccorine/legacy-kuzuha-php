@@ -24,7 +24,7 @@ if(!defined("INCLUDED_FROM_BBS")) {
  */
 class Bbsadmin extends Webapp {
 
-    var $bbs;
+    public $bbs;
 
     /**
      * Constructor
@@ -113,7 +113,7 @@ class Bbsadmin extends Webapp {
      */
     function prtadminmenu() {
 
-        $this->t->addVar('adminmenu', 'V', trim($this->f['v']));
+        $this->t->addVar('adminmenu', 'V', trim((string) $this->f['v']));
 
         $this->sethttpheader();
         print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Administration menu');
@@ -137,14 +137,14 @@ class Bbsadmin extends Webapp {
         }
         $logdata = file($this->c['LOGFILENAME']);
 
-        $this->t->addVar('killlist', 'V', trim($this->f['v']));
+        $this->t->addVar('killlist', 'V', trim((string) $this->f['v']));
 
-        $messages = array();
+        $messages = [];
         foreach ($logdata as $logline) {
             $message = $this->getmessage($logline);
-            $message['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", $message['MSG'], 1);
+            $message['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", "", (string) $message['MSG'], 1);
             $message['MSG'] = preg_replace("/<[^>]+>/", "", ltrim($message['MSG']));
-            $msgsplit = explode("\r", $message['MSG']);
+            $msgsplit = explode("\r", (string) $message['MSG']);
             $message['MSGDIGEST'] = $msgsplit[0];
             $index = 1;
             while ($index < count($msgsplit) - 1 and strlen($message['MSGDIGEST'] . $msgsplit[$index]) < 50) {
@@ -152,7 +152,7 @@ class Bbsadmin extends Webapp {
                 $index++;
             }
             $message['WDATE'] = Func::getdatestr($message['NDATE']);
-            $message['USER_NOTAG'] = preg_replace("/<[^>]*>/", '', $message['USER']);
+            $message['USER_NOTAG'] = preg_replace("/<[^>]*>/", '', (string) $message['USER']);
             $messages[] = $message;
         }
 
@@ -179,7 +179,7 @@ class Bbsadmin extends Webapp {
         }
         if (!is_array($killids)) {
             $tmp = $killids;
-            $killids = array();
+            $killids = [];
             $killids[] = $tmp;
         }
 
@@ -190,14 +190,14 @@ class Bbsadmin extends Webapp {
         flock ($fh, 2);
         fseek ($fh, 0, 0);
 
-        $logdata = array();
+        $logdata = [];
         while (($logline = Func::fgetline($fh)) !== FALSE) {
              $logdata[] = $logline;
         }
 
-        $killntimes = array();
-        $killlogdata = array();
-        $newlogdata = array();
+        $killntimes = [];
+        $killlogdata = [];
+        $newlogdata = [];
         $i = 0;
         while ($i < count($logdata)) {
             $items = explode(',', $logdata[$i], 3);
@@ -246,13 +246,13 @@ class Bbsadmin extends Webapp {
                     flock ($fh, 2);
                     fseek ($fh, 0, 0);
 
-                    $newlogdata = array();
+                    $newlogdata = [];
                     $hit = FALSE;
 
                     if ($this->c['OLDLOGFMT']) {
                         $needle = $killntimes[$killid] . "," . $killid . ",";
                         while (($logline = Func::fgetline($fh)) !== FALSE) {
-                            if (!$hit and strpos($logline, $needle) !== FALSE and strpos($logline, $needle) == 0) {
+                            if (!$hit and str_contains($logline, $needle) and str_starts_with($logline, $needle)) {
                                 $hit = TRUE;
                             }
                             else {
@@ -266,12 +266,12 @@ class Bbsadmin extends Webapp {
                         while (($htmlline = Func::fgetline($fh)) !== FALSE) {
 
                             # Start of message
-                            if (!$hit and strpos($htmlline, $needle) !== FALSE) {
+                            if (!$hit and str_contains($htmlline, $needle)) {
                                 $hit = TRUE;
                                 $flgbuffer = TRUE;
                             }
                             # End of message
-                            else if ($flgbuffer and strpos($htmlline, "<hr") !== FALSE) {
+                            else if ($flgbuffer and str_contains($htmlline, "<hr")) {
                                 $flgbuffer = FALSE;
                             }
                             # Inside message
@@ -309,7 +309,7 @@ class Bbsadmin extends Webapp {
      */
     function prtsetpass() {
 
-        $this->t->addVar('setpass', 'V', trim($this->f['v']));
+        $this->t->addVar('setpass', 'V', trim((string) $this->f['v']));
 
         $this->sethttpheader();
         print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Password settings page');
@@ -335,10 +335,10 @@ class Bbsadmin extends Webapp {
         $cryptpass = crypt($inputpass, $salt);
         $inputsize = strlen($cryptpass) + 10;
 
-        $this->t->addVars('pass', array(
+        $this->t->addVars('pass', [
             'CRYPTPASS' => $cryptpass,
             'INPUTSIZE' => $inputsize,
-        ));
+        ]);
 
         $this->sethttpheader();
         print $this->prthtmlhead ($this->c['BBSTITLE'] . ' Password settings page');
