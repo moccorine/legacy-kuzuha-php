@@ -3,6 +3,7 @@
 namespace Kuzuha;
 
 use App\Config;
+use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\StringHelper;
 
@@ -198,8 +199,26 @@ class Treeview extends Bbs
         $forminput = '<input type="hidden" name="m" value="tree" /><input type="hidden" name="treem" value="p" />';
         $this->setform($dtitle, $dmsg, $dlink, $forminput);
 
+        # Get form HTML
+        ob_start();
+        $this->template->displayParsedTemplate('form');
+        $formHtml = ob_get_clean();
+
         # Upper main section
-        $this->template->displayParsedTemplate('treeview_upper');
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'),
+            'FORM' => $formHtml,
+            'TRANS_TREE_VIEW' => Translator::trans('tree.tree_view'),
+            'TRANS_PR_OFFICE' => Translator::trans('tree.pr_office'),
+            'TRANS_EMAIL_ADMIN' => Translator::trans('tree.email_admin'),
+            'TRANS_CONTACT' => Translator::trans('tree.contact'),
+            'TRANS_MESSAGE_LOGS' => Translator::trans('tree.message_logs'),
+            'TRANS_MESSAGE_LOGS_TITLE' => Translator::trans('tree.message_logs_title'),
+            'TRANS_STANDARD_VIEW' => Translator::trans('tree.standard_view'),
+            'TRANS_STANDARD_VIEW_TITLE' => Translator::trans('tree.standard_view_title'),
+            'TRANS_BOTTOM' => Translator::trans('tree.bottom'),
+        ]);
+        echo $this->renderTwig('tree/upper.twig', $data);
 
         $threadindex = 0;
 
@@ -295,17 +314,35 @@ class Treeview extends Bbs
                 $this->template->addVar('nextpage', 'EINDEX', $eindex);
             }
             if (!$this->config['SHOW_READNEWBTN']) {
-                $this->template->setAttribute('readnew', 'visibility', 'hidden');
+                $showReadnew = false;
+            } else {
+                $showReadnew = true;
             }
         }
 
         # Administrator post
-        if ($this->config['BBSMODE_ADMINONLY'] == 0) {
-            $this->template->setAttribute('adminlogin', 'visibility', 'hidden');
-        }
+        $showAdminLogin = ($this->config['BBSMODE_ADMINONLY'] != 0);
+
+        # Get copyright HTML
+        ob_start();
+        $this->template->displayParsedTemplate('copyright');
+        $copyrightHtml = ob_get_clean();
 
         # Lower main section
-        $this->template->displayParsedTemplate('treeview_lower');
+        $data = array_merge($this->config, $this->session, [
+            'MSGMORE' => $msgmore,
+            'SHOW_NEXTPAGE' => isset($eindex),
+            'EINDEX' => $eindex ?? '',
+            'SHOW_READNEW' => $showReadnew ?? false,
+            'SHOW_ADMINLOGIN' => $showAdminLogin,
+            'COPYRIGHT' => $copyrightHtml,
+            'TRANS_NEXT_PAGE' => Translator::trans('tree.next_page'),
+            'TRANS_RELOAD' => Translator::trans('tree.reload'),
+            'TRANS_UNREAD' => Translator::trans('tree.unread'),
+            'TRANS_TOP' => Translator::trans('tree.top'),
+            'TRANS_POST_AS_ADMIN' => Translator::trans('tree.post_as_admin'),
+        ]);
+        echo $this->renderTwig('tree/lower.twig', $data);
 
         print $this->prthtmlfoot();
     }

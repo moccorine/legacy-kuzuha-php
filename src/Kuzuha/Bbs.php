@@ -414,19 +414,35 @@ class Bbs extends Webapp
             $message['THREAD'] = $message['POSTID'];
         }
         $filename ? $mode = 1 : $mode = 0;
-        $this->setmessage($message, $mode, $filename);
 
+        // Get message HTML
+        ob_start();
+        $this->setmessage($message, $mode, $filename);
+        $this->template->displayParsedTemplate('message');
+        $messageHtml = ob_get_clean();
+
+        // Set form variables for follow
         if ($this->config['AUTOLINK']) {
-            $this->template->addVar('follow', 'CHK_A', ' checked="checked"');
+            $this->template->addVar('form', 'CHK_A', ' checked="checked"');
         }
-        $this->template->addVar('follow', 'FOLLOWID', $message['POSTID']);
-        $this->template->addVar('follow', 'SEARCHID', $this->form['s']);
-        $this->template->addVar('follow', 'FF', $this->form['ff']);
-        # Display
+        $this->template->addVar('form', 'FOLLOWID', $message['POSTID']);
+        $this->template->addVar('form', 'SEARCHID', $this->form['s']);
+        $this->template->addVar('form', 'FF', $this->form['ff']);
+
+        // Get form HTML
+        ob_start();
+        $this->template->displayParsedTemplate('form');
+        $formHtml = ob_get_clean();
+
         $this->sethttpheader();
-        $this->renderPage($this->config['BBSTITLE'] . ' Follow-up post', function () {
-            $this->template->displayParsedTemplate('follow');
-        });
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('follow.followup_post'),
+            'MESSAGE' => $messageHtml,
+            'FORM' => $formHtml,
+            'TRANS_FOLLOWUP_POST' => Translator::trans('follow.followup_post'),
+            'TRANS_RETURN' => Translator::trans('follow.return'),
+        ]);
+        echo $this->renderTwig('follow.twig', $data);
     }
 
     /**
@@ -436,7 +452,6 @@ class Bbs extends Webapp
      */
     public function prtnewpost($retry = false)
     {
-
         # Administrator authentication
         if ($this->config['BBSMODE_ADMINONLY'] != 0
             and crypt((string) $this->form['u'], (string) $this->config['ADMINPOST']) != $this->config['ADMINPOST']) {
@@ -454,13 +469,22 @@ class Bbs extends Webapp
         $this->setform($dtitle, $dmsg, $dlink);
 
         if ($this->config['AUTOLINK']) {
-            $this->template->addVar('newpost', 'CHK_A', ' checked="checked"');
+            $this->template->addVar('form', 'CHK_A', ' checked="checked"');
         }
 
+        // Get form HTML
+        ob_start();
+        $this->template->displayParsedTemplate('form');
+        $formHtml = ob_get_clean();
+
         $this->sethttpheader();
-        $this->renderPage("{$this->config['BBSTITLE']} New post", function () {
-            $this->template->displayParsedTemplate('newpost');
-        });
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('newpost.new_post'),
+            'FORM' => $formHtml,
+            'TRANS_NEW_POST' => Translator::trans('newpost.new_post'),
+            'TRANS_RETURN' => Translator::trans('newpost.return'),
+        ]);
+        echo $this->renderTwig('newpost.twig', $data);
     }
 
     /**
@@ -470,26 +494,29 @@ class Bbs extends Webapp
      */
     public function prtsearchlist($mode = '')
     {
-
         if (!$this->form['s']) {
             $this->prterror(Translator::trans('error.no_parameters'));
         }
         if (!$mode) {
             $mode = $this->form['m'];
         }
+
+        $result = $this->msgsearchlist($mode);
+        $messages = '';
+        foreach ($result as $message) {
+            $messages .= $this->prtmessage($message, $mode, $this->form['ff']);
+        }
+        $success = count($result);
+
         $this->sethttpheader();
-        $this->renderPage($this->config['BBSTITLE'] . ' Post search', function () use ($mode) {
-            $this->template->displayParsedTemplate('searchlist_upper');
-
-            $result = $this->msgsearchlist($mode);
-            foreach ($result as $message) {
-                print $this->prtmessage($message, $mode, $this->form['ff']);
-            }
-            $success = count($result);
-
-            $this->template->addVar('searchlist_lower', 'SUCCESS', $success);
-            $this->template->displayParsedTemplate('searchlist_lower');
-        });
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('search.post_search'),
+            'MESSAGES' => $messages,
+            'SUCCESS' => $success,
+            'TRANS_POSTS_FOUND' => Translator::trans('search.posts_found'),
+            'TRANS_RETURN' => Translator::trans('search.return'),
+        ]);
+        echo $this->renderTwig('searchlist.twig', $data);
     }
 
     /**
@@ -578,39 +605,50 @@ class Bbs extends Webapp
      */
     public function prtcustom($mode = '')
     {
-
-        if ($this->config['GZIPU']) {
-            $this->template->addVar('custom', 'CHK_G', ' checked="checked"');
-        }
-        if ($this->config['AUTOLINK']) {
-            $this->template->addVar('custom', 'CHK_A', ' checked="checked"');
-        }
-        if ($this->config['LINKOFF']) {
-            $this->template->addVar('custom', 'CHK_LOFF', ' checked="checked"');
-        }
-        if ($this->config['HIDEFORM']) {
-            $this->template->addVar('custom', 'CHK_HIDE', ' checked="checked"');
-        }
-        if ($this->config['SHOWIMG']) {
-            $this->template->addVar('custom', 'CHK_SI', ' checked="checked"');
-        }
-        if ($this->config['COOKIE']) {
-            $this->template->addVar('custom', 'CHK_COOKIE', ' checked="checked"');
-        }
-
-        $this->config['FOLLOWWIN'] ? $this->template->addVar('custom', 'CHK_FW_1', ' checked="checked"')
-            : $this->template->addVar('custom', 'CHK_FW_0', ' checked="checked"');
-        $this->config['RELTYPE'] ? $this->template->addVar('custom', 'CHK_RT_1', ' checked="checked"')
-            : $this->template->addVar('custom', 'CHK_RT_0', ' checked="checked"');
-
-        $this->template->addVar('custom_hide', 'BBSMODE_ADMINONLY', $this->config['BBSMODE_ADMINONLY']);
-        $this->template->addVar('custom_a', 'BBSMODE_ADMINONLY', $this->config['BBSMODE_ADMINONLY']);
-        $this->template->addVar('custom', 'MODE', $mode);
-
         $this->sethttpheader();
-        $this->renderPage($this->config['BBSTITLE'] . ' User settings', function () {
-            $this->template->displayParsedTemplate('custom');
-        });
+        $data = array_merge($this->config, $this->session, [
+            'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('custom.user_settings'),
+            'MODE' => $mode,
+            'CHK_G' => $this->config['GZIPU'] ? ' checked="checked"' : '',
+            'CHK_A' => $this->config['AUTOLINK'] ? ' checked="checked"' : '',
+            'CHK_LOFF' => $this->config['LINKOFF'] ? ' checked="checked"' : '',
+            'CHK_HIDE' => $this->config['HIDEFORM'] ? ' checked="checked"' : '',
+            'CHK_SI' => $this->config['SHOWIMG'] ? ' checked="checked"' : '',
+            'CHK_COOKIE' => $this->config['COOKIE'] ? ' checked="checked"' : '',
+            'CHK_FW_0' => !$this->config['FOLLOWWIN'] ? ' checked="checked"' : '',
+            'CHK_FW_1' => $this->config['FOLLOWWIN'] ? ' checked="checked"' : '',
+            'CHK_RT_0' => !$this->config['RELTYPE'] ? ' checked="checked"' : '',
+            'CHK_RT_1' => $this->config['RELTYPE'] ? ' checked="checked"' : '',
+            'TRANS_USER_SETTINGS' => Translator::trans('custom.user_settings'),
+            'TRANS_DISPLAY_COLORS' => Translator::trans('custom.display_colors'),
+            'TRANS_TEXT_COLOR' => Translator::trans('custom.text_color'),
+            'TRANS_BG_COLOR' => Translator::trans('custom.bg_color'),
+            'TRANS_LINK_COLOR' => Translator::trans('custom.link_color'),
+            'TRANS_VISITED_COLOR' => Translator::trans('custom.visited_color'),
+            'TRANS_ACTIVE_COLOR' => Translator::trans('custom.active_color'),
+            'TRANS_HOVER_COLOR' => Translator::trans('custom.hover_color'),
+            'TRANS_TITLE_COLOR' => Translator::trans('custom.title_color'),
+            'TRANS_QUOTE_COLOR' => Translator::trans('custom.quote_color'),
+            'TRANS_ADDITIONAL_FEATURES' => Translator::trans('custom.additional_features'),
+            'TRANS_POSTS_DISPLAYED' => Translator::trans('custom.posts_displayed'),
+            'TRANS_GZIP' => Translator::trans('custom.gzip'),
+            'TRANS_HIDE_FORM' => Translator::trans('custom.hide_form'),
+            'TRANS_AUTOLINK' => Translator::trans('custom.autolink'),
+            'TRANS_COOKIE' => Translator::trans('custom.cookie'),
+            'TRANS_HIDE_LINKS' => Translator::trans('custom.hide_links'),
+            'TRANS_FOLLOWUP_DISPLAY' => Translator::trans('custom.followup_display'),
+            'TRANS_NEW_WINDOW' => Translator::trans('custom.new_window'),
+            'TRANS_SAME_PAGE' => Translator::trans('custom.same_page'),
+            'TRANS_BOOKMARK_INFO' => Translator::trans('custom.bookmark_info'),
+            'TRANS_REGISTER' => Translator::trans('custom.register'),
+            'TRANS_REGISTER_TITLE' => Translator::trans('custom.register_title'),
+            'TRANS_UNDO' => Translator::trans('custom.undo'),
+            'TRANS_UNDO_TITLE' => Translator::trans('custom.undo_title'),
+            'TRANS_RESTORE' => Translator::trans('custom.restore'),
+            'TRANS_RESTORE_TITLE' => Translator::trans('custom.restore_title'),
+            'TRANS_RETURN' => Translator::trans('custom.return'),
+        ]);
+        echo $this->renderTwig('custom.twig', $data);
     }
 
     /**

@@ -1,0 +1,20 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+  <table>
+    <tr>
+      <td>
+        <span class="pagetitle">
+          <a href="{{ DEFURL }}" style="text-decoration: none;">
+            {{ BBSTITLE }}
+          </a>
+        </span>
+        - {{ TRANS_NEW_POST }}
+        <a href="{{ DEFURL }}" title="{{ TRANS_RETURN }}">
+          ←{{ TRANS_RETURN }}
+        </a>
+      </td>
+    </tr>
+  </table>
+  {{ FORM|raw }}
+{% endblock %}

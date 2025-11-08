@@ -457,14 +457,14 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $this->template->clearTemplate('oldlog_upper');
-        $this->template->clearTemplate('oldlog_lower');
-        $this->template->addVar('oldlog_upper', 'FILENAME', $filename);
-
         $fh = @fopen($dir . $filename, 'rb');
         if (!$fh) {
-            $this->template->addVar('oldlog_upper', 'success', 'false');
-            $this->template->displayParsedTemplate('oldlog_upper');
+            $data = array_merge($this->config, $this->session, [
+                'FILENAME' => $filename,
+                'SUCCESS' => false,
+                'TRANS_UNABLE_TO_OPEN' => Translator::trans('log.unable_to_open'),
+            ]);
+            echo $this->renderTwig('log/oldlog_header.twig', $data);
             return 2;
         }
         flock($fh, 1);
@@ -484,8 +484,11 @@ class Getlog extends Webapp
                     }
                 }
             }
-            $this->template->addVar('oldlog_upper', 'TIMERANGE', $timerangestr);
-            $this->template->displayParsedTemplate('oldlog_upper');
+            $data = array_merge($this->config, $this->session, [
+                'FILENAME' => $filename,
+                'TIMERANGE' => $timerangestr,
+            ]);
+            echo $this->renderTwig('log/oldlog_header.twig', $data);
         }
 
 
@@ -619,9 +622,10 @@ class Getlog extends Webapp
                         $resultmsg .= $resultcount . ' results found.';
                     }
                 }
-                #print $resultmsg;
-                $this->template->addVar('oldlog_lower', 'RESULTMSG', $resultmsg);
-                $this->template->displayParsedTemplate('oldlog_lower');
+                $data = array_merge($this->config, $this->session, [
+                    'RESULTMSG' => $resultmsg,
+                ]);
+                echo $this->renderTwig('log/oldlog_footer.twig', $data);
             }
         }
 
