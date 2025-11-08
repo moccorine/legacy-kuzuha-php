@@ -42,11 +42,6 @@ var vanisher = {
   init: function () {
     var nodes = document.getElementsByClassName("ngset");
     if (nodes.length > 0) {
-      // Check if already initialized
-      if (nodes[0].hasAttribute('data-vanisher-init')) {
-        return;
-      }
-      nodes[0].setAttribute('data-vanisher-init', 'true');
       vanisher.initNgWord(nodes[0]);
       vanisher.vanishNgWord(cookie.get("ngWord="));
     }
