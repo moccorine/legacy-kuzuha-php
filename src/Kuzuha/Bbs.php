@@ -489,11 +489,8 @@ class Bbs extends Webapp
         }
         $filename ? $mode = 1 : $mode = 0;
 
-        // Get message HTML
-        ob_start();
-        $this->setmessage($message, $mode, $filename);
-        $this->template->displayParsedTemplate('message');
-        $messageHtml = ob_get_clean();
+        // Get message HTML using Twig
+        $messageHtml = $this->prtmessage($message, $mode, $filename);
 
         // Set form variables for follow
         if ($this->config['AUTOLINK']) {
