@@ -2,34 +2,64 @@
 
 ## Deploy
 
-### 1. Set permissions
+### 1. Clone and setup
 
 ```bash
-chmod 777 log count
-chmod 666 bbs.log bbs.cnt
+git clone <repository-url>
+cd legacy-kuzuha-php
+cp .env.example .env
 ```
 
-### 2. Start Docker container
+### 2. Configure environment
+
+Edit `.env` and set your configuration:
+```bash
+APP_NAME="Your BBS Name"
+APP_URL=http://your-domain.com
+APP_LOCALE=ja  # or en
+
+ADMIN_NAME=Administrator
+ADMIN_EMAIL=your@email.com
+# Leave ADMIN_PASSWORD empty for initial setup
+ADMIN_PASSWORD=
+ADMIN_KEY=your-secret-key
+```
+
+### 3. Set permissions
+
+```bash
+chmod -R 777 storage/app storage/logs storage/cache
+```
+
+### 4. Start Docker container
 
 ```bash
 docker-compose up -d
 ```
 
-### 3. Initial password setup
+### 5. Install dependencies
 
-Access `http://localhost:8080/bbs.php` and you'll see the password settings page.
+```bash
+docker-compose exec web composer install
+```
+
+### 6. Initial password setup
+
+Access `http://localhost:8080/` and you'll see the password settings page.
+
+Enter your desired admin password and click "Set".
 
 Copy the encrypted password string displayed (e.g., `7PUPc9zzOI3DQ`).
 
-### 4. Configure admin password
+### 7. Configure admin password
 
-Edit `conf.php` and set the encrypted password:
+Edit `.env` and set the encrypted password:
 
-```php
-'ADMINPOST' => '7PUPc9zzOI3DQ',
+```bash
+ADMIN_PASSWORD=7PUPc9zzOI3DQ
 ```
 
-### 5. Restart container
+### 8. Restart container
 
 ```bash
 docker-compose restart
