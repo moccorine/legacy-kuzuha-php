@@ -160,7 +160,7 @@
   "message": {
     "user": "投稿者",
     "post_date": "投稿日時",
-    "reference": "引用"
+    "reference": "参考"
   },
   "redirect": {
     "redirecting": "リダイレクト中…",
