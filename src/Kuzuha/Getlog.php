@@ -9,6 +9,7 @@ use App\Utils\HtmlHelper;
 use App\Utils\HtmlParser;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
+use App\Utils\UserAgentHelper;
 use App\Utils\ValidationRegex;
 
 /*
@@ -930,31 +931,14 @@ class Getlog extends Webapp
     /**
      * Check download function availability
      */
+    /**
+     * Check if browser supports download
+     * 
+     * @return bool True if browser is modern enough
+     */
     public function dlchk()
     {
-
-        if (!@$_SERVER['HTTP_USER_AGENT']) {
-            return true;
-        }
-        if (preg_match("/^Mozilla\/(\S+)\s(.+)/", (string) @$_SERVER['HTTP_USER_AGENT'], $matches)) {
-            $ver = $matches[1];
-            $uos = $matches[2];
-            $isie = 0;
-            if (preg_match("/MSIE (\S)/", $uos, $matches)) {
-                $isie = 1;
-                $iever = $matches[1];
-            }
-            $ismac = 0;
-            if (preg_match('/Mac/', $uos, $matches)) {
-                $ismac = 1;
-            }
-            if ((@$ver >= 4 and !@$isie) or (@$ver >= 4 and @$isie and @$iever >= 5 and !@$ismac)) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        return true;
+        return UserAgentHelper::supportsDownload();
     }
 
 

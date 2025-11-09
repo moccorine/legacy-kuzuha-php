@@ -21,7 +21,8 @@
     "php-di/php-di": "^7.1",
     "dflydev/fig-cookies": "^3.2",
     "symfony/dom-crawler": "^7.3",
-    "symfony/css-selector": "^7.3"
+    "symfony/css-selector": "^7.3",
+    "mobiledetect/mobiledetectlib": "^4.8"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.89",
