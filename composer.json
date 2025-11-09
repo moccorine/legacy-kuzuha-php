@@ -19,7 +19,9 @@
     "twig/twig": "^3.22",
     "symfony/translation": "^7.3",
     "php-di/php-di": "^7.1",
-    "dflydev/fig-cookies": "^3.2"
+    "dflydev/fig-cookies": "^3.2",
+    "symfony/dom-crawler": "^7.3",
+    "symfony/css-selector": "^7.3"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.89",

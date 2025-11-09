@@ -6,6 +6,7 @@ use App\Config;
 use App\Translator;
 use App\Utils\FileHelper;
 use App\Utils\HtmlHelper;
+use App\Utils\HtmlParser;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\ValidationRegex;
@@ -561,13 +562,13 @@ class Getlog extends Webapp
         # HTML search
         else {
             if (!$conditions['showall']) {
-                # Buffers file reads for each message
+                // Buffers file reads for each message
                 $buffer = '';
                 $flgbuffer = false;
                 $result = 0;
                 while (($htmlline = FileHelper::getLine($fh)) !== false) {
-                    # Start message
-                    if (!$flgbuffer and preg_match("/<div [^>]*id=\"m\d+\"[^>]*>/", $htmlline)) {
+                    // Start message (check for div with id starting with 'm' followed by digits)
+                    if (!$flgbuffer && str_contains($htmlline, '<div') && str_contains($htmlline, 'id="m')) {
                         $buffer = $htmlline;
                         $flgbuffer = true;
                     }
@@ -669,20 +670,18 @@ class Getlog extends Webapp
         $message['MSG'] = '';
         $message['NDATESTR'] = '';
 
-        if (preg_match("/<span class=\"mun\">([^<]+)<\/span>/", (string) $buffer, $matches)) {
-            $message['USER'] = $matches[1];
-        }
-        if (preg_match("/<span class=\"ms\">([^<]+)<\/span>/", (string) $buffer, $matches)) {
-            $message['TITLE'] = $matches[1];
-        }
-        if (preg_match("/<blockquote>[\r\n\s]*<pre>(.+?)<\/pre>/ms", (string) $buffer, $matches)) {
-            $message['MSG'] = $matches[1];
-        }
-        if (preg_match("/<span class=\"md\">[^<]*投稿日：(\d+)\/(\d+)\/(\d+)[^\d]+(\d+)時(\d+)分(\d+)秒/", (string) $buffer, $matches)) {
+        // Parse HTML using DomCrawler (safer than regex)
+        $parsed = HtmlParser::parseMessage($buffer);
+        $message['USER'] = $parsed['USER'];
+        $message['TITLE'] = $parsed['TITLE'];
+        $message['MSG'] = $parsed['MSG'];
+        
+        if (isset($parsed['date_parts'])) {
+            $dp = $parsed['date_parts'];
             if (@$conditions['savesw']) {
-                $message['NDATESTR'] = $matches[3] . $matches[4];
+                $message['NDATESTR'] = $dp['day'] . $dp['hour'];
             } else {
-                $message['NDATESTR'] = $matches[4] . $matches[5];
+                $message['NDATESTR'] = $dp['hour'] . $dp['minute'];
             }
         }
 
