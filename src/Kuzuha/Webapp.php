@@ -11,6 +11,7 @@ use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
 use App\Utils\TextEscape;
 use App\View;
+use App\Models\Repositories\BbsLogRepositoryInterface;
 
 class Webapp
 {
@@ -25,6 +26,11 @@ class Webapp
     public function __construct()
     {
         $this->config = Config::getInstance()->all();
+    }
+
+    public function setBbsLogRepository($repo): void
+    {
+        $this->bbsLogRepo = $repo;
     }
 
     /*20210625 Neko/2chtrip http://www.mits-jp.com/2ch/ */
@@ -93,10 +99,10 @@ class Webapp
         # Default query
         $this->session['QUERY'] = 'c='.$this->session['C'];
         if ($this->session['MSGDISP']) {
-            $this->session['QUERY'] .= '&amp;d='.$this->session['MSGDISP'];
+            $this->session['QUERY'] .= '&d='.$this->session['MSGDISP'];
         }
         if ($this->session['TOPPOSTID']) {
-            $this->session['QUERY'] .= '&amp;p='.$this->session['TOPPOSTID'];
+            $this->session['QUERY'] .= '&p='.$this->session['TOPPOSTID'];
         }
         # Default URL
         $this->session['DEFURL'] = $this->config['CGIURL'] . '?' . $this->session['QUERY'];
@@ -176,13 +182,13 @@ class Webapp
         if (!$mode) {
             $msg = preg_replace(
                 "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"" . route('follow', ['s' => '$1']) . "&amp;{$this->session['QUERY']}\">$2</a>",
+                "<a href=\"" . route('follow', ['s' => '$1']) . "&{$this->session['QUERY']}\">$2</a>",
                 $msg,
                 1
             );
             $msg = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"" . route('follow', ['s' => '$1']) . "&amp;{$this->session['QUERY']}\">$2</a>",
+                "<a href=\"" . route('follow', ['s' => '$1']) . "&{$this->session['QUERY']}\">$2</a>",
                 $msg,
                 1
             );
@@ -325,14 +331,21 @@ class Webapp
         if ($logfilename) {
             preg_match("/^([\w.]*)$/", $logfilename, $matches);
             $logfilename = $this->config['OLDLOGFILEDIR'].'/'.$matches[1];
-        } else {
-            $logfilename = $this->config['LOGFILENAME'];
+            if (!file_exists($logfilename)) {
+                $this->prterror(Translator::trans('error.failed_to_read'));
+            }
+            return file($logfilename);
         }
+        
+        if (isset($this->bbsLogRepository) && $this->bbsLogRepository) {
+            return $this->bbsLogRepository->getAll();
+        }
+        
+        $logfilename = $this->config['LOGFILENAME'];
         if (!file_exists($logfilename)) {
             $this->prterror(Translator::trans('error.failed_to_read'));
         }
-        $logdata = file($logfilename);
-        return $logdata;
+        return file($logfilename);
     }
 
     /**

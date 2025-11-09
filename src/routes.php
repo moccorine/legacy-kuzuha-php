@@ -60,8 +60,10 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
         // Get repositories from container (autowired)
         $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
         $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
+        $bbsLogRepo = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
+        $oldLogRepo = $container->get(\App\Models\Repositories\OldLogRepositoryInterface::class);
         
-        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo);
+        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo, $bbsLogRepo, $oldLogRepo);
         $bbs->main();
     }
 
@@ -97,8 +99,10 @@ $app->post('/', function (Request $request, Response $response) use ($container)
         // Get repositories from container (autowired)
         $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
         $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
+        $bbsLogRepo = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
+        $oldLogRepo = $container->get(\App\Models\Repositories\OldLogRepositoryInterface::class);
         
-        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo);
+        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo, $bbsLogRepo, $oldLogRepo);
         $bbs->main();
     }
 
@@ -117,10 +121,11 @@ $app->post('/', function (Request $request, Response $response) use ($container)
 });
 
 // Message log search
-$app->map(['GET', 'POST'], '/search', function (Request $request, Response $response) {
+$app->map(['GET', 'POST'], '/search', function (Request $request, Response $response) use ($container) {
     ob_start();
 
-    $getlog = new \Kuzuha\Getlog();
+    $oldLogRepo = $container->get(\App\Models\Repositories\OldLogRepositoryInterface::class);
+    $getlog = new \Kuzuha\Getlog($oldLogRepo);
     $getlog->main();
 
     $output = ob_get_clean();
@@ -184,9 +189,11 @@ $app->map(['GET', 'POST'], '/thread', function (Request $request, Response $resp
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs->procForm();
         $imagebbs->prtsearchlist();
     } else {
         $bbs = new \Kuzuha\Bbs();
+        $bbs->procForm();
         $bbs->prtsearchlist();
     }
 
@@ -207,9 +214,11 @@ $app->map(['GET', 'POST'], '/follow', function (Request $request, Response $resp
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs->procForm();
         $imagebbs->prtfollow();
     } else {
         $bbs = new \Kuzuha\Bbs();
+        $bbs->procForm();
         $bbs->prtfollow();
     }
 

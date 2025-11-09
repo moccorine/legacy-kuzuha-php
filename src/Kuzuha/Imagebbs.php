@@ -238,7 +238,7 @@ class Imagebbs extends Bbs
     public function putmessage($message)
     {
 
-        $posterr = parent::putmessage($message);
+        $posterr = parent::saveMessage($message);
 
         if ($posterr) {
             return $posterr;
@@ -248,17 +248,10 @@ class Imagebbs extends Bbs
             $maxspace = $this->config['MAX_UPLOADSPACE'] * 1024;
 
             $files = [];
-            $dh = opendir($this->config['UPLOADDIR']);
-            if (!$dh) {
-                return;
+            foreach (glob($this->config['UPLOADDIR'] . '*.{gif,jpg,png}', GLOB_BRACE) as $filepath) {
+                $files[] = $filepath;
+                $dirspace += filesize($filepath);
             }
-            while ($entry = readdir($dh)) {
-                if (is_file($this->config['UPLOADDIR'] . $entry) and preg_match("/\.(gif|jpg|png)$/i", $entry)) {
-                    $files[] = $this->config['UPLOADDIR'] . $entry;
-                    $dirspace += filesize($this->config['UPLOADDIR'] . $entry);
-                }
-            }
-            closedir($dh);
 
             # Delete old images
             if ($dirspace > $maxspace) {
