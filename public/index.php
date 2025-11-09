@@ -6,6 +6,15 @@ if (!str_starts_with(phpversion(), '8')) {
     exit();
 }
 
+require __DIR__ . '/../vendor/autoload.php';
+
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->load();
+
+// Set timezone from environment or default to JST
+date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'Asia/Tokyo');
+
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
@@ -15,8 +24,6 @@ use DI\Container;
 use App\Models\Repositories\AccessCounterRepositoryInterface;
 use App\Models\Repositories\ParticipantCounterRepositoryInterface;
 use App\Models\RepositoryFactory;
-
-require __DIR__ . '/../vendor/autoload.php';
 
 // Change working directory to project root
 chdir(__DIR__ . '/..');

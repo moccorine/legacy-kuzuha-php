@@ -17,6 +17,7 @@ Edit `.env` and set your configuration:
 APP_NAME="Your BBS Name"
 APP_URL=http://your-domain.com
 APP_LOCALE=ja  # or en
+APP_TIMEZONE=Asia/Tokyo  # Default timezone (JST)
 
 ADMIN_NAME=Administrator
 ADMIN_EMAIL=your@email.com
