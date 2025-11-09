@@ -33,7 +33,7 @@ $app->add(function (Request $request, $handler) {
 });
 
 // Main bulletin board
-$app->get('/', function (Request $request, Response $response) {
+$app->get('/', function (Request $request, Response $response) use ($container) {
     ob_start();
 
     // Set $_GET for legacy code
@@ -44,7 +44,11 @@ $app->get('/', function (Request $request, Response $response) {
         $imagebbs = new \Kuzuha\Imagebbs();
         $imagebbs->main();
     } else {
-        $bbs = new \Kuzuha\Bbs();
+        // Get repositories from container (autowired)
+        $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
+        $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
+        
+        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo);
         $bbs->main();
     }
 
@@ -58,7 +62,7 @@ $app->get('/', function (Request $request, Response $response) {
 });
 
 // Post message
-$app->post('/', function (Request $request, Response $response) {
+$app->post('/', function (Request $request, Response $response) use ($container) {
     ob_start();
 
     // Set $_POST and $_GET for legacy code
@@ -70,7 +74,11 @@ $app->post('/', function (Request $request, Response $response) {
         $imagebbs = new \Kuzuha\Imagebbs();
         $imagebbs->main();
     } else {
-        $bbs = new \Kuzuha\Bbs();
+        // Get repositories from container (autowired)
+        $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
+        $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
+        
+        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo);
         $bbs->main();
     }
 

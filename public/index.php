@@ -11,6 +11,10 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use App\Config;
 use App\Translator;
+use DI\Container;
+use App\Models\Repositories\AccessCounterRepositoryInterface;
+use App\Models\Repositories\ParticipantCounterRepositoryInterface;
+use App\Models\RepositoryFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -77,6 +81,20 @@ if (\App\Utils\NetworkHelper::hostnameMatch($config->get('HOSTNAME_BANNED'), $co
 define('CURRENT_TIME', time() - $config->get('DIFFTIME') * 60 * 60 + $config->get('DIFFSEC'));
 define('INCLUDED_FROM_BBS', true);
 
+// Create PHP-DI container with autowiring
+$container = new Container();
+
+// Register repository bindings
+$container->set(AccessCounterRepositoryInterface::class, function() {
+    return RepositoryFactory::createAccessCounterRepository();
+});
+
+$container->set(ParticipantCounterRepositoryInterface::class, function() {
+    return RepositoryFactory::createParticipantCounterRepository();
+});
+
+// Create Slim app with container
+AppFactory::setContainer($container);
 $app = AppFactory::create();
 
 // Load routes

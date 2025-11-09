@@ -9,6 +9,8 @@ use App\Utils\FileHelper;
 use App\Utils\NetworkHelper;
 use App\Utils\SecurityHelper;
 use App\Utils\StringHelper;
+use App\Models\Repositories\AccessCounterRepositoryInterface;
+use App\Models\Repositories\ParticipantCounterRepositoryInterface;
 
 /**
  * Standard bulletin board class - Bbs
@@ -21,13 +23,20 @@ use App\Utils\StringHelper;
  */
 class Bbs extends Webapp
 {
+    private ?AccessCounterRepositoryInterface $accessCounterRepo = null;
+    private ?ParticipantCounterRepositoryInterface $participantCounterRepo = null;
+    
     /**
      * Constructor
      *
      */
-    public function __construct()
-    {
+    public function __construct(
+        ?AccessCounterRepositoryInterface $accessCounterRepo = null,
+        ?ParticipantCounterRepositoryInterface $participantCounterRepo = null
+    ) {
         parent::__construct();
+        $this->accessCounterRepo = $accessCounterRepo;
+        $this->participantCounterRepo = $participantCounterRepo;
     }
 
     /**
@@ -66,7 +75,7 @@ class Bbs extends Webapp
             }
             # Douple post error, etc.
             if ($posterr == 1) {
-                $this->prtmain();
+                $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
             }
             # Protect code redisplayed due to time lapse
             elseif ($posterr == 2) {
@@ -75,7 +84,7 @@ class Bbs extends Webapp
                 } elseif ($this->form['write']) {
                     $this->prtnewpost(true);
                 } else {
-                    $this->prtmain(true);
+                    $this->prtmain(true, $this->accessCounterRepo, $this->participantCounterRepo);
                 }
             }
             # Entering admin mode
@@ -88,7 +97,7 @@ class Bbs extends Webapp
             elseif ($this->form['f']) {
                 $this->prtputcomplete();
             } else {
-                $this->prtmain();
+                $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
             }
         }
         # Display user settings page
@@ -109,7 +118,7 @@ class Bbs extends Webapp
         }
         # Default: bulletin board display
         else {
-            $this->prtmain();
+            $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
         }
 
         if ($this->config['GZIPU']) {
@@ -122,9 +131,22 @@ class Bbs extends Webapp
      *
      * @access  public
      * @param   Boolean  $retry  Retry flag
+     * @param   AccessCounterRepositoryInterface|null  $accessCounterRepo
+     * @param   ParticipantCounterRepositoryInterface|null  $participantCounterRepo
      */
-    public function prtmain($retry = false)
-    {
+    public function prtmain(
+        $retry = false,
+        ?AccessCounterRepositoryInterface $accessCounterRepo = null,
+        ?ParticipantCounterRepositoryInterface $participantCounterRepo = null
+    ) {
+        // Override injected repositories if provided
+        if ($accessCounterRepo !== null) {
+            $this->accessCounterRepo = $accessCounterRepo;
+        }
+        if ($participantCounterRepo !== null) {
+            $this->participantCounterRepo = $participantCounterRepo;
+        }
+        
         # Get display message
         [$logdatadisp, $bindex, $eindex, $lastindex] = $this->getdispmessage();
         # Form section settings
@@ -311,15 +333,19 @@ class Bbs extends Webapp
     {
         $counter = '';
         $showCounter = false;
-        if ($this->config['SHOW_COUNTER']) {
-            $counter = number_format($this->counter());
+        if ($this->config['SHOW_COUNTER'] && $this->accessCounterRepo !== null) {
+            $counter = number_format($this->accessCounterRepo->increment());
             $showCounter = true;
         }
         
         $mbrcount = '';
         $showMbrCount = false;
-        if ($this->config['CNTFILENAME']) {
-            $mbrcount = number_format($this->getParticipantCount());
+        if ($this->config['CNTFILENAME'] && $this->participantCounterRepo !== null) {
+            $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $userKey = (string) hexdec(substr(md5($remoteAddr), 0, 8));
+            $mbrcount = number_format(
+                $this->participantCounterRepo->recordVisit($userKey, CURRENT_TIME, $this->config['CNTLIMIT'])
+            );
             $showMbrCount = true;
         }
         
@@ -382,15 +408,17 @@ class Bbs extends Webapp
         # Counter and member count
         $showCounter = false;
         $counter = '';
-        if ($this->config['SHOW_COUNTER']) {
-            $counter = number_format($this->counter());
+        if ($this->config['SHOW_COUNTER'] && $this->accessCounterRepo !== null) {
+            $counter = number_format($this->accessCounterRepo->getCurrent());
             $showCounter = true;
         }
         
         $showMbrCount = false;
         $mbrcount = '';
-        if ($this->config['CNTFILENAME']) {
-            $mbrcount = number_format($this->getParticipantCount());
+        if ($this->config['CNTFILENAME'] && $this->participantCounterRepo !== null) {
+            $mbrcount = number_format(
+                $this->participantCounterRepo->getActiveCount(CURRENT_TIME, $this->config['CNTLIMIT'])
+            );
             $showMbrCount = true;
         }
         
@@ -1455,69 +1483,5 @@ class Bbs extends Webapp
         $this->session['UNDO_P'] = $undoid;
         $this->session['UNDO_K'] = $undokey;
         setcookie('undo', $cookiestr, CURRENT_TIME + 86400); // expires in 24 hours
-    }
-
-    /**
-     * Bulletproof counter process
-     *
-     * @access  public
-     * @param   Integer Bulletproof level
-     * @return  String  Counter value
-     */
-    public function counter($countlevel = 0)
-    {
-        if (!$countlevel) {
-            if (isset($this->config['COUNTLEVEL'])) {
-                $countlevel = $this->config['COUNTLEVEL'];
-            }
-            if ($countlevel < 1) {
-                $countlevel = 1;
-            }
-        }
-        $count = [];
-        for ($i = 0; $i < $countlevel; $i++) {
-            $filename = "{$this->config['COUNTFILE']}{$i}.dat";
-            if (is_writable($filename) and $fh = @fopen($filename, 'r')) {
-                $count[$i] = fgets($fh, 10);
-                fclose($fh);
-            } else {
-                $count[$i] = 0;
-            }
-            $filenumber[$count[$i]] = $i;
-        }
-        sort($count, SORT_NUMERIC);
-        $mincount = $count[0];
-        $maxcount = $count[$countlevel - 1] + 1;
-        if ($fh = @fopen("{$this->config['COUNTFILE']}{$filenumber[$mincount]}.dat", 'w')) {
-            fputs($fh, $maxcount);
-            fclose($fh);
-            return $maxcount;
-        } else {
-            return 'Counter error';
-        }
-    }
-
-    /**
-     * Participant count (currently viewing)
-     *
-     * @access  public
-     * @param   $cntfilename  Record file name
-     * @return  String  Number of participants
-     */
-    public function getParticipantCount($cntfilename = '')
-    {
-        if (!$cntfilename) {
-            $cntfilename = $this->config['CNTFILENAME'];
-        }
-        
-        if (!$cntfilename) {
-            return 0;
-        }
-        
-        return \App\Utils\ParticipantCounter::count(
-            $cntfilename,
-            $this->config['CNTLIMIT'],
-            CURRENT_TIME
-        );
     }
 }
