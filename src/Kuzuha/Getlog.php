@@ -5,6 +5,8 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\FileHelper;
+use App\Utils\RegexPatterns;
+use App\Utils\ValidationRegex;
 
 /*
 
@@ -142,7 +144,7 @@ class Getlog extends Webapp
             $this->prterror('This directory could not be opened.');
         }
         while ($entry = readdir($dh)) {
-            if (is_file($dir . $entry) and \App\Utils\ValidationRegex::isNumericFilename($entry, $oldlogext)) {
+            if (is_file($dir . $entry) and ValidationRegex::isNumericFilename($entry, $oldlogext)) {
                 $files[] = $entry;
             }
         }
@@ -400,7 +402,7 @@ class Getlog extends Webapp
         }
 
         # Illegal file name
-        if (!\App\Utils\ValidationRegex::isNumericFilename((string) $filename, $oldlogext)) {
+        if (!ValidationRegex::isNumericFilename((string) $filename, $oldlogext)) {
             return 1;
         } elseif (!is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
             return 1;
@@ -452,7 +454,7 @@ class Getlog extends Webapp
         }
 
         # Illegal file name
-        if (!\App\Utils\ValidationRegex::isNumericFilename((string) $filename, $oldlogext)) {
+        if (!ValidationRegex::isNumericFilename((string) $filename, $oldlogext)) {
             return 1;
         } elseif (!is_file($dir . $filename)) {
             return 1;
@@ -774,7 +776,7 @@ class Getlog extends Webapp
     {
 
         # Illegal file name
-        if (!\App\Utils\ValidationRegex::isNumericFilename((string) $filename, 'dat')) {
+        if (!ValidationRegex::isNumericFilename((string) $filename, 'dat')) {
             return 1;
         } elseif (!is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
             return 1;
@@ -799,7 +801,7 @@ class Getlog extends Webapp
 
                 $msg = ltrim((string) $message['MSG']);
                 $msg = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', $msg, 1);
-                $msg = \App\Utils\RegexPatterns::stripHtmlTags((string) $msg);
+                $msg = RegexPatterns::stripHtmlTags((string) $msg);
                 $msgsplit = explode("\r", (string) $msg);
                 $msgdigest = $msgsplit[0];
                 $index = 1;

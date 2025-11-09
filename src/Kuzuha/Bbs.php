@@ -7,8 +7,11 @@ use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\FileHelper;
 use App\Utils\NetworkHelper;
+use App\Utils\QuoteRegex;
+use App\Utils\RegexPatterns;
 use App\Utils\SecurityHelper;
 use App\Utils\StringHelper;
+use App\Utils\ValidationRegex;
 use App\Models\Repositories\AccessCounterRepositoryInterface;
 use App\Models\Repositories\ParticipantCounterRepositoryInterface;
 
@@ -590,7 +593,7 @@ class Bbs extends Webapp
         $message = $this->getmessage($result[0]);
 
         if (!$retry) {
-            $formmsg = \App\Utils\QuoteRegex::formatAsQuote(
+            $formmsg = QuoteRegex::formatAsQuote(
                 $message['MSG'],
                 removeLinks: true,
                 followLinkBase: route('follow', ['s' => ''])
@@ -612,7 +615,7 @@ class Bbs extends Webapp
         $messageHtml = $this->prtmessage($message, $mode, $filename);
 
         // Get form HTML using Twig (hide form config on follow page)
-        $formData = $this->getFormData('＞' . \App\Utils\RegexPatterns::stripHtmlTags((string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
+        $formData = $this->getFormData('＞' . RegexPatterns::stripHtmlTags((string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
         $formData['SHOW_FORMCONFIG'] = false;
         $formHtml = $this->renderTwig('components/form.twig', $formData);
         
@@ -707,7 +710,7 @@ class Bbs extends Webapp
 
         $fh = null;
         if ($this->form['ff']) {
-            if (\App\Utils\ValidationRegex::isValidFilename((string) $this->form['ff'])) {
+            if (ValidationRegex::isValidFilename((string) $this->form['ff'])) {
                 $fh = @fopen($this->config['OLDLOGFILEDIR'] . $this->form['ff'], 'rb');
             }
             if (!$fh) {
@@ -730,7 +733,7 @@ class Bbs extends Webapp
                 }
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and \App\Utils\RegexPatterns::stripHtmlTags((string) $message['USER']) == $this->form['s']) {
+                if ($mode == 's' and RegexPatterns::stripHtmlTags((string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
@@ -749,7 +752,7 @@ class Bbs extends Webapp
             foreach ($logdata as $logline) {
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and \App\Utils\RegexPatterns::stripHtmlTags((string) $message['USER']) == $this->form['s']) {
+                if ($mode == 's' and RegexPatterns::stripHtmlTags((string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
@@ -862,7 +865,7 @@ class Bbs extends Webapp
             $flgchgindex = -1;
             $cindex = 0;
             foreach ($colors as $confname) {
-                if (\App\Utils\ValidationRegex::isValidHexColor((string) $this->form[$confname])
+                if (ValidationRegex::isValidHexColor((string) $this->form[$confname])
                     and $this->form[$confname] != $this->config[$confname]) {
                     $this->config[$confname] = $this->form[$confname];
                     $flgchgindex = $cindex;
@@ -892,7 +895,7 @@ class Bbs extends Webapp
             }
         }
         # Redirect
-        if (\App\Utils\ValidationRegex::hasHttpProtocol((string) $this->config['CGIURL'])) {
+        if (ValidationRegex::hasHttpProtocol((string) $this->config['CGIURL'])) {
             header("Location: {$redirecturl}");
         } else {
             $this->prtredirect(htmlentities((string) $redirecturl));
@@ -1400,7 +1403,7 @@ class Bbs extends Webapp
                         return;
                     }
                     while ($entry = readdir($dh)) {
-                        if ($entry != $currentfile and is_file($tmpdir . $entry) and \App\Utils\ValidationRegex::isNumericFilename($entry, 'html')) {
+                        if ($entry != $currentfile and is_file($tmpdir . $entry) and ValidationRegex::isNumericFilename($entry, 'html')) {
                             $files[] = $entry;
                         }
                     }
