@@ -19,6 +19,7 @@ use App\Models\Repositories\AccessCounterRepositoryInterface;
 use App\Models\Repositories\ParticipantCounterRepositoryInterface;
 use App\Models\Repositories\BbsLogRepositoryInterface;
 use App\Models\Repositories\OldLogRepositoryInterface;
+use App\Services\BbsPostValidator;
 
 /**
  * Standard bulletin board class - Bbs
@@ -137,11 +138,14 @@ class Bbs extends Webapp
 
         // Get environment variables
         $this->setuserenv();
-        // Parameter check
-        $posterr = $this->validatePost();
+        
+        // Create validator and validate post
+        $validator = new BbsPostValidator($this->config, $this->form, $this->session);
+        $posterr = $validator->validate();
+        
         // Post operation
         if (!$posterr) {
-            $message = $this->buildPostMessage();
+            $message = $validator->buildMessage();
             
             // Resolve thread ID from archive if replying from archive file
             if ($this->form['ff'] && $message['REFID']) {
