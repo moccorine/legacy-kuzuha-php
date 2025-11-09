@@ -99,10 +99,10 @@ class Webapp
         # Default query
         $this->session['QUERY'] = 'c='.$this->session['C'];
         if ($this->session['MSGDISP']) {
-            $this->session['QUERY'] .= '&amp;d='.$this->session['MSGDISP'];
+            $this->session['QUERY'] .= '&d='.$this->session['MSGDISP'];
         }
         if ($this->session['TOPPOSTID']) {
-            $this->session['QUERY'] .= '&amp;p='.$this->session['TOPPOSTID'];
+            $this->session['QUERY'] .= '&p='.$this->session['TOPPOSTID'];
         }
         # Default URL
         $this->session['DEFURL'] = $this->config['CGIURL'] . '?' . $this->session['QUERY'];
@@ -182,13 +182,13 @@ class Webapp
         if (!$mode) {
             $msg = preg_replace(
                 "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"" . route('follow', ['s' => '$1']) . "&amp;{$this->session['QUERY']}\">$2</a>",
+                "<a href=\"" . route('follow', ['s' => '$1']) . "&{$this->session['QUERY']}\">$2</a>",
                 $msg,
                 1
             );
             $msg = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"" . route('follow', ['s' => '$1']) . "&amp;{$this->session['QUERY']}\">$2</a>",
+                "<a href=\"" . route('follow', ['s' => '$1']) . "&{$this->session['QUERY']}\">$2</a>",
                 $msg,
                 1
             );
