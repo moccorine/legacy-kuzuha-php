@@ -165,8 +165,7 @@ class Webapp
         }
         $message['WDATE'] = DateHelper::getDateString($message['NDATE'], $this->config['DATEFORMAT']);
         #20181102 Gikoneko: Escape special characters
-        $message['MSG'] = preg_replace('/{/i', '&#123;', (string) $message['MSG'], -1);
-        $message['MSG'] = preg_replace('/}/i', '&#125;', $message['MSG'], -1);
+        $message['MSG'] = \App\Utils\TextEscape::escapeTwigChars((string) $message['MSG']);
 
         #20241016 Heyuri: Deprecated by ytthumb.js, embedding each video in browser slows stuff down a lot
         ##20200524 Gikoneko: youtube embedding
