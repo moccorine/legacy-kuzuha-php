@@ -233,7 +233,7 @@ class Webapp
             $message['BTNAUTHOR'] = '';
             if ($message['USER'] != $this->config['ANONY_NAME'] and $this->config['BBSMODE_ADMINONLY'] != 1) {
                 $message['BTNAUTHOR'] = "$spacer<a href=\"{$this->config['CGIURL']}"
-                    .'?m=s&amp;s='. urlencode(preg_replace('/<[^>]*>/', '', (string) $message['USER'])) .'&amp;'.$this->session['QUERY'];
+                    .'?m=s&amp;s='. urlencode(\App\Utils\RegexPatterns::stripHtmlTags((string) $message['USER'])) .'&amp;'.$this->session['QUERY'];
                 if ($this->form['w']) {
                     $message['BTNAUTHOR'] .= '&amp;w='.$this->form['w'];
                 }

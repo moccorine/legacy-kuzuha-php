@@ -614,7 +614,7 @@ class Bbs extends Webapp
         $messageHtml = $this->prtmessage($message, $mode, $filename);
 
         // Get form HTML using Twig (hide form config on follow page)
-        $formData = $this->getFormData('＞' . preg_replace('/<[^>]*>/', '', (string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
+        $formData = $this->getFormData('＞' . \App\Utils\RegexPatterns::stripHtmlTags((string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
         $formData['SHOW_FORMCONFIG'] = false;
         $formHtml = $this->renderTwig('components/form.twig', $formData);
         
@@ -732,7 +732,7 @@ class Bbs extends Webapp
                 }
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and preg_replace('/<[^>]*>/', '', (string) $message['USER']) == $this->form['s']) {
+                if ($mode == 's' and \App\Utils\RegexPatterns::stripHtmlTags((string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
                 }
                 # Search by thread
@@ -751,7 +751,7 @@ class Bbs extends Webapp
             foreach ($logdata as $logline) {
                 $message = $this->getmessage($logline);
                 # Search by user
-                if ($mode == 's' and preg_replace('/<[^>]*>/', '', (string) $message['USER']) == $this->form['s']) {
+                if ($mode == 's' and \App\Utils\RegexPatterns::stripHtmlTags((string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
                 }
                 # Search by thread

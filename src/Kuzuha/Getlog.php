@@ -799,7 +799,7 @@ class Getlog extends Webapp
 
                 $msg = ltrim((string) $message['MSG']);
                 $msg = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', $msg, 1);
-                $msg = preg_replace('/<[^>]+>/', '', (string) $msg);
+                $msg = \App\Utils\RegexPatterns::stripHtmlTags((string) $msg);
                 $msgsplit = explode("\r", (string) $msg);
                 $msgdigest = $msgsplit[0];
                 $index = 1;
