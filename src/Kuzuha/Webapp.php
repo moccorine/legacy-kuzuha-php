@@ -147,155 +147,141 @@ class Webapp
      */
     public function prepareMessageForDisplay($message, $mode = 0, $tlog = '')
     {
-
-        if (count($message) < 10) {
-            return $message;
-        }
         $message['WDATE'] = DateHelper::getDateString($message['NDATE'], $this->config['DATEFORMAT']);
         $message['MSG'] = TextEscape::escapeTwigChars((string) $message['MSG']);
 
-        #20241016 Heyuri: Deprecated by ytthumb.js, embedding each video in browser slows stuff down a lot
-        ##20200524 Gikoneko: youtube embedding
-        #$message['MSG'] = preg_replace("/<a href=\"https:\/\/youtu.be\/([^\"]+?)\" target=\"link\">([^<]+?)<\/a>/",
-        #"<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/$1\" frameborder=\"0\" allow=\"autoplay; encrypted-media\" allowfullscreen></iframe>\r<a href=\"https://youtu.be/$1\">$2</a>", $message['MSG']);
-        ##20200524 Gikoneko: youtube embedding 2
-        #$message['MSG'] = preg_replace("/<a href=\"https:\/\/www.youtube.com\/watch\?v=([^\"]+?)\" target=\"link\">([^<]+?)<\/a>/",
-        #"<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/$1\" frameborder=\"0\" allow=\"autoplay; encrypted-media\" allowfullscreen></iframe>\r<a href=\"https://www.youtube.com/watch?v=$1\">$2</a>", $message['MSG']);
-        ##20200524 Gikoneko: youtube embedding 3
-        #$message['MSG'] = preg_replace("/<a href=\"https:\/\/m.youtube.com\/watch\?v=([^\"]+?)\" target=\"link\">([^<]+?)<\/a>/",
-        #"<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/$1\" frameborder=\"0\" allow=\"autoplay; encrypted-media\" allowfullscreen></iframe>\r<a href=\"https://m.youtube.com/watch?v=$1\">$2</a>", $message['MSG']);
+        // TODO: YouTube URL展開機能の実装を検討（クライアントサイドまたはサーバーサイド）
 
-        # "Reference"
+        $message['MSG'] = $this->processReferenceLinks($message['MSG'], $mode);
+        $message['MSG'] = $this->processQuotes($message['MSG']);
+        $message['MSG'] = $this->processImages($message['MSG']);
+
+        if (!$message['THREAD']) {
+            $message['THREAD'] = $message['POSTID'];
+        }
+
+        if ($mode == 0 or ($mode == 1 and $this->config['OLDLOGBTN'])) {
+            $message = array_merge($message, $this->buildActionButtons($message, $mode, $tlog));
+        }
+
+        $message['HAS_MAIL'] = !empty($message['MAIL']);
+        $message['SHOW_IP'] = $this->config['IPPRINT'];
+        $message['SHOW_UA'] = $this->config['UAPRINT'];
+
+        return $message;
+    }
+
+    private function processReferenceLinks($msg, $mode)
+    {
         if (!$mode) {
-            $message['MSG'] = preg_replace(
+            $msg = preg_replace(
                 "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
                 "<a href=\"" . route('follow', ['s' => '$1']) . "&amp;{$this->session['QUERY']}\">$2</a>",
-                $message['MSG'],
+                $msg,
                 1
             );
-            $message['MSG'] = preg_replace(
+            $msg = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
                 "<a href=\"" . route('follow', ['s' => '$1']) . "&amp;{$this->session['QUERY']}\">$2</a>",
-                $message['MSG'],
+                $msg,
                 1
             );
         } else {
-            $message['MSG'] = preg_replace(
+            $msg = preg_replace(
                 "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
                 '<a href="#a$1">$2</a>',
-                $message['MSG'],
+                $msg,
                 1
             );
-            $message['MSG'] = preg_replace(
+            $msg = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
                 '<a href="#a$1">$2</a>',
-                $message['MSG'],
+                $msg,
                 1
             );
         }
-        if ($mode == 0 or ($mode == 1 and $this->config['OLDLOGBTN'])) {
+        return $msg;
+    }
 
-            if (!$this->config['FOLLOWWIN']) {
-                $newwin = ' target="link"';
-            } else {
-                $newwin = '';
-            }
-            $spacer = '&nbsp;&nbsp;&nbsp;';
-            $lnk_class = 'class="internal"';
-            # Follow-up post button
-            $message['BTNFOLLOW'] = '';
-            if ($this->config['BBSMODE_ADMINONLY'] != 1) {
-                $followParams = ['s' => $message['POSTID']];
-                parse_str($this->session['QUERY'], $queryParams);
-                $followParams = array_merge($followParams, $queryParams);
-                if ($this->form['w']) {
-                    $followParams['w'] = $this->form['w'];
-                }
-                if ($mode == 1) {
-                    $followParams['ff'] = $tlog;
-                }
-                $message['BTNFOLLOW'] = "$spacer<a href=\"" . route('follow', $followParams) . "\"$newwin $lnk_class title=\"Follow-up post (reply)\" >{$this->config['TXTFOLLOW']}</a>";
-            }
-            # Search by user button
-            $message['BTNAUTHOR'] = '';
-            if ($message['USER'] != $this->config['ANONY_NAME'] and $this->config['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNAUTHOR'] = "$spacer<a href=\"{$this->config['CGIURL']}"
-                    .'?m=s&amp;s='. urlencode(RegexPatterns::stripHtmlTags((string) $message['USER'])) .'&amp;'.$this->session['QUERY'];
-                if ($this->form['w']) {
-                    $message['BTNAUTHOR'] .= '&amp;w='.$this->form['w'];
-                }
-                if ($mode == 1) {
-                    $message['BTNAUTHOR'] .= "&amp;ff=$tlog";
-                }
-                $message['BTNAUTHOR'] .= "\" target=\"link\" $lnk_class title=\"Search by user\" >{$this->config['TXTAUTHOR']}</a>";
-            }
-            # Thread view button
-            if (!$message['THREAD']) {
-                $message['THREAD'] = $message['POSTID'];
-            }
-            $message['BTNTHREAD'] = '';
-            if ($this->config['BBSMODE_ADMINONLY'] != 1) {
-                $threadParams = ['s' => $message['THREAD']];
-                parse_str($this->session['QUERY'], $queryParams);
-                $threadParams = array_merge($threadParams, $queryParams);
-                if ($mode == 1) {
-                    $threadParams['ff'] = $tlog;
-                }
-                $message['BTNTHREAD'] = "$spacer<a href=\"" . route('thread', $threadParams) . "\" target=\"link\" $lnk_class title=\"Thread view\" >{$this->config['TXTTHREAD']}</a>";
-            }
-            # Tree view button
-            $message['BTNTREE'] = '';
-            if ($this->config['BBSMODE_ADMINONLY'] != 1) {
-                $message['BTNTREE'] = "$spacer<a href=\"{$this->config['CGIURL']}?m=tree&amp;s={$message['THREAD']}&amp;".$this->session['QUERY'];
-                if ($mode == 1) {
-                    $message['BTNTREE'] .= "&amp;ff=$tlog";
-                }
-                $message['BTNTREE'] .= "\" target=\"link\" $lnk_class title=\"Tree view\" >{$this->config['TXTTREE']}</a>";
-            }
-            # UNDO button
-            $message['BTNUNDO'] = '';
-            if ($this->config['ALLOW_UNDO'] and isset($this->session['UNDO_P']) and $this->session['UNDO_P'] == $message['POSTID']) {
-                $message['BTNUNDO'] = "$spacer<a href=\"{$this->config['CGIURL']}?m=u&amp;s={$message['POSTID']}&amp;".$this->session['QUERY'];
-                $message['BTNUNDO'] .= "\" $lnk_class title=\"Delete post\" >{$this->config['TXTUNDO']}</a>";
-            }
-            # Button integration
-            $message['BTN'] = $message['BTNFOLLOW']. $message['BTNAUTHOR']. $message['BTNTHREAD']. $message['BTNTREE']. $message['BTNUNDO'];
-        }
-        # Email address
-        if ($message['MAIL']) {
-            $message['USER'] = "<a href=\"mailto:{$message['MAIL']}\">{$message['USER']}</a>";
-        }
-        # Change quote color
-        $message['MSG'] = preg_replace("/(^|\r)(\&gt;[^\r]*)/", '$1<span class="q">$2</span>', (string) $message['MSG']);
-        $message['MSG'] = str_replace("</span>\r<span class=\"q\">", "\r", $message['MSG']);
-        # Environment variables
-        $message['ENVADDR'] = '';
-        $message['ENVUA'] = '';
-        $message['ENVBR'] = '';
-        if ($this->config['IPPRINT'] or $this->config['UAPRINT']) {
-            if ($this->config['IPPRINT']) {
-                $message['ENVADDR'] = $message['PHOST'];
-            }
-            if ($this->config['UAPRINT']) {
-                $message['ENVUA'] = $message['AGENT'];
-            }
-            if ($this->config['IPPRINT'] and $this->config['UAPRINT']) {
-                $message['ENVBR'] = '<br>';
-            }
-        }
-        # Whether or not to display images on the image BBS
+    private function processQuotes($msg)
+    {
+        $msg = preg_replace("/(^|\r)(\&gt;[^\r]*)/", '$1<span class="q">$2</span>', (string) $msg);
+        return str_replace("</span>\r<span class=\"q\">", "\r", $msg);
+    }
+
+    private function processImages($msg)
+    {
         if (!$this->config['SHOWIMG']) {
-            $message['MSG'] = StringHelper::convertImageTag($message['MSG']);
+            return StringHelper::convertImageTag($msg);
         }
-        # Convert img tags even if there is no image file
-        elseif (preg_match("/<a href=[^>]+><img [^>]*?src=\"([^\"]+)\"[^>]+><\/a>/i", (string) $message['MSG'], $matches)) {
+        if (preg_match("/<a href=[^>]+><img [^>]*?src=\"([^\"]+)\"[^>]+><\/a>/i", (string) $msg, $matches)) {
             if (!file_exists($matches[1])) {
-                $message['MSG'] = StringHelper::convertImageTag($message['MSG']);
+                return StringHelper::convertImageTag($msg);
             }
         }
-        # Message display content definition
-        
-        return $message;
+        return $msg;
+    }
+
+    private function buildActionButtons($message, $mode, $tlog)
+    {
+        $buttons = [
+            'FOLLOW_URL' => null,
+            'AUTHOR_URL' => null,
+            'THREAD_URL' => null,
+            'TREE_URL' => null,
+            'UNDO_URL' => null,
+            'OPEN_NEW_WINDOW' => !$this->config['FOLLOWWIN'],
+        ];
+
+        if ($this->config['BBSMODE_ADMINONLY'] == 1) {
+            return $buttons;
+        }
+
+        parse_str($this->session['QUERY'], $queryParams);
+
+        $followParams = array_merge(['s' => $message['POSTID']], $queryParams);
+        if ($this->form['w']) {
+            $followParams['w'] = $this->form['w'];
+        }
+        if ($mode == 1) {
+            $followParams['ff'] = $tlog;
+        }
+        $buttons['FOLLOW_URL'] = route('follow', $followParams);
+
+        if ($message['USER'] != $this->config['ANONY_NAME']) {
+            $authorParams = [
+                'm' => 's',
+                's' => RegexPatterns::stripHtmlTags((string) $message['USER'])
+            ];
+            if ($this->form['w']) {
+                $authorParams['w'] = $this->form['w'];
+            }
+            if ($mode == 1) {
+                $authorParams['ff'] = $tlog;
+            }
+            $buttons['AUTHOR_URL'] = $this->config['CGIURL'] . '?' . http_build_query($authorParams) . '&' . $this->session['QUERY'];
+        }
+
+        $threadParams = array_merge(['s' => $message['THREAD']], $queryParams);
+        if ($mode == 1) {
+            $threadParams['ff'] = $tlog;
+        }
+        $buttons['THREAD_URL'] = route('thread', $threadParams);
+
+        $treeParams = [
+            'm' => 'tree',
+            's' => $message['THREAD']
+        ];
+        if ($mode == 1) {
+            $treeParams['ff'] = $tlog;
+        }
+        $buttons['TREE_URL'] = $this->config['CGIURL'] . '?' . http_build_query($treeParams) . '&' . $this->session['QUERY'];
+
+        if ($this->config['ALLOW_UNDO'] && isset($this->session['UNDO_P']) && $this->session['UNDO_P'] == $message['POSTID']) {
+            $buttons['UNDO_URL'] = $this->config['CGIURL'] . '?m=u&s=' . $message['POSTID'] . '&' . $this->session['QUERY'];
+        }
+
+        return $buttons;
     }
 
     /**
@@ -314,12 +300,14 @@ class Webapp
     {
         $message = $this->prepareMessageForDisplay($message, $mode, $tlog);
         
-        $showEnv = !empty($message['ENVADDR']) || !empty($message['ENVUA']);
-        
         return $this->renderTwig('components/message.twig', array_merge($message, [
-            'SHOW_ENV' => $showEnv,
             'TRANS_USER' => Translator::trans('message.user'),
             'TRANS_POST_DATE' => Translator::trans('message.post_date'),
+            'TXTFOLLOW' => $this->config['TXTFOLLOW'],
+            'TXTAUTHOR' => $this->config['TXTAUTHOR'],
+            'TXTTHREAD' => $this->config['TXTTHREAD'],
+            'TXTTREE' => $this->config['TXTTREE'],
+            'TXTUNDO' => $this->config['TXTUNDO'],
         ]));
     }
 

@@ -4,11 +4,26 @@
       <span class="mnum">{{ POSTID }}.</span>
       <span class="ms">{{ TITLE|raw }}</span>&nbsp;&nbsp;
       <span class="mu">{{ TRANS_USER }}:</span>
-      <span class="mun">{{ USER|raw }}</span>&nbsp;&nbsp;
+      <span class="mun">
+        {% if HAS_MAIL %}
+          <a href="mailto:{{ MAIL }}">{{ USER|raw }}</a>
+        {% else %}
+          {{ USER|raw }}
+        {% endif %}
+      </span>&nbsp;&nbsp;
       <span class="md">
         {{ TRANS_POST_DATE }}: {{ WDATE }}<a id="a{{ POSTID }}">
           &nbsp;
-        </a><span class="nb">{{ BTN|raw }}</span>
+        </a><span class="nb">
+          {% if FOLLOW_URL or AUTHOR_URL or THREAD_URL or TREE_URL or UNDO_URL %}
+            {% set target = OPEN_NEW_WINDOW ? ' target="link"' : '' %}
+            {% if FOLLOW_URL %}&nbsp;&nbsp;&nbsp;<a href="{{ FOLLOW_URL }}"{{ target }} class="internal" title="Follow-up post (reply)">{{ TXTFOLLOW }}</a>{% endif %}
+            {% if AUTHOR_URL %}&nbsp;&nbsp;&nbsp;<a href="{{ AUTHOR_URL }}" target="link" class="internal" title="Search by user">{{ TXTAUTHOR }}</a>{% endif %}
+            {% if THREAD_URL %}&nbsp;&nbsp;&nbsp;<a href="{{ THREAD_URL }}" target="link" class="internal" title="Thread view">{{ TXTTHREAD }}</a>{% endif %}
+            {% if TREE_URL %}&nbsp;&nbsp;&nbsp;<a href="{{ TREE_URL }}" target="link" class="internal" title="Tree view">{{ TXTTREE }}</a>{% endif %}
+            {% if UNDO_URL %}&nbsp;&nbsp;&nbsp;<a href="{{ UNDO_URL }}" class="internal" title="Delete post">{{ TXTUNDO }}</a>{% endif %}
+          {% endif %}
+        </span>
       </span>
     </span>
     <div class="contents">
@@ -16,9 +31,11 @@
         {{- MSG|raw -}}
       </pre>
     </div>
-    {% if SHOW_ENV %}
+    {% if SHOW_IP or SHOW_UA %}
       <div class="env">
-        {{ ENVADDR|raw }}{{ ENVBR|raw }}{{ ENVUA|raw }}
+        {% if SHOW_IP %}{{ PHOST }}{% endif %}
+        {% if SHOW_IP and SHOW_UA %}<br>{% endif %}
+        {% if SHOW_UA %}{{ AGENT }}{% endif %}
       </div>
     {% endif %}
   </div>
