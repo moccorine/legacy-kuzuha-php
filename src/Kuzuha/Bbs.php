@@ -590,18 +590,16 @@ class Bbs extends Webapp
         $message = $this->getmessage($result[0]);
 
         if (!$retry) {
-            $formmsg = $message['MSG'];
-            $formmsg = preg_replace("/&gt; &gt;[^\r]+\r/", '', (string) $formmsg);
-            $formmsg = preg_replace("/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "[^\"]*\"[^>]*>[^<]+<\/a>/i", '', $formmsg);
-            $formmsg = preg_replace("/<a href=\"[^>]+>([^<]+)<\/a>/i", '$1', $formmsg);
-            $formmsg = preg_replace("/\r*<a href=[^>]+><img [^>]+><\/a>/i", '', $formmsg);
-            $formmsg = preg_replace("/\r/", "\r> ", $formmsg);
-            $formmsg = "> $formmsg\r";
-            $formmsg = preg_replace("/\r>\s+\r/", "\r", $formmsg);
-            $formmsg = preg_replace("/\r>\s+\r$/", "\r", (string) $formmsg);
+            $formmsg = \App\Utils\QuoteRegex::formatAsQuote(
+                $message['MSG'],
+                removeLinks: true,
+                followLinkBase: route('follow', ['s' => ''])
+            );
         } else {
             $formmsg = $this->form['v'];
-            $formmsg = preg_replace("/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "[^\"]*\"[^>]*>[^<]+<\/a>/i", '', (string) $formmsg);
+            // Remove follow links from retry
+            $pattern = "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "[^\"]*\"[^>]*>[^<]+<\/a>/i";
+            $formmsg = preg_replace($pattern, '', (string) $formmsg);
         }
         $formmsg .= "\r";
 
