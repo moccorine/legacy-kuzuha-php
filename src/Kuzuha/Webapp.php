@@ -130,7 +130,20 @@ class Webapp
     }
 
     /**
-     * Display message contents definition
+     * Prepare message data for display
+     * 
+     * Transforms raw message data into display-ready format by:
+     * - Formatting date/time
+     * - Escaping special characters for Twig
+     * - Converting reference links
+     * - Generating action buttons (follow, thread, tree, etc.)
+     * - Adding environment information if enabled
+     *
+     * @access  public
+     * @param   array   $message  Raw message data from log
+     * @param   int     $mode     Display mode (0: BBS, 1: Search with buttons, 2: Search without buttons, 3: File output)
+     * @param   string  $tlog     Log file name (for search results)
+     * @return  array   Message data prepared for display
      */
     public function prepareMessageForDisplay($message, $mode = 0, $tlog = '')
     {
