@@ -1,5 +1,16 @@
 # Dead Code Removal
 
+## Conclusion
+
+**Status:** DEAD CODE - Methods are called but never defined, yet app works fine
+
+**Reason:** The code paths calling these undefined methods are never executed because:
+1. `CGIURL` is `/` (relative path)
+2. `ValidationRegex::hasHttpProtocol('/')` returns `false`  
+3. So `header("Location: ...")` is executed instead of `prtredirect()`
+
+**Action:** SAFE TO REMOVE
+
 ## Undefined Method Calls
 
 ### prthtmlhead() and prthtmlfoot()
