@@ -50,4 +50,34 @@ interface BbsLogRepositoryInterface
      * @return int Number of messages
      */
     public function count(): int;
+    
+    /**
+     * Get next post ID
+     * 
+     * @return int Next post ID
+     */
+    public function getNextPostId(): int;
+    
+    /**
+     * Prepend message to log (add at beginning)
+     * 
+     * @param array $message Message data
+     * @param int $maxMessages Maximum number of messages to keep
+     * @return void
+     */
+    public function prepend(array $message, int $maxMessages): void;
+    
+    /**
+     * Lock the log file for exclusive access
+     * 
+     * @return void
+     */
+    public function lock(): void;
+    
+    /**
+     * Unlock the log file
+     * 
+     * @return void
+     */
+    public function unlock(): void;
 }

@@ -4,6 +4,8 @@ namespace App\Models\Repositories;
 
 class BbsLogFileRepository implements BbsLogRepositoryInterface
 {
+    private ?\SplFileObject $lockedFile = null;
+    
     public function __construct(
         private string $logFilePath
     ) {}
@@ -12,28 +14,26 @@ class BbsLogFileRepository implements BbsLogRepositoryInterface
     {
         $line = implode(',', $message) . "\n";
         
-        $fh = @fopen($this->logFilePath, 'ab');
-        if (!$fh) {
-            throw new \RuntimeException("Failed to open log file: {$this->logFilePath}");
-        }
-        
-        if (fwrite($fh, $line) === false) {
-            fclose($fh);
+        $file = new \SplFileObject($this->logFilePath, 'ab');
+        if ($file->fwrite($line) === false) {
             throw new \RuntimeException("Failed to write to log file: {$this->logFilePath}");
         }
-        
-        fclose($fh);
     }
     
     public function getAll(): array
     {
         if (!file_exists($this->logFilePath)) {
-            return [];
+            throw new \RuntimeException("Log file does not exist: {$this->logFilePath}");
         }
         
-        $lines = @file($this->logFilePath);
-        if ($lines === false) {
-            throw new \RuntimeException("Failed to read log file: {$this->logFilePath}");
+        $file = new \SplFileObject($this->logFilePath, 'rb');
+        $lines = [];
+        
+        while (!$file->eof()) {
+            $line = $file->fgets();
+            if ($line !== false && $line !== '') {
+                $lines[] = $line;
+            }
         }
         
         return $lines;
@@ -78,21 +78,82 @@ class BbsLogFileRepository implements BbsLogRepositoryInterface
             return false;
         }
         
-        $fh = @fopen($this->logFilePath, 'wb');
-        if (!$fh) {
-            throw new \RuntimeException("Failed to open log file for writing: {$this->logFilePath}");
-        }
-        
+        $file = new \SplFileObject($this->logFilePath, 'wb');
         foreach ($newLines as $line) {
-            fwrite($fh, $line);
+            $file->fwrite($line);
         }
         
-        fclose($fh);
         return true;
     }
     
     public function count(): int
     {
         return count($this->getAll());
+    }
+    
+    public function getNextPostId(): int
+    {
+        if (!file_exists($this->logFilePath)) {
+            return 1;
+        }
+        
+        $all = $this->getAll();
+        if (empty($all)) {
+            return 1;
+        }
+        
+        $firstLine = $all[0];
+        $parts = explode(',', $firstLine, 3);
+        
+        return isset($parts[1]) ? (int)$parts[1] + 1 : 1;
+    }
+    
+    public function prepend(array $message, int $maxMessages): void
+    {
+        $this->lock();
+        
+        try {
+            $all = $this->getAll();
+            
+            $cleanMessage = array_map(fn($v) => str_replace("\n", '', $v), $message);
+            $line = implode(',', $cleanMessage) . "\n";
+            
+            if (count($all) >= $maxMessages) {
+                $all = array_slice($all, 0, $maxMessages - 1);
+            }
+            
+            array_unshift($all, $line);
+            
+            $file = new \SplFileObject($this->logFilePath, 'wb');
+            foreach ($all as $logLine) {
+                $file->fwrite($logLine);
+            }
+        } finally {
+            $this->unlock();
+        }
+    }
+    
+    public function lock(): void
+    {
+        if ($this->lockedFile) {
+            return;
+        }
+        
+        $this->lockedFile = new \SplFileObject($this->logFilePath, 'rb+');
+        
+        if (!$this->lockedFile->flock(LOCK_EX)) {
+            $this->lockedFile = null;
+            throw new \RuntimeException("Failed to lock log file: {$this->logFilePath}");
+        }
+    }
+    
+    public function unlock(): void
+    {
+        if (!$this->lockedFile) {
+            return;
+        }
+        
+        $this->lockedFile->flock(LOCK_UN);
+        $this->lockedFile = null;
     }
 }

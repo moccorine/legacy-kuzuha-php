@@ -32,21 +32,21 @@ class Bbs extends Webapp
 {
     private ?AccessCounterRepositoryInterface $accessCounterRepo = null;
     private ?ParticipantCounterRepositoryInterface $participantCounterRepo = null;
-    protected $bbsLogRepo = null;
+    protected $bbsLogRepository = null;
     private array $pendingCookies = [];
     
     public function __construct(
         ?AccessCounterRepositoryInterface $accessCounterRepo = null,
         ?ParticipantCounterRepositoryInterface $participantCounterRepo = null,
-        ?BbsLogRepositoryInterface $bbsLogRepo = null
+        ?BbsLogRepositoryInterface $bbsLogRepository = null
     ) {
         parent::__construct();
         $this->accessCounterRepo = $accessCounterRepo;
         $this->participantCounterRepo = $participantCounterRepo;
-        $this->bbsLogRepo = $bbsLogRepo;
+        $this->bbsLogRepository = $bbsLogRepository;
         
-        if ($bbsLogRepo) {
-            $this->setBbsLogRepository($bbsLogRepo);
+        if ($bbsLogRepository) {
+            $this->setBbsLogRepository($bbsLogRepository);
         }
     }
 
@@ -1347,68 +1347,63 @@ class Bbs extends Webapp
         if (!is_array($message)) {
             return $message;
         }
-        $fh = @fopen($this->config['LOGFILENAME'], 'rb+');
-        if (!$fh) {
-            $this->prterror(Translator::trans('error.failed_to_read'));
-        }
-        flock($fh, 2);
-        fseek($fh, 0, 0);
 
-        $logdata = [];
-        while (($logline = FileHelper::getLine($fh)) !== false) {
-            $logdata[] = $logline;
-        }
-        $posterr = 0;
-        if ($this->form['ff']) {
-            $refdata = $this->searchmessage('THREAD', $message['REFID'], false, $this->form['ff']);
-            if (isset($refdata[0])) {
-                $refmessage = $this->getmessage($refdata[0]);
-                if ($refmessage) {
-                    $message['THREAD'] = $refmessage['thread'];
+        return $this->saveMessage($message);
+    }
+
+    protected function saveMessage($message)
+    {
+        $this->bbsLogRepository->lock();
+        try {
+            $logdata = $this->bbsLogRepository->getAll();
+            $posterr = 0;
+
+            if ($this->form['ff']) {
+                $refdata = $this->searchmessage('THREAD', $message['REFID'], false, $this->form['ff']);
+                if (isset($refdata[0])) {
+                    $refmessage = $this->getmessage($refdata[0]);
+                    $message['THREAD'] = $refmessage ? $refmessage['thread'] : '';
                 } else {
                     $message['THREAD'] = '';
                 }
             } else {
-                $message['THREAD'] = '';
-            }
-        } else {
-            for ($i = 0; $i < count($logdata); $i++) {
-                $items = @explode(',', $logdata[$i]);
-                if (count($items) > 8) {
-                    $items[9] = rtrim($items[9]);
-                    if ($i < $this->config['CHECKCOUNT'] and $message['MSG'] == $items[9]) {
-                        $posterr = 1;
-                        break;
-                    }
-                    if ($this->config['IPREC'] and CURRENT_TIME < ($items[0] + $this->config['SPTIME'])
-                        and $this->session['HOST'] == $items[4]) {
-                        $posterr = 2;
-                        break;
-                    }
-                    if ($message['PCODE'] == $items[2]) {
-                        $posterr = 2;
-                        break;
-                    }
-                    if ($message['REFID'] and $items[1] == $message['REFID']) {
-                        $message['THREAD'] = $items[3];
-                        if (!$message['THREAD']) {
-                            $message['THREAD'] = $items[1];
+                for ($i = 0; $i < count($logdata); $i++) {
+                    $items = @explode(',', $logdata[$i]);
+                    if (count($items) > 8) {
+                        $items[9] = rtrim($items[9]);
+                        if ($i < $this->config['CHECKCOUNT'] and $message['MSG'] == $items[9]) {
+                            $posterr = 1;
+                            break;
+                        }
+                        if ($this->config['IPREC'] and CURRENT_TIME < ($items[0] + $this->config['SPTIME'])
+                            and $this->session['HOST'] == $items[4]) {
+                            $posterr = 2;
+                            break;
+                        }
+                        if ($message['PCODE'] == $items[2]) {
+                            $posterr = 2;
+                            break;
+                        }
+                        if ($message['REFID'] and $items[1] == $message['REFID']) {
+                            $message['THREAD'] = $items[3];
+                            if (!$message['THREAD']) {
+                                $message['THREAD'] = $items[1];
+                            }
                         }
                     }
                 }
             }
-        }
-        if ($posterr) {
-            flock($fh, 3);
-            fclose($fh);
-            return $posterr;
-        } else {
-            $items = @explode(',', $logdata[0], 3);
-            $message['POSTID'] = $items[1] + 1;
+
+            if ($posterr) {
+                return $posterr;
+            }
+
+            $message['POSTID'] = $this->bbsLogRepository->getNextPostId();
             if (!$message['REFID']) {
                 $message['THREAD'] = $message['POSTID'];
             }
-            $msgdata = implode(',', [
+
+            $msgdata = [
                 CURRENT_TIME,
                 $message['POSTID'],
                 $message['PCODE'],
@@ -1420,20 +1415,10 @@ class Bbs extends Webapp
                 str_replace(',', '&#44;', $message['TITLE']),
                 str_replace(',', '&#44;', $message['MSG']),
                 $message['REFID'],
-            ]);
-            $msgdata = str_replace("\n", '', $msgdata) . "\n";
-            if (count($logdata) >= $this->config['LOGSAVE']) {
-                $logdata = array_slice($logdata, 0, $this->config['LOGSAVE'] - 2);
-            }
-            {
-                $logdata = $msgdata . implode('', $logdata);
-                fseek($fh, 0, 0);
-                ftruncate($fh, 0);
-                fwrite($fh, $logdata);
-            }
-            flock($fh, 3);
-            fclose($fh);
-            # Cookie registration
+            ];
+
+            $this->bbsLogRepository->prepend($msgdata, $this->config['LOGSAVE']);
+
             if ($this->config['COOKIE']) {
                 $this->setBbsCookie();
                 if ($this->config['ALLOW_UNDO']) {
@@ -1441,112 +1426,119 @@ class Bbs extends Webapp
                 }
             }
 
-            # Message log output
-            if ($this->config['OLDLOGFILEDIR']) {
-                $dir = $this->config['OLDLOGFILEDIR'];
+            $this->writeOldLog(implode(',', $msgdata) . "\n");
 
-                if ($this->config['OLDLOGFMT']) {
-                    $oldlogext = 'dat';
-                } else {
-                    $oldlogext = 'html';
-                }
-                if ($this->config['OLDLOGSAVESW']) {
-                    $oldlogfilename = $dir . date('Ym', CURRENT_TIME) . ".$oldlogext";
-                    $oldlogtitle = $this->config['BBSTITLE'] . date(' Y.m', CURRENT_TIME);
-                } else {
-                    $oldlogfilename = $dir . date('Ymd', CURRENT_TIME) . ".$oldlogext";
-                    $oldlogtitle = $this->config['BBSTITLE'] . date(' Y.m.d', CURRENT_TIME);
-                }
-                if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
-                    $this->prterror(Translator::trans('error.log_size_limit'));
-                }
-                $fh = @fopen($oldlogfilename, 'ab');
-                if (!$fh) {
-                    $this->prterror(Translator::trans('error.log_output_failed'));
-                }
-                flock($fh, 2);
-                $isnewdate = false;
-                if (!@filesize($oldlogfilename)) {
-                    $isnewdate = true;
-                }
-                fwrite($fh, $msgdata);
-                flock($fh, 3);
-                fclose($fh);
-                if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
-                    @chmod($oldlogfilename, 0400);
-                }
-                # Delete old log files
-                if (!$this->config['OLDLOGSAVESW'] and $isnewdate) {
-                    $limitdate = CURRENT_TIME - $this->config['OLDLOGSAVEDAY'] * 60 * 60 * 24;
-                    $limitdate = date('Ymd', $limitdate);
-                    $dh = opendir($dir);
-                    while ($entry = readdir($dh)) {
-                        if (is_file($dir . $entry)) {
-                            $info = pathinfo($entry);
-                            if ($info['extension'] === $oldlogext && ctype_digit($info['filename'])) {
-                                $timestamp = $info['filename'];
-                                if (strlen($timestamp) == strlen($limitdate) && $timestamp < $limitdate) {
-                                    unlink($dir . $entry);
-                                }
-                            }
-                        }
+            return 0;
+        } finally {
+            $this->bbsLogRepository->unlock();
+        }
+    }
+
+    protected function writeOldLog($msgdata)
+    {
+        if (!$this->config['OLDLOGFILEDIR']) {
+            return;
+        }
+
+        $dir = $this->config['OLDLOGFILEDIR'];
+        $oldlogext = $this->config['OLDLOGFMT'] ? 'dat' : 'html';
+
+        if ($this->config['OLDLOGSAVESW']) {
+            $oldlogfilename = $dir . date('Ym', CURRENT_TIME) . ".$oldlogext";
+        } else {
+            $oldlogfilename = $dir . date('Ymd', CURRENT_TIME) . ".$oldlogext";
+        }
+
+        if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
+            $this->prterror(Translator::trans('error.log_size_limit'));
+        }
+
+        $fh = @fopen($oldlogfilename, 'ab');
+        if (!$fh) {
+            $this->prterror(Translator::trans('error.log_output_failed'));
+        }
+
+        flock($fh, 2);
+        $isnewdate = !@filesize($oldlogfilename);
+        fwrite($fh, $msgdata);
+        flock($fh, 3);
+        fclose($fh);
+
+        if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
+            @chmod($oldlogfilename, 0400);
+        }
+
+        if (!$this->config['OLDLOGSAVESW'] and $isnewdate) {
+            $this->deleteOldLogFiles($dir, $oldlogext);
+        }
+
+        $this->createArchive($dir, $oldlogext);
+    }
+
+    protected function deleteOldLogFiles($dir, $oldlogext)
+    {
+        $limitdate = CURRENT_TIME - $this->config['OLDLOGSAVEDAY'] * 60 * 60 * 24;
+        $limitdate = date('Ymd', $limitdate);
+        $dh = opendir($dir);
+        while ($entry = readdir($dh)) {
+            if (is_file($dir . $entry)) {
+                $info = pathinfo($entry);
+                if ($info['extension'] === $oldlogext && ctype_digit($info['filename'])) {
+                    $timestamp = $info['filename'];
+                    if (strlen($timestamp) == strlen($limitdate) && $timestamp < $limitdate) {
+                        unlink($dir . $entry);
                     }
-                    closedir($dh);
-                }
-
-                # Archive creation
-                # ZIP archive handling removed (ZIPDIR not configured)
-                $tmpdir = $dir;
-                if ($this->config['OLDLOGFMT']) {
-                    $tmpdir = $this->config['ZIPDIR'];
-                }
-                if ($this->config['OLDLOGSAVESW']) {
-                    $currentfile = date('Ym', CURRENT_TIME) . '.html';
-                } else {
-                    $currentfile = date('Ymd', CURRENT_TIME) . '.html';
-                }
-
-                $files = [];
-                $dh = opendir($tmpdir);
-                if (!$dh) {
-                    return;
-                }
-                while ($entry = readdir($dh)) {
-                    if ($entry != $currentfile and is_file($tmpdir . $entry) and ValidationRegex::isNumericFilename($entry, 'html')) {
-                        $files[] = $entry;
-                    }
-                }
-                closedir($dh);
-
-                # File with the latest update time, other than the current log
-                $maxftime = 0;
-                foreach ($files as $filename) {
-                    $fstat = stat($tmpdir . $filename);
-                    if ($fstat[9] > $maxftime) {
-                        $maxftime = $fstat[9];
-                        $checkedfile = $tmpdir . $filename;
-                    }
-                }
-                if (!$checkedfile) {
-                    return;
-                }
-                $info = pathinfo($checkedfile);
-                $zipfilename = $info['dirname'] . '/' . $info['filename'] . '.zip';
-
-                # Create a ZIP file using PHP's ZipArchive
-                $zip = new \ZipArchive();
-                if ($zip->open($zipfilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
-                    $zip->addFile($checkedfile, basename($checkedfile));
-                    $zip->close();
-                }
-
-                # Delete temporary files
-                if ($this->config['OLDLOGFMT']) {
-                    unlink($checkedfile);
                 }
             }
         }
-        return 0;
+        closedir($dh);
+    }
+
+    protected function createArchive($dir, $oldlogext)
+    {
+        $tmpdir = $this->config['OLDLOGFMT'] ? $this->config['ZIPDIR'] : $dir;
+        $currentfile = $this->config['OLDLOGSAVESW'] 
+            ? date('Ym', CURRENT_TIME) . '.html'
+            : date('Ymd', CURRENT_TIME) . '.html';
+
+        $files = [];
+        $dh = opendir($tmpdir);
+        if (!$dh) {
+            return;
+        }
+        while ($entry = readdir($dh)) {
+            if ($entry != $currentfile and is_file($tmpdir . $entry) and ValidationRegex::isNumericFilename($entry, 'html')) {
+                $files[] = $entry;
+            }
+        }
+        closedir($dh);
+
+        $maxftime = 0;
+        $checkedfile = null;
+        foreach ($files as $filename) {
+            $fstat = stat($tmpdir . $filename);
+            if ($fstat[9] > $maxftime) {
+                $maxftime = $fstat[9];
+                $checkedfile = $tmpdir . $filename;
+            }
+        }
+
+        if (!$checkedfile) {
+            return;
+        }
+
+        $info = pathinfo($checkedfile);
+        $zipfilename = $info['dirname'] . '/' . $info['filename'] . '.zip';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipfilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+            $zip->addFile($checkedfile, basename($checkedfile));
+            $zip->close();
+        }
+
+        if ($this->config['OLDLOGFMT']) {
+            unlink($checkedfile);
+        }
     }
 
     /**

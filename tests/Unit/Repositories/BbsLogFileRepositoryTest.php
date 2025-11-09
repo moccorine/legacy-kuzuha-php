@@ -36,12 +36,12 @@ class BbsLogFileRepositoryTest extends TestCase
         $this->assertStringContainsString('1,TestUser,test@example.com,Test Title,Test Message,1234567890', $content);
     }
     
-    public function testGetAllReturnsEmptyArrayWhenFileDoesNotExist(): void
+    public function testGetAllThrowsExceptionWhenFileDoesNotExist(): void
     {
-        $result = $this->repository->getAll();
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Log file does not exist');
         
-        $this->assertIsArray($result);
-        $this->assertEmpty($result);
+        $this->repository->getAll();
     }
     
     public function testGetAllReturnsAllMessages(): void
@@ -128,6 +128,8 @@ class BbsLogFileRepositoryTest extends TestCase
     
     public function testCount(): void
     {
+        // Create empty file first
+        file_put_contents($this->testLogFile, '');
         $this->assertEquals(0, $this->repository->count());
         
         $this->repository->append(['1', 'User1', '', 'Title1', 'Message1', '1000']);
@@ -142,7 +144,6 @@ class BbsLogFileRepositoryTest extends TestCase
         $invalidRepo = new BbsLogFileRepository('/invalid/path/that/does/not/exist/test.log');
         
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Failed to open log file');
         
         $invalidRepo->append(['1', 'User', '', 'Title', 'Message', '1000']);
     }

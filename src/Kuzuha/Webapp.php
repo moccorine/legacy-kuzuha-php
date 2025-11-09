@@ -337,8 +337,8 @@ class Webapp
             return file($logfilename);
         }
         
-        if (isset($this->bbsLogRepo) && $this->bbsLogRepo) {
-            return $this->bbsLogRepo->getAll();
+        if (isset($this->bbsLogRepository) && $this->bbsLogRepository) {
+            return $this->bbsLogRepository->getAll();
         }
         
         $logfilename = $this->config['LOGFILENAME'];
