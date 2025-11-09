@@ -895,11 +895,7 @@ class Bbs extends Webapp
             }
         }
         # Redirect
-        if (ValidationRegex::hasHttpProtocol((string) $this->config['CGIURL'])) {
-            header("Location: {$redirecturl}");
-        } else {
-            $this->prtredirect(htmlentities((string) $redirecturl));
-        }
+        header("Location: {$redirecturl}");
     }
 
     /**
@@ -1326,18 +1322,7 @@ class Bbs extends Webapp
                 if (!@filesize($oldlogfilename)) {
                     $isnewdate = true;
                 }
-                if ($this->config['OLDLOGFMT']) {
-                    fwrite($fh, $msgdata);
-                } else {
-                    # HTML header for HTML output
-                    if ($isnewdate) {
-                        $oldloghtmlhead = $this->prthtmlhead($oldlogtitle);
-                        $oldloghtmlhead .= "<span class=\"pagetitle\">$oldlogtitle</span>\n\n<hr />\n";
-                        fwrite($fh, $oldloghtmlhead);
-                    }
-                    $msghtml = $this->prtmessage($this->getmessage($msgdata), 3);
-                    fwrite($fh, $msghtml);
-                }
+                fwrite($fh, $msgdata);
                 flock($fh, 3);
                 fclose($fh);
                 if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
@@ -1362,78 +1347,53 @@ class Bbs extends Webapp
                 }
 
                 # Archive creation
-                if ($this->config['ZIPDIR'] and @function_exists('gzcompress')) {
-                    # In the case of dat, it also writes the message log in HTML format as a temporary file to be saved in the ZIP
-                    if ($this->config['OLDLOGFMT']) {
-                        if ($this->config['OLDLOGSAVESW']) {
-                            $tmplogfilename = $this->config['ZIPDIR'] . date('Ym', CURRENT_TIME) . '.html';
-                        } else {
-                            $tmplogfilename = $this->config['ZIPDIR'] . date('Ymd', CURRENT_TIME) . '.html';
-                        }
+                # ZIP archive handling removed (ZIPDIR not configured)
+                $tmpdir = $dir;
+                if ($this->config['OLDLOGFMT']) {
+                    $tmpdir = $this->config['ZIPDIR'];
+                }
+                if ($this->config['OLDLOGSAVESW']) {
+                    $currentfile = date('Ym', CURRENT_TIME) . '.html';
+                } else {
+                    $currentfile = date('Ymd', CURRENT_TIME) . '.html';
+                }
 
-                        $fhtmp = @fopen($tmplogfilename, 'ab');
-                        if (!$fhtmp) {
-                            return;
-                        }
-                        flock($fhtmp, 2);
+                $files = [];
+                $dh = opendir($tmpdir);
+                if (!$dh) {
+                    return;
+                }
+                while ($entry = readdir($dh)) {
+                    if ($entry != $currentfile and is_file($tmpdir . $entry) and ValidationRegex::isNumericFilename($entry, 'html')) {
+                        $files[] = $entry;
+                    }
+                }
+                closedir($dh);
 
-                        if (!@filesize($tmplogfilename)) {
-                            $oldloghtmlhead = $this->prthtmlhead($oldlogtitle);
-                            $oldloghtmlhead .= "<span class=\"pagetitle\">$oldlogtitle</span>\n\n<hr />\n";
-                            fwrite($fhtmp, $oldloghtmlhead);
-                        }
-                        $msghtml = $this->prtmessage($this->getmessage($msgdata), 3);
-                        fwrite($fhtmp, $msghtml);
-                        flock($fhtmp, 3);
-                        fclose($fhtmp);
+                # File with the latest update time, other than the current log
+                $maxftime = 0;
+                foreach ($files as $filename) {
+                    $fstat = stat($tmpdir . $filename);
+                    if ($fstat[9] > $maxftime) {
+                        $maxftime = $fstat[9];
+                        $checkedfile = $tmpdir . $filename;
                     }
-                    $tmpdir = $dir;
-                    if ($this->config['OLDLOGFMT']) {
-                        $tmpdir = $this->config['ZIPDIR'];
-                    }
-                    if ($this->config['OLDLOGSAVESW']) {
-                        $currentfile = date('Ym', CURRENT_TIME) . '.html';
-                    } else {
-                        $currentfile = date('Ymd', CURRENT_TIME) . '.html';
-                    }
+                }
+                if (!$checkedfile) {
+                    return;
+                }
+                $zipfilename = preg_replace("/\.\w+$/", '.zip', $checkedfile);
 
-                    $files = [];
-                    $dh = opendir($tmpdir);
-                    if (!$dh) {
-                        return;
-                    }
-                    while ($entry = readdir($dh)) {
-                        if ($entry != $currentfile and is_file($tmpdir . $entry) and ValidationRegex::isNumericFilename($entry, 'html')) {
-                            $files[] = $entry;
-                        }
-                    }
-                    closedir($dh);
+                # Create a ZIP file using PHP's ZipArchive
+                $zip = new \ZipArchive();
+                if ($zip->open($zipfilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                    $zip->addFile($checkedfile, basename($checkedfile));
+                    $zip->close();
+                }
 
-                    # File with the latest update time, other than the current log
-                    $maxftime = 0;
-                    foreach ($files as $filename) {
-                        $fstat = stat($tmpdir . $filename);
-                        if ($fstat[9] > $maxftime) {
-                            $maxftime = $fstat[9];
-                            $checkedfile = $tmpdir . $filename;
-                        }
-                    }
-                    if (!$checkedfile) {
-                        return;
-                    }
-                    $zipfilename = preg_replace("/\.\w+$/", '.zip', $checkedfile);
-
-                    # Create a ZIP file using PHP's ZipArchive
-                    $zip = new \ZipArchive();
-                    if ($zip->open($zipfilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
-                        $zip->addFile($checkedfile, basename($checkedfile));
-                        $zip->close();
-                    }
-
-                    # Delete temporary files
-                    if ($this->config['OLDLOGFMT']) {
-                        unlink($checkedfile);
-                    }
+                # Delete temporary files
+                if ($this->config['OLDLOGFMT']) {
+                    unlink($checkedfile);
                 }
             }
         }

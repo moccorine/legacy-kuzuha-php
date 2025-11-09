@@ -135,28 +135,6 @@ class Webapp
     }
 
     /**
-     * Redirector output with META tags
-     *
-     * @access  public
-     * @param   String  $redirecturl    URL to redirect
-     */
-    public function prtredirect($redirecturl)
-    {
-        print $this->prthtmlhead(
-            $this->config['BBSTITLE'] . ' - URL redirection',
-            "<meta http-equiv=\"refresh\" content=\"1;url={$redirecturl}\">\n"
-        );
-        
-        echo $this->renderTwig('redirect.twig', [
-            'REDIRECTURL' => $redirecturl,
-            'TRANS_REDIRECTING' => Translator::trans('redirect.redirecting'),
-            'TRANS_TO' => Translator::trans('redirect.to'),
-        ]);
-        
-        print $this->prthtmlfoot();
-    }
-
-    /**
      * Display message contents definition
      */
     public function setmessage($message, $mode = 0, $tlog = '')
