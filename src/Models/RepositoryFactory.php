@@ -11,6 +11,8 @@ use App\Models\Repositories\ParticipantCounterCsvRepository;
 use App\Models\Repositories\ParticipantCounterSqliteRepository;
 use App\Models\Repositories\BbsLogRepositoryInterface;
 use App\Models\Repositories\BbsLogFileRepository;
+use App\Models\Repositories\OldLogRepositoryInterface;
+use App\Models\Repositories\OldLogFileRepository;
 
 class RepositoryFactory
 {
@@ -51,5 +53,16 @@ class RepositoryFactory
     {
         $config = Config::getInstance();
         return new BbsLogFileRepository($config->get('LOGFILENAME'));
+    }
+
+    public static function createOldLogRepository(): OldLogRepositoryInterface
+    {
+        $config = Config::getInstance();
+        $logDir = $config->get('OLDLOGFILEDIR');
+        $extension = $config->get('OLDLOGFMT') ? 'dat' : 'html';
+        $monthlyMode = (bool) $config->get('OLDLOGSAVESW', 1);
+        $maxSize = $config->get('MAXOLDLOGSIZE', 1000000);
+        
+        return new OldLogFileRepository($logDir, $extension, $monthlyMode, $maxSize);
     }
 }

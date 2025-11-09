@@ -18,6 +18,7 @@ use App\Utils\ValidationRegex;
 use App\Models\Repositories\AccessCounterRepositoryInterface;
 use App\Models\Repositories\ParticipantCounterRepositoryInterface;
 use App\Models\Repositories\BbsLogRepositoryInterface;
+use App\Models\Repositories\OldLogRepositoryInterface;
 
 /**
  * Standard bulletin board class - Bbs
@@ -30,20 +31,28 @@ use App\Models\Repositories\BbsLogRepositoryInterface;
  */
 class Bbs extends Webapp
 {
+    // Post error codes
+    public const POST_SUCCESS = 0;
+    public const POST_ERROR_DUPLICATE = 1;
+    public const POST_ERROR_RATE_LIMIT = 2;
+
     private ?AccessCounterRepositoryInterface $accessCounterRepo = null;
     private ?ParticipantCounterRepositoryInterface $participantCounterRepo = null;
     protected $bbsLogRepository = null;
+    protected $oldLogRepository = null;
     private array $pendingCookies = [];
     
     public function __construct(
         ?AccessCounterRepositoryInterface $accessCounterRepo = null,
         ?ParticipantCounterRepositoryInterface $participantCounterRepo = null,
-        ?BbsLogRepositoryInterface $bbsLogRepository = null
+        ?BbsLogRepositoryInterface $bbsLogRepository = null,
+        ?OldLogRepositoryInterface $oldLogRepository = null
     ) {
         parent::__construct();
         $this->accessCounterRepo = $accessCounterRepo;
         $this->participantCounterRepo = $participantCounterRepo;
         $this->bbsLogRepository = $bbsLogRepository;
+        $this->oldLogRepository = $oldLogRepository;
         
         if ($bbsLogRepository) {
             $this->setBbsLogRepository($bbsLogRepository);
@@ -132,17 +141,27 @@ class Bbs extends Webapp
         $posterr = $this->validatePost();
         // Post operation
         if (!$posterr) {
-            $posterr = $this->putmessage($this->buildPostMessage());
+            $message = $this->buildPostMessage();
+            
+            // Resolve thread ID from archive if replying from archive file
+            if ($this->form['ff'] && $message['REFID']) {
+                $message['THREAD'] = $this->resolveThreadFromArchive($message['REFID'], $this->form['ff']);
+            } else {
+                // Use null as placeholder to resolve from current log
+                $message['THREAD'] = null;
+            }
+            
+            $posterr = $this->saveMessage($message);
         }
 
         // Handle post result
         switch ($posterr) {
-            case 1:
+            case self::POST_ERROR_DUPLICATE:
                 // Double post error, etc.
                 $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
                 break;
             
-            case 2:
+            case self::POST_ERROR_RATE_LIMIT:
                 // Protect code redisplayed due to time lapse
                 if ($this->form['f']) {
                     $this->prtfollow(true);
@@ -713,24 +732,26 @@ class Bbs extends Webapp
      */
     public function msgsearchlist($mode)
     {
-
-        $fh = null;
-        if ($this->form['ff']) {
-            if (ValidationRegex::isValidFilename((string) $this->form['ff'])) {
-                $fh = @fopen($this->config['OLDLOGFILEDIR'] . $this->form['ff'], 'rb');
-            }
-            if (!$fh) {
-                $this->prterror(Translator::trans('error.file_open_failed', ['filename' => $this->form['ff']]));
-            }
-            flock($fh, 1);
-        }
-
         $result = [];
 
-        if ($fh) {
+        if ($this->form['ff']) {
+            if (!ValidationRegex::isValidFilename((string) $this->form['ff'])) {
+                $this->prterror(Translator::trans('error.file_open_failed', ['filename' => $this->form['ff']]));
+            }
+
+            if (!$this->oldLogRepository) {
+                $this->prterror(Translator::trans('error.file_open_failed', ['filename' => $this->form['ff']]));
+            }
+
+            try {
+                $logdata = $this->oldLogRepository->getAll($this->form['ff']);
+            } catch (\RuntimeException $e) {
+                $this->prterror(Translator::trans('error.file_open_failed', ['filename' => $this->form['ff']]));
+            }
+
             $linecount = 0;
             $threadstart = false;
-            while (($logline = FileHelper::getLine($fh)) !== false) {
+            foreach ($logdata as $logline) {
                 if ($threadstart) {
                     $linecount++;
                 }
@@ -751,8 +772,6 @@ class Bbs extends Webapp
                     }
                 }
             }
-            flock($fh, 3);
-            fclose($fh);
         } else {
             $logdata = $this->loadmessage();
             foreach ($logdata as $logline) {
@@ -1337,88 +1356,131 @@ class Bbs extends Webapp
     }
 
     /**
-     * Message registration process
+     * Resolve thread ID from archive file
      *
-     * @access  public
-     * @return  Integer  Error code
+     * @param int $refId Reference post ID
+     * @param string $archiveFile Archive filename
+     * @return string|null Thread ID or null if not found
      */
-    public function putmessage($message)
+    protected function resolveThreadFromArchive(int $refId, string $archiveFile): ?string
     {
-        if (!is_array($message)) {
-            return $message;
+        $refdata = $this->searchmessage('THREAD', $refId, false, $archiveFile);
+        if (isset($refdata[0])) {
+            $refmessage = $this->getmessage($refdata[0]);
+            return $refmessage ? $refmessage['thread'] : null;
         }
-
-        return $this->saveMessage($message);
+        return null;
     }
 
-    protected function saveMessage($message)
+    /**
+     * Validate message and resolve thread ID from current log
+     *
+     * @param array $message Message data
+     * @return array ['error' => int, 'thread' => string|null]
+     */
+    protected function validateAndResolveThread(array $message): array
+    {
+        $logdata = $this->bbsLogRepository->getAll();
+        $thread = null;
+
+        foreach ($logdata as $i => $logline) {
+            $items = @explode(',', $logline);
+            if (count($items) <= 8) {
+                continue;
+            }
+
+            $items[9] = rtrim($items[9]);
+            
+            // Check for duplicate message content (only check recent posts)
+            if ($i < $this->config['CHECKCOUNT'] && $message['MSG'] == $items[9]) {
+                return ['error' => self::POST_ERROR_DUPLICATE, 'thread' => null];
+            }
+            
+            // Check IP-based rate limit
+            if ($this->config['IPREC'] 
+                && CURRENT_TIME < ($items[0] + $this->config['SPTIME'])
+                && $this->session['HOST'] == $items[4]) {
+                return ['error' => self::POST_ERROR_RATE_LIMIT, 'thread' => null];
+            }
+            
+            // Check for PCODE conflict (same protection code)
+            if ($message['PCODE'] == $items[2]) {
+                return ['error' => self::POST_ERROR_RATE_LIMIT, 'thread' => null];
+            }
+            
+            // Find thread ID from reference message
+            if ($message['REFID'] && $items[1] == $message['REFID']) {
+                $thread = $items[3] ?: $items[1];
+            }
+        }
+
+        return ['error' => self::POST_SUCCESS, 'thread' => $thread];
+    }
+
+    /**
+     * Build message data array for CSV storage
+     *
+     * Escapes commas in user input fields to prevent CSV corruption.
+     *
+     * @param array $message Message data
+     * @return array Associative array with message fields
+     */
+    protected function buildMessageData(array $message): array
+    {
+        return [
+            'timestamp' => CURRENT_TIME,
+            'postid' => $message['POSTID'],
+            'pcode' => $message['PCODE'],
+            'thread' => $message['THREAD'],
+            'phost' => $message['PHOST'],
+            'agent' => str_replace(',', '&#44;', $message['AGENT']),
+            'user' => str_replace(',', '&#44;', $message['USER']),
+            'mail' => str_replace(',', '&#44;', $message['MAIL']),
+            'title' => str_replace(',', '&#44;', $message['TITLE']),
+            'msg' => str_replace(',', '&#44;', $message['MSG']),
+            'refid' => $message['REFID'],
+        ];
+    }
+
+    /**
+     * Save a new message to the bulletin board
+     *
+     * Validates the message against duplicate posts and rate limits,
+     * then saves it to the main log and archive log.
+     *
+     * @param array $message Message data array (THREAD can be null as placeholder)
+     * @return int Error code:
+     *             - POST_SUCCESS (0): Message saved successfully
+     *             - POST_ERROR_DUPLICATE (1): Duplicate message detected
+     *             - POST_ERROR_RATE_LIMIT (2): Rate limit exceeded or PCODE conflict
+     */
+    public function saveMessage(array $message): int
     {
         $this->bbsLogRepository->lock();
         try {
-            $logdata = $this->bbsLogRepository->getAll();
-            $posterr = 0;
-
-            if ($this->form['ff']) {
-                $refdata = $this->searchmessage('THREAD', $message['REFID'], false, $this->form['ff']);
-                if (isset($refdata[0])) {
-                    $refmessage = $this->getmessage($refdata[0]);
-                    $message['THREAD'] = $refmessage ? $refmessage['thread'] : '';
-                } else {
-                    $message['THREAD'] = '';
+            // Resolve thread ID and validate if not already set
+            if ($message['THREAD'] === null) {
+                $result = $this->validateAndResolveThread($message);
+                if ($result['error'] !== self::POST_SUCCESS) {
+                    return $result['error'];
                 }
-            } else {
-                for ($i = 0; $i < count($logdata); $i++) {
-                    $items = @explode(',', $logdata[$i]);
-                    if (count($items) > 8) {
-                        $items[9] = rtrim($items[9]);
-                        if ($i < $this->config['CHECKCOUNT'] and $message['MSG'] == $items[9]) {
-                            $posterr = 1;
-                            break;
-                        }
-                        if ($this->config['IPREC'] and CURRENT_TIME < ($items[0] + $this->config['SPTIME'])
-                            and $this->session['HOST'] == $items[4]) {
-                            $posterr = 2;
-                            break;
-                        }
-                        if ($message['PCODE'] == $items[2]) {
-                            $posterr = 2;
-                            break;
-                        }
-                        if ($message['REFID'] and $items[1] == $message['REFID']) {
-                            $message['THREAD'] = $items[3];
-                            if (!$message['THREAD']) {
-                                $message['THREAD'] = $items[1];
-                            }
-                        }
-                    }
-                }
+                $message['THREAD'] = $result['thread'];
             }
 
-            if ($posterr) {
-                return $posterr;
-            }
-
+            // Assign post ID and thread ID
             $message['POSTID'] = $this->bbsLogRepository->getNextPostId();
             if (!$message['REFID']) {
+                // New thread: thread ID = post ID
                 $message['THREAD'] = $message['POSTID'];
             }
 
-            $msgdata = [
-                CURRENT_TIME,
-                $message['POSTID'],
-                $message['PCODE'],
-                $message['THREAD'],
-                $message['PHOST'],
-                str_replace(',', '&#44;', $message['AGENT']),
-                str_replace(',', '&#44;', $message['USER']),
-                str_replace(',', '&#44;', $message['MAIL']),
-                str_replace(',', '&#44;', $message['TITLE']),
-                str_replace(',', '&#44;', $message['MSG']),
-                $message['REFID'],
-            ];
+            // Build CSV data array
+            $msgdata = $this->buildMessageData($message);
 
+            // Save to main log
             $this->bbsLogRepository->prepend($msgdata, $this->config['LOGSAVE']);
 
+            // Set cookies for user preferences and undo functionality
             if ($this->config['COOKIE']) {
                 $this->setBbsCookie();
                 if ($this->config['ALLOW_UNDO']) {
@@ -1426,9 +1488,10 @@ class Bbs extends Webapp
                 }
             }
 
-            $this->writeOldLog(implode(',', $msgdata) . "\n");
+            // Save to archive log (daily/monthly file)
+            $this->writeOldLog(implode(',', array_values($msgdata)) . "\n");
 
-            return 0;
+            return self::POST_SUCCESS;
         } finally {
             $this->bbsLogRepository->unlock();
         }
@@ -1436,62 +1499,44 @@ class Bbs extends Webapp
 
     protected function writeOldLog($msgdata)
     {
-        if (!$this->config['OLDLOGFILEDIR']) {
+        if (!$this->config['OLDLOGFILEDIR'] || !$this->oldLogRepository) {
             return;
         }
 
-        $dir = $this->config['OLDLOGFILEDIR'];
-        $oldlogext = $this->config['OLDLOGFMT'] ? 'dat' : 'html';
+        try {
+            $this->oldLogRepository->append($msgdata);
 
-        if ($this->config['OLDLOGSAVESW']) {
-            $oldlogfilename = $dir . date('Ym', CURRENT_TIME) . ".$oldlogext";
-        } else {
-            $oldlogfilename = $dir . date('Ymd', CURRENT_TIME) . ".$oldlogext";
-        }
+            if ($this->oldLogRepository->isNewFile() && !$this->config['OLDLOGSAVESW']) {
+                $this->deleteOldLogFiles(
+                    $this->config['OLDLOGFILEDIR'],
+                    $this->config['OLDLOGFMT'] ? 'dat' : 'html'
+                );
+            }
 
-        if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
+            $this->createArchive(
+                $this->config['OLDLOGFILEDIR'],
+                $this->config['OLDLOGFMT'] ? 'dat' : 'html'
+            );
+        } catch (\RuntimeException $e) {
             $this->prterror(Translator::trans('error.log_size_limit'));
         }
-
-        $fh = @fopen($oldlogfilename, 'ab');
-        if (!$fh) {
-            $this->prterror(Translator::trans('error.log_output_failed'));
-        }
-
-        flock($fh, 2);
-        $isnewdate = !@filesize($oldlogfilename);
-        fwrite($fh, $msgdata);
-        flock($fh, 3);
-        fclose($fh);
-
-        if (@filesize($oldlogfilename) > $this->config['MAXOLDLOGSIZE']) {
-            @chmod($oldlogfilename, 0400);
-        }
-
-        if (!$this->config['OLDLOGSAVESW'] and $isnewdate) {
-            $this->deleteOldLogFiles($dir, $oldlogext);
-        }
-
-        $this->createArchive($dir, $oldlogext);
     }
 
     protected function deleteOldLogFiles($dir, $oldlogext)
     {
         $limitdate = CURRENT_TIME - $this->config['OLDLOGSAVEDAY'] * 60 * 60 * 24;
         $limitdate = date('Ymd', $limitdate);
-        $dh = opendir($dir);
-        while ($entry = readdir($dh)) {
-            if (is_file($dir . $entry)) {
-                $info = pathinfo($entry);
-                if ($info['extension'] === $oldlogext && ctype_digit($info['filename'])) {
-                    $timestamp = $info['filename'];
-                    if (strlen($timestamp) == strlen($limitdate) && $timestamp < $limitdate) {
-                        unlink($dir . $entry);
-                    }
+        
+        foreach (glob($dir . "*.$oldlogext") as $filepath) {
+            $entry = basename($filepath);
+            $info = pathinfo($entry);
+            if (ctype_digit($info['filename'])) {
+                $timestamp = $info['filename'];
+                if (strlen($timestamp) == strlen($limitdate) && $timestamp < $limitdate) {
+                    unlink($filepath);
                 }
             }
         }
-        closedir($dh);
     }
 
     protected function createArchive($dir, $oldlogext)
@@ -1502,16 +1547,12 @@ class Bbs extends Webapp
             : date('Ymd', CURRENT_TIME) . '.html';
 
         $files = [];
-        $dh = opendir($tmpdir);
-        if (!$dh) {
-            return;
-        }
-        while ($entry = readdir($dh)) {
-            if ($entry != $currentfile and is_file($tmpdir . $entry) and ValidationRegex::isNumericFilename($entry, 'html')) {
+        foreach (glob($tmpdir . '*.html') as $filepath) {
+            $entry = basename($filepath);
+            if ($entry != $currentfile && ValidationRegex::isNumericFilename($entry, 'html')) {
                 $files[] = $entry;
             }
         }
-        closedir($dh);
 
         $maxftime = 0;
         $checkedfile = null;

@@ -11,6 +11,7 @@ use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\UserAgentHelper;
 use App\Utils\ValidationRegex;
+use App\Models\Repositories\OldLogRepositoryInterface;
 
 /*
 
@@ -56,12 +57,16 @@ $GLOBALS['CONF_GETLOG'] = [
  */
 class Getlog extends Webapp
 {
+    protected $oldLogRepository = null;
+
     /**
      * Constructor
      *
      */
-    public function __construct()
+    public function __construct(?OldLogRepositoryInterface $oldLogRepository = null)
     {
+        $this->oldLogRepository = $oldLogRepository;
+        
         $config = Config::getInstance();
         foreach ($GLOBALS['CONF_GETLOG'] as $key => $value) {
             $config->set($key, $value);
@@ -142,17 +147,12 @@ class Getlog extends Webapp
         }
 
         $files = [];
-
-        $dh = opendir($dir);
-        if (!$dh) {
-            $this->prterror('This directory could not be opened.');
-        }
-        while ($entry = readdir($dh)) {
-            if (is_file($dir . $entry) and ValidationRegex::isNumericFilename($entry, $oldlogext)) {
+        foreach (glob($dir . "*.$oldlogext") as $filepath) {
+            $entry = basename($filepath);
+            if (ValidationRegex::isNumericFilename($entry, $oldlogext)) {
                 $files[] = $entry;
             }
         }
-        closedir($dh);
 
         # Sort by natural file name order
         natsort($files);
@@ -474,8 +474,7 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $fh = @fopen($dir . $filename, 'rb');
-        if (!$fh) {
+        if (!$this->oldLogRepository) {
             $data = array_merge($this->config, $this->session, [
                 'FILENAME' => $filename,
                 'SUCCESS' => false,
@@ -484,7 +483,18 @@ class Getlog extends Webapp
             echo $this->renderTwig('log/oldlog_header.twig', $data);
             return 2;
         }
-        flock($fh, 1);
+
+        try {
+            $logdata = $this->oldLogRepository->getAll($filename);
+        } catch (\RuntimeException $e) {
+            $data = array_merge($this->config, $this->session, [
+                'FILENAME' => $filename,
+                'SUCCESS' => false,
+                'TRANS_UNABLE_TO_OPEN' => Translator::trans('log.unable_to_open'),
+            ]);
+            echo $this->renderTwig('log/oldlog_header.twig', $data);
+            return 2;
+        }
 
         $timerangestr = '';
         if (!(!$this->config['OLDLOGFMT'] and !$conditions)) {
@@ -519,7 +529,7 @@ class Getlog extends Webapp
         if ($this->config['OLDLOGFMT']) {
             if (!@$conditions['showall']) {
                 $result = 0;
-                while (($logline = FileHelper::getLine($fh)) !== false) {
+                foreach ($logdata as $logline) {
                     $message = $this->getmessage($logline);
                     $result = $this->msgsearch($message, $conditions);
                     # Search hit
@@ -554,9 +564,14 @@ class Getlog extends Webapp
             }
             # Show all
             else {
-                while (($logline = FileHelper::getLine($fh)) !== false) {
-                    $messagestr = $this->renderMessage($this->getmessage($logline), $msgmode, $filename);
-                    print $messagestr;
+                foreach ($logdata as $index => $logline) {
+                    error_log("Line {$index}: " . var_export($logline, true));
+                    $message = $this->getmessage($logline);
+                    error_log("Message {$index}: " . var_export($message, true));
+                    if ($message) {
+                        $messagestr = $this->renderMessage($message, $msgmode, $filename);
+                        print $messagestr;
+                    }
                 }
             }
         }
@@ -567,7 +582,7 @@ class Getlog extends Webapp
                 $buffer = '';
                 $flgbuffer = false;
                 $result = 0;
-                while (($htmlline = FileHelper::getLine($fh)) !== false) {
+                foreach ($logdata as $htmlline) {
                     // Start message (check for div with id starting with 'm' followed by digits)
                     if (!$flgbuffer && str_contains($htmlline, '<div') && str_contains($htmlline, 'id="m')) {
                         $buffer = $htmlline;
@@ -615,13 +630,11 @@ class Getlog extends Webapp
                     }
                 }
             } else {
-                while (($htmlline = FileHelper::getLine($fh)) !== false) {
+                foreach ($logdata as $htmlline) {
                     print $htmlline;
                 }
             }
         }
-        flock($fh, 3);
-        fclose($fh);
 
         if (!(!$this->config['OLDLOGFMT'] and !$conditions)) {
             $resultmsg = '';
@@ -794,18 +807,22 @@ class Getlog extends Webapp
             return 1;
         }
 
-        $fh = @fopen($this->config['OLDLOGFILEDIR'] . $filename, 'rb');
-        if (!$fh) {
+        if (!$this->oldLogRepository) {
             $this->prterror($filename . ' was unable to be opened.');
         }
-        flock($fh, 1);
+
+        try {
+            $logdata = $this->oldLogRepository->getAll($filename);
+        } catch (\RuntimeException $e) {
+            $this->prterror($filename . ' was unable to be opened.');
+        }
 
         $tid = [];
         $tcount = [];
         $ttitle = [];
         $ttime = [];
         $tindex = 0;
-        while (($logline = FileHelper::getLine($fh)) !== false) {
+        foreach ($logdata as $logline) {
             $message = $this->getmessage($logline);
             if (!$message['THREAD'] or $message['THREAD'] == $message['POSTID'] or !@$ttitle[$message['THREAD']]) {
                 $tid[$tindex] = $message['POSTID'];
@@ -838,8 +855,6 @@ class Getlog extends Webapp
                 $ttime[$message['THREAD']] = $message['NDATE'];
             }
         }
-        flock($fh, 3);
-        fclose($fh);
 
         $topics = [];
         $tidcount = count($tid);
@@ -888,23 +903,17 @@ class Getlog extends Webapp
 
         $dir = $this->config['ZIPDIR'];
 
-        $dh = opendir($dir);
-        if (!$dh) {
-            $this->prterror('This directory could not be opened.');
-        }
         $archives = [];
-        while ($entry = readdir($dh)) {
-            if (is_file($dir . $entry) and preg_match("/\.(zip|lzh|rar|gz|tar\.gz)$/i", $entry)) {
-                $fstat = stat($dir . $entry);
-                $archives[] = [
-                    'DIR' => $dir,
-                    'FILENAME' => $entry,
-                    'FTIME' => date('Y/m/d H:i:s', $fstat[9]),
-                    'FSIZE' => $fstat[7],
-                ];
-            }
+        foreach (glob($dir . '*.{zip,lzh,rar,gz,tar.gz}', GLOB_BRACE) as $filepath) {
+            $entry = basename($filepath);
+            $fstat = stat($filepath);
+            $archives[] = [
+                'DIR' => $dir,
+                'FILENAME' => $entry,
+                'FTIME' => date('Y/m/d H:i:s', $fstat[9]),
+                'FSIZE' => $fstat[7],
+            ];
         }
-        closedir($dh);
 
         # Sort by natural file name order
         usort($archives, function ($a, $b) {
@@ -949,5 +958,8 @@ class Getlog extends Webapp
 
 
 
-
+    protected function prthtmlfoot()
+    {
+        return '';
+    }
 }

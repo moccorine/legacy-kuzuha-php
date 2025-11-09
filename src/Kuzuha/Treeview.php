@@ -115,7 +115,7 @@ class Treeview extends Bbs
 
             # Post operation
             if (!$posterr) {
-                $posterr = $this->putmessage($this->buildPostMessage());
+                $posterr = $this->saveMessage($this->buildPostMessage());
             }
 
             # Double post error, etc

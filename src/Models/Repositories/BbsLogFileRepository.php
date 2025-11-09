@@ -115,7 +115,9 @@ class BbsLogFileRepository implements BbsLogRepositoryInterface
         try {
             $all = $this->getAll();
             
-            $cleanMessage = array_map(fn($v) => str_replace("\n", '', $v), $message);
+            // Convert associative array to indexed array and clean newlines
+            $values = array_values($message);
+            $cleanMessage = array_map(fn($v) => str_replace("\n", '', $v), $values);
             $line = implode(',', $cleanMessage) . "\n";
             
             if (count($all) >= $maxMessages) {

@@ -24,6 +24,7 @@ use DI\Container;
 use App\Models\Repositories\AccessCounterRepositoryInterface;
 use App\Models\Repositories\ParticipantCounterRepositoryInterface;
 use App\Models\Repositories\BbsLogRepositoryInterface;
+use App\Models\Repositories\OldLogRepositoryInterface;
 use App\Models\RepositoryFactory;
 
 // Change working directory to project root
@@ -103,6 +104,10 @@ $container->set(ParticipantCounterRepositoryInterface::class, function() {
 
 $container->set(BbsLogRepositoryInterface::class, function() {
     return RepositoryFactory::createBbsLogRepository();
+});
+
+$container->set(OldLogRepositoryInterface::class, function() {
+    return RepositoryFactory::createOldLogRepository();
 });
 
 // Create Slim app with container
