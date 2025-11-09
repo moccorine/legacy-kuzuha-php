@@ -1,5 +1,50 @@
 # HTML Generation Extraction Plan
 
+## Priority Order (Easiest First)
+
+### Phase 1: Webapp.php prtredirect() (Priority: HIGHEST - EASIEST)
+**Impact:** 2 print statements
+**Difficulty:** Very Easy
+**Time:** 30 minutes
+
+**Current Code:**
+```php
+public function prtredirect($redirecturl)
+{
+    print $this->prthtmlhead(...);  // Remove this
+    
+    echo $this->renderTwig('redirect.twig', [...]);  // Already using Twig!
+    
+    print $this->prthtmlfoot();  // Remove this
+}
+```
+
+**Target:** Move head/foot to redirect.twig template (extend base layout)
+
+**Benefits:**
+- Quick win
+- Already 80% migrated
+- Clean example for other methods
+
+### Phase 2: Simple echo/print Replacements (Priority: HIGH)
+**Impact:** ~10 statements
+**Difficulty:** Easy
+**Time:** 2-3 hours
+
+Files with simple HTML output:
+- Bbs.php: `print $this->prtmessage(...)` - already returns HTML
+- Getlog.php: Simple print statements
+
+### Phase 3: Getlog.php (Priority: MEDIUM)
+**Impact:** 18 echo/print statements
+**Difficulty:** Medium
+**Time:** 1-2 days
+
+### Phase 4: Treeview.php (Priority: LOW - LAST)
+**Impact:** 23 echo/print statements
+**Difficulty:** Hard (complex tree structure)
+**Time:** 2-3 days
+
 ## Current State
 
 **Mixed HTML Generation:**
