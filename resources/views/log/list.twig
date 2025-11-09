@@ -28,7 +28,11 @@
       {% for file in files %}
         <tr>
           <td>
-            {{ file.FCHECK|raw }}
+            {% if MULTIPLESEARCH %}
+              <input type="checkbox" name="f[]" value="{{ file.FILENAME }}"{% if file.CHECKED %} checked="checked"{% endif %} />
+            {% else %}
+              <input type="radio" name="f" value="{{ file.FILENAME }}"{% if file.CHECKED %} checked="checked"{% endif %} />
+            {% endif %}
           </td>
           <td>
             <a href="{{ route('search', {f: file.FILENAME}) }}">

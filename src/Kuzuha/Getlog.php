@@ -183,20 +183,14 @@ class Getlog extends Webapp
                 $ftitle = $filename;
             }
 
-            $checked = ($filename == $checkedfile) ? ' checked="checked"' : '';
-            $checkbox = '';
-            if (@$this->config['MULTIPLESEARCH']) {
-                $checkbox = "<input type=\"checkbox\" name=\"f[]\" value=\"$filename\"$checked />";
-            } else {
-                $checkbox = "<input type=\"radio\" name=\"f\" value=\"$filename\"$checked />";
-            }
-
+            $checked = ($filename == $checkedfile);
+            
             $fileList[] = [
-                'FCHECK' => $checkbox,
                 'FILENAME' => $filename,
                 'FTITLE' => $ftitle,
                 'FTIME' => $ftime,
                 'FSIZE' => $fsize,
+                'CHECKED' => $checked,
             ];
         }
 

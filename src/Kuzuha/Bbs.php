@@ -594,17 +594,12 @@ class Bbs extends Webapp
         $formData['SHOW_FORMCONFIG'] = false;
         $formHtml = $this->renderTwig('components/form.twig', $formData);
         
-        // Add follow-specific hidden inputs before </form>
-        $hiddenInputs = '<input type="hidden" name="f" value="' . htmlspecialchars($this->form['s']) . '" />';
-        $hiddenInputs .= '<input type="hidden" name="ff" value="' . htmlspecialchars($this->form['ff']) . '" />';
-        $hiddenInputs .= '<input type="hidden" name="s" value="' . htmlspecialchars($this->form['s']) . '" />';
-        $formHtml = str_replace('</form>', $hiddenInputs . '</form>', $formHtml);
-
-        
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('follow.followup_post'),
             'MESSAGE' => $messageHtml,
             'FORM' => $formHtml,
+            'FOLLOW_POST_ID' => $this->form['s'],
+            'FOLLOW_FILE' => $this->form['ff'],
             'TRANS_FOLLOWUP_POST' => Translator::trans('follow.followup_post'),
             'TRANS_RETURN' => Translator::trans('follow.return'),
         ]);

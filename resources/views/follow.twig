@@ -15,5 +15,12 @@
       </td>
     </tr>
   </table>
-  {{ FORM|raw }}
+  
+  {# Insert hidden inputs before closing form tag #}
+  {% set form_with_hidden = FORM|replace({'</form>': '
+    <input type="hidden" name="f" value="' ~ FOLLOW_POST_ID|e('html_attr') ~ '" />
+    <input type="hidden" name="ff" value="' ~ FOLLOW_FILE|e('html_attr') ~ '" />
+    <input type="hidden" name="s" value="' ~ FOLLOW_POST_ID|e('html_attr') ~ '" />
+  </form>'}) %}
+  {{ form_with_hidden|raw }}
 {% endblock %}
