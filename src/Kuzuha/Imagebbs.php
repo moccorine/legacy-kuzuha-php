@@ -126,10 +126,10 @@ class Imagebbs extends Bbs
      * @return  Array  Message array
      */
     #[\Override]
-    public function getformmessage()
+    public function buildPostMessage()
     {
 
-        $message = parent::getformmessage();
+        $message = parent::buildPostMessage();
 
         if (!is_array($message)) {
             return $message;

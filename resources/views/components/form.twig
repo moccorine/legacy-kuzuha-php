@@ -1,5 +1,7 @@
 <form method="post" enctype="multipart/form-data" action="{{ CGIURL }}">
-  {{ MODE|raw }}
+  {% if MODE %}
+    <input type="hidden" name="m" value="{{ MODE }}" />
+  {% endif %}
   <input type="hidden" name="c" value="{{ C }}" />
   <input type="hidden" name="p" value="{{ TOPPOSTID }}" />
   <input type="hidden" name="pc" value="{{ PCODE }}" />

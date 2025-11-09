@@ -109,11 +109,11 @@ class Treeview extends Bbs
             $this->setuserenv();
 
             # Parameter check
-            $posterr = $this->chkmessage();
+            $posterr = $this->validatePost();
 
             # Post operation
             if (!$posterr) {
-                $posterr = $this->putmessage($this->getformmessage());
+                $posterr = $this->putmessage($this->buildPostMessage());
             }
 
             # Double post error, etc

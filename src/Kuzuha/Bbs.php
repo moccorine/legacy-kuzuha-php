@@ -6,6 +6,7 @@ use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\FileHelper;
+use App\Utils\AutoLink;
 use App\Utils\KaomojiHelper;
 use App\Utils\NetworkHelper;
 use App\Utils\QuoteRegex;
@@ -49,41 +50,95 @@ class Bbs extends Webapp
      */
     public function main()
     {
-        # Start execution time measurement
+        // Start execution time measurement
         $this->setstarttime();
-        # Form acquisition preprocessing
+        // Form acquisition preprocessing
         $this->procForm();
-        # Reflect user settings
+        // Reflect user settings
         $this->refcustom();
         $this->setusersession();
 
-        # If ADMINPOST is empty and not setting password, show password setup page
+        // If ADMINPOST is empty and not setting password, show password setup page
         if (empty($this->config['ADMINPOST']) && $this->form['m'] != 'ad') {
             $bbsadmin = new Bbsadmin($this);
             $bbsadmin->prtsetpass();
             return;
         }
 
-        # gzip compression transfer
+        // gzip compression transfer
         if ($this->config['GZIPU']) {
             ob_start('ob_gzhandler');
         }
-        # Post operation
-        if ($this->form['m'] == 'p' and trim((string) $this->form['v'])) {
-            # Get environment variables
-            $this->setuserenv();
-            # Parameter check
-            $posterr = $this->chkmessage();
-            # Post operation
-            if (!$posterr) {
-                $posterr = $this->putmessage($this->getformmessage());
-            }
-            # Douple post error, etc.
-            if ($posterr == 1) {
+
+        // Route to appropriate handler based on mode
+        $mode = $this->form['m'] ?? '';
+        
+        switch ($mode) {
+            case 'p':
+                $this->handlePostMode();
+                break;
+            
+            case 'c':
+                // User settings process
+                $this->setcustom();
+                break;
+            
+            case 'u':
+                // UNDO process
+                $this->prtundo();
+                break;
+            
+            default:
+                if ($this->form['setup']) {
+                    // Display user settings page
+                    $this->prtcustom();
+                } else {
+                    // Default: bulletin board display
+                    $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
+                }
+                break;
+        }
+
+        if ($this->config['GZIPU']) {
+            ob_end_flush();
+        }
+    }
+
+    /**
+     * Handle post mode operations
+     */
+    private function handlePostMode()
+    {
+        // New post page display
+        if ($this->form['write'] && !trim((string) $this->form['v'])) {
+            $this->prtnewpost();
+            return;
+        }
+
+        // Post submission
+        if (!trim((string) $this->form['v'])) {
+            $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
+            return;
+        }
+
+        // Get environment variables
+        $this->setuserenv();
+        // Parameter check
+        $posterr = $this->validatePost();
+        // Post operation
+        if (!$posterr) {
+            $posterr = $this->putmessage($this->buildPostMessage());
+        }
+
+        // Handle post result
+        switch ($posterr) {
+            case 1:
+                // Double post error, etc.
                 $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
-            }
-            # Protect code redisplayed due to time lapse
-            elseif ($posterr == 2) {
+                break;
+            
+            case 2:
+                // Protect code redisplayed due to time lapse
                 if ($this->form['f']) {
                     $this->prtfollow(true);
                 } elseif ($this->form['write']) {
@@ -91,43 +146,23 @@ class Bbs extends Webapp
                 } else {
                     $this->prtmain(true, $this->accessCounterRepo, $this->participantCounterRepo);
                 }
-            }
-            # Entering admin mode
-            elseif ($posterr == 3) {
+                break;
+            
+            case 3:
+                // Entering admin mode
                 define('BBS_ACTIVATED', true);
                 $bbsadmin = new Bbsadmin($this);
                 $bbsadmin->main();
-            }
-            # Post completion page
-            elseif ($this->form['f']) {
-                $this->prtputcomplete();
-            } else {
-                $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
-            }
-        }
-        # Display user settings page
-        elseif ($this->form['setup']) {
-            $this->prtcustom();
-        }
-        # User settings process
-        elseif ($this->form['m'] == 'c') {
-            $this->setcustom();
-        }
-        # New post
-        elseif ($this->form['m'] == 'p' and $this->form['write']) {
-            $this->prtnewpost();
-        }
-        # UNDO process
-        elseif ($this->form['m'] == 'u') {
-            $this->prtundo();
-        }
-        # Default: bulletin board display
-        else {
-            $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
-        }
-
-        if ($this->config['GZIPU']) {
-            ob_end_flush();
+                break;
+            
+            default:
+                // Post completion
+                if ($this->form['f']) {
+                    $this->prtputcomplete();
+                } else {
+                    $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
+                }
+                break;
         }
     }
 
@@ -403,7 +438,7 @@ class Bbs extends Webapp
         # Protect code generation
         $pcode = SecurityHelper::generateProtectCode();
         if (!$mode) {
-            $mode = '<input type="hidden" name="m" value="p" />';
+            $mode = 'p';
         }
         
         # Hide post form
@@ -934,228 +969,369 @@ class Bbs extends Webapp
     }
 
     /**
-     * Post check
+     * Validate post message
      *
      * @access  public
      * @param   Boolean   $limithost  Whether or not to check for same host
-     * @return  Integer   Error code
+     * @return  Integer   Error code (0: success, 2: retry)
      */
-    public function chkmessage($limithost = true)
+    public function validatePost($limithost = true)
     {
-        $posterr = 0;
+        $this->validatePostingEnabled();
+        $this->validateAdminOnly();
+        $this->validateReferer();
+        $this->validateMessageFormat();
+        $this->validateFieldLengths();
+        $this->validatePostInterval($limithost);
+        
+        if (trim((string) $this->form['v']) == '') {
+            return 2;
+        }
+        
+        $this->validateProhibitedWords();
+        
+        return 0;
+    }
+
+    /**
+     * Check if posting is enabled
+     */
+    private function validatePostingEnabled()
+    {
+        // Check if posting is suspended
         if ($this->config['RUNMODE'] == 1) {
             $this->prterror(Translator::trans('error.posting_suspended'));
         }
-        /* Prohibit access by host name process */
+
+        // Prohibit access by hostname
         if (NetworkHelper::hostnameMatch($this->config['HOSTNAME_POSTDENIED'], $this->config['HOSTAGENT_BANNED'])) {
             $this->prterror(Translator::trans('error.posting_suspended'));
         }
-        if ($this->config['BBSMODE_ADMINONLY'] == 1 or ($this->config['BBSMODE_ADMINONLY'] == 2 and !$this->form['f'])) {
-            if (crypt((string) $this->form['u'], (string) $this->config['ADMINPOST']) != $this->config['ADMINPOST']) {
-                $this->prterror(Translator::trans('error.admin_only'));
-            }
+    }
+
+    /**
+     * Check admin-only mode
+     */
+    private function validateAdminOnly()
+    {
+        // Admin-only mode check
+        $isAdminOnlyMode = $this->config['BBSMODE_ADMINONLY'] == 1 
+            || ($this->config['BBSMODE_ADMINONLY'] == 2 && !$this->form['f']);
+        
+        if (!$isAdminOnlyMode) {
+            return;
         }
-        if ($_SERVER['HTTP_REFERER'] and $this->config['REFCHECKURL']
-            and (!str_contains((string) $_SERVER['HTTP_REFERER'], (string) $this->config['REFCHECKURL'])
-            or strpos((string) $_SERVER['HTTP_REFERER'], (string) $this->config['REFCHECKURL']) > 0)) {
-            $this->prterror("Posts cannot be made from any URLs besides <br>{$this->config['REFCHECKURL']}.");
+
+        $isValidAdmin = crypt((string) $this->form['u'], (string) $this->config['ADMINPOST']) 
+            == $this->config['ADMINPOST'];
+        
+        if (!$isValidAdmin) {
+            $this->prterror(Translator::trans('error.admin_only'));
         }
+    }
+
+    /**
+     * Validate HTTP referer
+     */
+    private function validateReferer()
+    {
+        if (!$_SERVER['HTTP_REFERER'] || !$this->config['REFCHECKURL']) {
+            return;
+        }
+
+        // Referer check
+        $referer = (string) $_SERVER['HTTP_REFERER'];
+        $checkUrl = (string) $this->config['REFCHECKURL'];
+        
+        if (!str_contains($referer, $checkUrl) || strpos($referer, $checkUrl) > 0) {
+            $this->prterror("Posts cannot be made from any URLs besides <br>{$checkUrl}.");
+        }
+    }
+
+    /**
+     * Validate message format (length per line, number of lines, total size)
+     */
+    private function validateMessageFormat()
+    {
+        // Validate message length per line
         foreach (explode("\r", (string) $this->form['v']) as $line) {
             if (strlen($line) > $this->config['MAXMSGCOL']) {
                 $this->prterror(Translator::trans('error.too_many_characters'));
             }
         }
+
+        // Validate number of lines
         if (substr_count((string) $this->form['v'], "\r") > $this->config['MAXMSGLINE'] - 1) {
             $this->prterror(Translator::trans('error.too_many_linebreaks'));
         }
+
+        // Validate total message size
         if (strlen((string) $this->form['v']) > $this->config['MAXMSGSIZE']) {
             $this->prterror(Translator::trans('error.file_size_too_large'));
         }
-        if (strlen((string) $this->form['u']) > $this->config['MAXNAMELENGTH']) {
-            $this->prterror('There are too many characters in the name field. (Up to {MAXNAMELENGTH} characters)');
-        }
-        if (strlen((string) $this->form['i']) > $this->config['MAXMAILLENGTH']) {
-            $this->prterror('There are too many characters in the email field. (Up to {MAXMAILLENGTH} characters)');
-        }
-        if ($this->form['i']) { ## mod
-            $this->prterror(Translator::trans('error.spam_detected')); ## mod
-        } ## mod
-        if (strlen((string) $this->form['t']) > $this->config['MAXTITLELENGTH']) {
-            $this->prterror('There are too many characters in the title field. (Up to {MAXTITLELENGTH} characters)');
-        }
-        {
-            $timestamp = SecurityHelper::verifyProtectCode($this->form['pc'], $limithost);
-
-            if ((CURRENT_TIME - $timestamp) < $this->config['MINPOSTSEC']) {
-                $this->prterror(Translator::trans('error.post_interval_too_short'));
-            }
-            /*            if ((CURRENT_TIME - $timestamp ) > $this->config['MAXPOSTSEC'] ) {
-                            $this->prterror ( 'The time between posts is too long. Please try again.');
-                            $posterr = 2;
-                            return $posterr;
-                        } */
-        }
-
-        if (trim((string) $this->form['v']) == '') {
-            $posterr = 2;
-            return $posterr;
-        }
-
-        ## if ($this->config['NGWORD']) {
-        ##     foreach ($this->config['NGWORD'] as $ngword) {
-        ##         if (strpos($this->form['v'], $ngword) !== FALSE
-        ##             or strpos($this->form['l'], $ngword) !== FALSE
-        ##             or strpos($this->form['t'], $ngword) !== FALSE
-        ##             or strpos($this->form['u'], $ngword) !== FALSE
-        ##             or strpos($this->form['i'], $ngword) !== FALSE) {
-        ##             $this->prterror ( 'The post contains prohibited words.' );
-        ##         }
-        ##     }
-        ## }
-        if ($this->config['NGWORD']) { ## mod
-            foreach ($this->config['NGWORD'] as $ngword) {
-                $ngword = strtolower((string) $ngword); // Convert prohibited word to lowercase
-                if (
-                    str_contains(strtolower((string) $this->form['v']), $ngword) ||
-                    str_contains(strtolower((string) $this->form['l']), $ngword) ||
-                    str_contains(strtolower((string) $this->form['t']), $ngword) ||
-                    str_contains(strtolower((string) $this->form['u']), $ngword) ||
-                    str_contains(strtolower((string) $this->form['i']), $ngword)
-                ) {
-                    $this->prterror(Translator::trans('error.prohibited_words'));
-                }
-            }
-        } ## mod end
-
-        #20240204 猫 spam detection (https://php.o0o0.jp/article/php-spam)
-        # Number of characters: char_num = mb_strlen( $this->form['v'], 'UTF8');
-        # Number of bytes: byte_num = strlen( $this->form['v']);
-
-        ## $char_num = mb_strlen( $this->form['v'], 'UTF8');
-        ## $byte_num = strlen( $this->form['v']);
-
-        # When single-byte characters makes up more than 90% of the total
-        ## if ((($char_num * 3 - $byte_num) / 2 / $char_num * 100) > 90) {
-        ##     # Treat as spam
-        ##     $this->prterror('This bulletin board\'s post function is currently disabled.');
-        ## }
-        ## disabled by TL: not suitable for languages that use single-byte characters (i.e. English)
-
-
-        return $posterr;
     }
 
     /**
-     * Get message from form input
+     * Validate field lengths (name, email, title)
+     */
+    private function validateFieldLengths()
+    {
+        // Validate name length
+        if (strlen((string) $this->form['u']) > $this->config['MAXNAMELENGTH']) {
+            $this->prterror('There are too many characters in the name field. (Up to {MAXNAMELENGTH} characters)');
+        }
+
+        // Validate email length
+        if (strlen((string) $this->form['i']) > $this->config['MAXMAILLENGTH']) {
+            $this->prterror('There are too many characters in the email field. (Up to {MAXMAILLENGTH} characters)');
+        }
+        
+        // Spam protection: reject if email field is filled
+        if ($this->form['i']) {
+            $this->prterror(Translator::trans('error.spam_detected'));
+        }
+
+        // Validate title length
+        if (strlen((string) $this->form['t']) > $this->config['MAXTITLELENGTH']) {
+            $this->prterror('There are too many characters in the title field. (Up to {MAXTITLELENGTH} characters)');
+        }
+    }
+
+    /**
+     * Validate post interval using protect code
+     */
+    private function validatePostInterval($limithost)
+    {
+        // Validate protect code and post interval
+        $timestamp = SecurityHelper::verifyProtectCode($this->form['pc'], $limithost);
+        
+        if ((CURRENT_TIME - $timestamp) < $this->config['MINPOSTSEC']) {
+            $this->prterror(Translator::trans('error.post_interval_too_short'));
+        }
+    }
+
+    /**
+     * Check for prohibited words (case-insensitive)
+     */
+    private function validateProhibitedWords()
+    {
+        if (!$this->config['NGWORD']) {
+            return;
+        }
+
+        // Check for prohibited words (case-insensitive)
+        foreach ($this->config['NGWORD'] as $ngword) {
+            $ngword = strtolower((string) $ngword);
+            
+            if (
+                str_contains(strtolower((string) $this->form['v']), $ngword) ||
+                str_contains(strtolower((string) $this->form['l']), $ngword) ||
+                str_contains(strtolower((string) $this->form['t']), $ngword) ||
+                str_contains(strtolower((string) $this->form['u']), $ngword) ||
+                str_contains(strtolower((string) $this->form['i']), $ngword)
+            ) {
+                $this->prterror(Translator::trans('error.prohibited_words'));
+            }
+        }
+
+        // 20240204 猫 spam detection (https://php.o0o0.jp/article/php-spam)
+        // Number of characters: char_num = mb_strlen($this->form['v'], 'UTF8');
+        // Number of bytes: byte_num = strlen($this->form['v']);
+        
+        // $char_num = mb_strlen($this->form['v'], 'UTF8');
+        // $byte_num = strlen($this->form['v']);
+        
+        // When single-byte characters makes up more than 90% of the total
+        // if ((($char_num * 3 - $byte_num) / 2 / $char_num * 100) > 90) {
+        //     // Treat as spam
+        //     $this->prterror('This bulletin board\'s post function is currently disabled.');
+        // }
+        // disabled by TL: not suitable for languages that use single-byte characters (i.e. English)
+    }
+
+    /**
+     * Build post message from form input
      *
      * @access  public
-     * @return  Array  Message array
+     * @return  Array|Integer  Message array or error code (3 for admin mode)
      */
-    public function getformmessage()
+    public function buildPostMessage()
     {
-
-        $message = [];
-        $message['PCODE'] = $this->form['pc'];
-        $message['USER'] = $this->form['u'];
-        $message['MAIL'] = $this->form['i'];
-        $message['TITLE'] = $this->form['t'];
-        $message['MSG'] = $this->form['v'];
-        $message['URL'] = $this->form['l'];
-        $message['PHOST'] = $this->session['HOST'];
-        $message['AGENT'] = $this->session['AGENT'];
-        # Reference ID
-        if ($this->form['f']) {
-            $message['REFID'] = $this->form['f'];
-        } else {
-            $message['REFID'] = '';
+        $message = $this->extractFormData();
+        $message['USER'] = $this->processUsername($message['USER'], $message['MSG']);
+        
+        // Check for admin mode entry
+        if (is_int($message['USER'])) {
+            return $message['USER']; // Return error code 3
         }
-        # Protect code
-        $message['PCODE'] = substr((string) $message['PCODE'], 8, 4);
-        # Title
-        if (!$message['TITLE']) {
-            $message['TITLE'] = ' ';
-        }
-        # User
-        if (!$message['USER']) {
-            $message['USER'] = $this->config['ANONY_NAME'];
-        } else {
-            # Admin check
-            if ($this->config['ADMINPOST'] and crypt((string) $message['USER'], (string) $this->config['ADMINPOST']) == $this->config['ADMINPOST']) {
-                $message['USER'] = "<span class=\"muh\">{$this->config['ADMINNAME']}</span>";
-                # Enter admin mode
-                if ($this->config['ADMINKEY'] and trim((string) $message['MSG']) == $this->config['ADMINKEY']) {
-                    return 3;
-                }
-            } elseif ($this->config['ADMINPOST'] and $message['USER'] == $this->config['ADMINPOST']) {
-                $message['USER'] = $this->config['ADMINNAME'] . '<span class="muh"> (hacker)</span>';
-            } elseif (!(!str_contains((string) $message['USER'], (string) $this->config['ADMINNAME']))) {
-                $message['USER'] = $this->config['ADMINNAME'] . '<span class="muh"> (fraudster)</span>';
-            }
-            # Fixed handle name check
-            elseif ($this->config['HANDLENAMES'][trim((string) $message['USER'])]) {
-                $message['USER'] .= '<span class="muh"> (fraudster)</span>';
-            }
-            # Trip function (simple deception prevention function)
-            elseif (str_contains((string) $message['USER'], '#')) {
-                #20210702 猫・管理パスばれ防止
-                if ($this->config['ADMINPOST'] and crypt(substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#')), (string) $this->config['ADMINPOST']) == $this->config['ADMINPOST']) {
-                    $message['USER'] = "<span class=\"muh\"><a href=\"mailto:{$this->config['ADMINMAIL']}\">{$this->config['ADMINNAME']}</a></span>".substr((string) $message['USER'], strpos((string) $message['USER'], '#'));
-                }
-                #20210923 猫・固定ハンドル名 パスばれ防止
-                # 固定ハンドル名変換
-                elseif (isset($this->config['HANDLENAMES'])) {
-                    $handlename = array_search(trim(substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#'))), $this->config['HANDLENAMES']);
-                    if ($handlename !== false) {
-                        $message['USER'] = "<span class=\"muh\">{$handlename}</span>".substr((string) $message['USER'], strpos((string) $message['USER'], '#'));
-                    }
-                }
-                $message['USER'] = substr((string) $message['USER'], 0, strpos((string) $message['USER'], '#')) . ' <span class="mut">◆' . substr((string) preg_replace("/\W/", '', crypt(substr((string) $message['USER'], strpos((string) $message['USER'], '#')), '00')), -7) .$this->tripuse($message['USER']). '</span>';
-            } elseif (str_contains((string) $message['USER'], '◆')) {
-                $message['USER'] .= ' (fraudster)';
-            }
-            # Fixed handle name conversion
-            elseif (isset($this->config['HANDLENAMES'])) {
-                $handlename = array_search(trim((string) $message['USER']), $this->config['HANDLENAMES']);
-                if ($handlename !== false) {
-                    $message['USER'] = "<span class=\"muh\">{$handlename}</span>";
-                }
-            }
-        }
-        $message['MSG'] = rtrim((string) $message['MSG']);
-
-        # Auto-link URLs
-        if ($this->config['AUTOLINK']) {
-            $message['MSG'] = preg_replace(
-                "/((https?|ftp|news):\/\/[-_.,!~*'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)/",
-                '<a href="$1" target="link">$1</a>',
-                $message['MSG']
-            );
-        }
-        # URL field
-        $message['URL'] = trim((string) $message['URL']);
-        if ($message['URL']) {
-            $message['MSG'] .= "\r\r<a href=\"".StringHelper::escapeUrl($message['URL'])."\" target=\"link\">{$message['URL']}</a>";
-        }
-        # Reference
-        if ($message['REFID']) {
-            $refdata = $this->searchmessage('POSTID', $message['REFID'], false, $this->form['ff']);
-            if (!$refdata) {
-                $this->prterror(Translator::trans('error.reference_not_found'));
-            }
-            $refmessage = $this->getmessage($refdata[0]);
-            $refmessage['WDATE'] = DateHelper::getDateString($refmessage['NDATE'], $this->config['DATEFORMAT']);
-            $refLabel = Translator::trans('message.reference');
-            $message['MSG'] .= "\r\r<a href=\"" . route('follow', ['s' => $message['REFID'], 'r' => '']) . "\">{$refLabel}: {$refmessage['WDATE']}</a>";
-            # Simple self-reply prevention function
-            if ($this->config['IPREC'] and $this->config['SHOW_SELFFOLLOW']
-                and $refmessage['PHOST'] != '' and $refmessage['PHOST'] == $message['PHOST']) {
-                $message['USER'] .= '<span class="muh"> (self-reply)</span>';
-            }
-        }
-        # Check
+        
+        $message['MSG'] = $this->processMessageContent($message['MSG'], $message['URL']);
+        $message = $this->attachReference($message);
+        
+        // Final size check
         if (strlen((string) $message['MSG']) > $this->config['MAXMSGSIZE']) {
             $this->prterror('The post contents are too large.');
         }
+        
+        return $message;
+    }
+
+    /**
+     * Extract basic form data into message array
+     */
+    private function extractFormData(): array
+    {
+        $message = [
+            'PCODE' => substr((string) $this->form['pc'], 8, 4),
+            'USER' => $this->form['u'],
+            'MAIL' => $this->form['i'],
+            'TITLE' => $this->form['t'] ?: ' ',
+            'MSG' => $this->form['v'],
+            'URL' => $this->form['l'],
+            'PHOST' => $this->session['HOST'],
+            'AGENT' => $this->session['AGENT'],
+            'REFID' => $this->form['f'] ?: '',
+        ];
+        
+        return $message;
+    }
+
+    /**
+     * Process username with admin check, trip code, and handle name conversion
+     *
+     * @return string|int Username string or 3 for admin mode entry
+     */
+    private function processUsername(string $username, string $message)
+    {
+        // Anonymous user
+        if (!$username) {
+            return $this->config['ANONY_NAME'];
+        }
+        
+        // Admin authentication
+        if ($this->config['ADMINPOST'] && crypt($username, (string) $this->config['ADMINPOST']) == $this->config['ADMINPOST']) {
+            // Check for admin mode entry
+            if ($this->config['ADMINKEY'] && trim($message) == $this->config['ADMINKEY']) {
+                return 3; // Admin mode entry code
+            }
+            return "<span class=\"muh\">{$this->config['ADMINNAME']}</span>";
+        }
+        
+        // Prevent admin name spoofing
+        if ($this->config['ADMINPOST'] && $username == $this->config['ADMINPOST']) {
+            return $this->config['ADMINNAME'] . '<span class="muh"> (hacker)</span>';
+        }
+        
+        if (str_contains($username, (string) $this->config['ADMINNAME'])) {
+            return $this->config['ADMINNAME'] . '<span class="muh"> (fraudster)</span>';
+        }
+        
+        // Fixed handle name fraud check
+        if ($this->config['HANDLENAMES'][trim($username)]) {
+            return $username . '<span class="muh"> (fraudster)</span>';
+        }
+        
+        // Trip code processing
+        if (str_contains($username, '#')) {
+            return $this->processTripCode($username);
+        }
+        
+        // Prevent trip code symbol spoofing
+        if (str_contains($username, '◆')) {
+            return $username . ' (fraudster)';
+        }
+        
+        // Fixed handle name conversion
+        if (isset($this->config['HANDLENAMES'])) {
+            $handlename = array_search(trim($username), $this->config['HANDLENAMES']);
+            if ($handlename !== false) {
+                return "<span class=\"muh\">{$handlename}</span>";
+            }
+        }
+        
+        return $username;
+    }
+
+    /**
+     * Process trip code in username
+     */
+    private function processTripCode(string $username): string
+    {
+        $hashPos = strpos($username, '#');
+        $nameBeforeHash = substr($username, 0, $hashPos);
+        $afterHash = substr($username, $hashPos);
+        
+        // 20210702 猫・管理パスばれ防止
+        // Admin with trip code (prevent password leak)
+        if ($this->config['ADMINPOST'] && crypt($nameBeforeHash, (string) $this->config['ADMINPOST']) == $this->config['ADMINPOST']) {
+            return "<span class=\"muh\"><a href=\"mailto:{$this->config['ADMINMAIL']}\">{$this->config['ADMINNAME']}</a></span>" . $afterHash;
+        }
+        
+        // 20210923 猫・固定ハンドル名 パスばれ防止
+        // Fixed handle name with trip code (prevent password leak)
+        if (isset($this->config['HANDLENAMES'])) {
+            $handlename = array_search(trim($nameBeforeHash), $this->config['HANDLENAMES']);
+            if ($handlename !== false) {
+                return "<span class=\"muh\">{$handlename}</span>" . $afterHash;
+            }
+        }
+        
+        // Generate trip code
+        $tripCode = substr(preg_replace("/\W/", '', crypt($afterHash, '00')), -7);
+        $tripUse = $this->tripuse($username);
+        
+        return $nameBeforeHash . ' <span class="mut">◆' . $tripCode . $tripUse . '</span>';
+    }
+
+    /**
+     * Process message content: trim, auto-link, append URL field
+     */
+    private function processMessageContent(string $message, string $url): string
+    {
+        $message = rtrim($message);
+        
+        // Auto-link URLs (http and https only)
+        if ($this->config['AUTOLINK']) {
+            $message = AutoLink::convert($message);
+        }
+        
+        // Append URL field
+        $url = trim($url);
+        if ($url) {
+            $message .= "\r\r<a href=\"" . StringHelper::escapeUrl($url) . "\" target=\"link\">{$url}</a>";
+        }
+        
+        return $message;
+    }
+
+    /**
+     * Attach reference link to message
+     */
+    private function attachReference(array $message): array
+    {
+        if (!$message['REFID']) {
+            return $message;
+        }
+        
+        // Find reference post
+        $refdata = $this->searchmessage('POSTID', $message['REFID'], false, $this->form['ff']);
+        if (!$refdata) {
+            $this->prterror(Translator::trans('error.reference_not_found'));
+        }
+        
+        $refmessage = $this->getmessage($refdata[0]);
+        $refmessage['WDATE'] = DateHelper::getDateString($refmessage['NDATE'], $this->config['DATEFORMAT']);
+        $refLabel = Translator::trans('message.reference');
+        
+        // Append reference link
+        $message['MSG'] .= "\r\r<a href=\"" . route('follow', ['s' => $message['REFID'], 'r' => '']) . "\">{$refLabel}: {$refmessage['WDATE']}</a>";
+        
+        // Mark self-reply
+        if ($this->config['IPREC'] && $this->config['SHOW_SELFFOLLOW']
+            && $refmessage['PHOST'] != '' && $refmessage['PHOST'] == $message['PHOST']) {
+            $message['USER'] .= '<span class="muh"> (self-reply)</span>';
+        }
+        
         return $message;
     }
 
