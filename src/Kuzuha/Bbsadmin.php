@@ -108,7 +108,6 @@ class Bbsadmin extends Webapp
      */
     public function prtadminmenu()
     {
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.menu_title'),
             'TRANS_ADMIN_MENU' => Translator::trans('admin.menu_title'),
@@ -156,7 +155,6 @@ class Bbsadmin extends Webapp
             $messages[] = $message;
         }
 
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.deletion_mode'),
             'TRANS_DELETION_MODE' => Translator::trans('admin.deletion_mode'),
@@ -309,7 +307,6 @@ class Bbsadmin extends Webapp
      */
     public function prtsetpass()
     {
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.password_settings_page'),
             'V' => trim((string) $this->form['v']),
@@ -336,7 +333,6 @@ class Bbsadmin extends Webapp
         $cryptpass = crypt($inputpass, $salt);
         $inputsize = strlen($cryptpass) + 10;
 
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.password_settings_page'),
             'CRYPTPASS' => $cryptpass,

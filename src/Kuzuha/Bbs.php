@@ -25,6 +25,7 @@ class Bbs extends Webapp
 {
     private ?AccessCounterRepositoryInterface $accessCounterRepo = null;
     private ?ParticipantCounterRepositoryInterface $participantCounterRepo = null;
+    private array $pendingCookies = [];
     
     /**
      * Constructor
@@ -168,7 +169,6 @@ class Bbs extends Webapp
         $statsHtml = $this->renderTwig('components/stats.twig', $statsData);
 
         # HTML header partial output
-        $this->sethttpheader();
 
         # Upper main section
         $data = array_merge($this->config, $this->session, [
@@ -624,7 +624,6 @@ class Bbs extends Webapp
         $hiddenInputs .= '<input type="hidden" name="s" value="' . htmlspecialchars($this->form['s']) . '" />';
         $formHtml = str_replace('</form>', $hiddenInputs . '</form>', $formHtml);
 
-        $this->sethttpheader();
         
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('follow.followup_post'),
@@ -662,7 +661,6 @@ class Bbs extends Webapp
         $formData = $this->getFormData($dtitle, $dmsg, $dlink);
         $formHtml = $this->renderTwig('components/form.twig', $formData);
 
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('newpost.new_post'),
             'FORM' => $formHtml,
@@ -693,7 +691,6 @@ class Bbs extends Webapp
         }
         $success = count($result);
 
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('search.post_search'),
             'MESSAGES' => $messages,
@@ -775,7 +772,6 @@ class Bbs extends Webapp
      */
     public function prtputcomplete()
     {
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('complete.post_complete'),
             'TRANS_POST_COMPLETE' => Translator::trans('complete.post_complete'),
@@ -790,7 +786,6 @@ class Bbs extends Webapp
      */
     public function prtcustom($mode = '')
     {
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('custom.user_settings'),
             'MODE' => $mode,
@@ -847,8 +842,11 @@ class Bbs extends Webapp
         # Cookie消去
         if ($this->form['cr']) {
             $this->form['c'] = '';
-            setcookie('c');
-            setcookie('undo');
+            if (!isset($this->pendingCookies['delete'])) {
+                $this->pendingCookies['delete'] = [];
+            }
+            $this->pendingCookies['delete'][] = 'c';
+            $this->pendingCookies['delete'][] = 'undo';
             $this->session['UNDO_P'] = '';
             $this->session['UNDO_K'] = '';
         } else {
@@ -892,7 +890,7 @@ class Bbs extends Webapp
                 $redirecturl .= '&m='.$this->form['nm'];
             }
             if ($this->config['COOKIE']) {
-                $this->setbbscookie();
+                $this->setBbsCookie();
             }
         }
         # Redirect
@@ -927,11 +925,13 @@ class Bbs extends Webapp
 
             $this->session['UNDO_P'] = '';
             $this->session['UNDO_K'] = '';
-            setcookie('undo');
+            if (!isset($this->pendingCookies['delete'])) {
+                $this->pendingCookies['delete'] = [];
+            }
+            $this->pendingCookies['delete'][] = 'undo';
         } else {
             $this->prterror(Translator::trans('error.deletion_not_permitted'));
         }
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('complete.deletion_complete'),
             'TRANS_DELETION_COMPLETE' => Translator::trans('complete.deletion_complete'),
@@ -1291,9 +1291,9 @@ class Bbs extends Webapp
             fclose($fh);
             # Cookie registration
             if ($this->config['COOKIE']) {
-                $this->setbbscookie();
+                $this->setBbsCookie();
                 if ($this->config['ALLOW_UNDO']) {
-                    $this->setundocookie($message['POSTID'], $message['PCODE']);
+                    $this->setUndoCookie($message['POSTID'], $message['PCODE']);
                 }
             }
 
@@ -1464,24 +1464,39 @@ class Bbs extends Webapp
 
     /**
      * Bulletin board cookie registration
+     * 
+     * @see CookieService::setUserCookie()
      */
-    public function setbbscookie()
+    public function setBbsCookie()
     {
-        $cookiestr = 'u=' . urlencode((string) $this->form['u']);
-        $cookiestr .= '&i=' . urlencode((string) $this->form['i']);
-        $cookiestr .= '&c=' . $this->form['c'];
-        setcookie('c', $cookiestr, CURRENT_TIME + 7776000); // expires in 90 days
+        $this->pendingCookies['user'] = [
+            'name' => $this->form['u'],
+            'email' => $this->form['i'],
+            'color' => $this->form['c'],
+        ];
     }
 
     /**
      * Register cookie for post UNDO
+     * 
+     * @see CookieService::setUndoCookie()
      */
-    public function setundocookie($undoid, $pcode)
+    public function setUndoCookie($undoid, $pcode)
     {
         $undokey = substr((string) preg_replace("/\W/", '', crypt((string) $pcode, (string) $this->config['ADMINPOST'])), -8);
-        $cookiestr = "p=$undoid&k=$undokey";
         $this->session['UNDO_P'] = $undoid;
         $this->session['UNDO_K'] = $undokey;
-        setcookie('undo', $cookiestr, CURRENT_TIME + 86400); // expires in 24 hours
+        $this->pendingCookies['undo'] = [
+            'post_id' => $undoid,
+            'key' => $undokey,
+        ];
+    }
+    
+    /**
+     * Get pending cookies to be set in response
+     */
+    public function getPendingCookies(): array
+    {
+        return $this->pendingCookies;
     }
 }

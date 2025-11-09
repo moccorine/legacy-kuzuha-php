@@ -203,7 +203,6 @@ class Getlog extends Webapp
         $showImageCheck = ($this->config['BBSMODE_IMAGE'] == 1);
         $showButtonCheck = ($this->config['OLDLOGFMT'] && $this->config['OLDLOGBTN']);
 
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'),
             'files' => $fileList,
@@ -362,7 +361,6 @@ class Getlog extends Webapp
             }
         }
 
-        $this->sethttpheader();
         $customstyle = "  .sq { color: #{$this->config['C_QUERY']}; }\n";
 
         $data = array_merge($this->config, $this->session, [
@@ -414,7 +412,6 @@ class Getlog extends Webapp
         header('Content-Disposition: attachment; filename='.$dlfilename);
 
         if ($this->config['OLDLOGFMT']) {
-            $this->sethttpheader();
             print $this->prthtmlhead($this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'));
             $data = array_merge($this->config, $this->session, [
                 'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.message_logs'),
@@ -847,7 +844,6 @@ class Getlog extends Webapp
             $i++;
         }
 
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.topic_list_title') . ' ' . $filename,
             'FILENAME' => $filename,
@@ -901,7 +897,6 @@ class Getlog extends Webapp
             return strnatcmp($a['FILENAME'], $b['FILENAME']);
         });
 
-        $this->sethttpheader();
         print $this->prthtmlhead($this->config['BBSTITLE'] . ' ' . Translator::trans('log.archive_title'));
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('log.archive_title'),

@@ -63,23 +63,27 @@ class Webapp
         $this->session['MSGDISP'] = (isset($this->form['d']) && $this->form['d'] != -1) ? $this->form['d'] : $this->config['MSGDISP'];
         $this->session['TOPPOSTID'] = $this->form['p'];
         # Get settings information cookies
-        if ($this->config['COOKIE'] and $_COOKIE['c']
-            and preg_match('/u=([^&]*)&i=([^&]*)&c=([^&]*)/', (string) $_COOKIE['c'], $matches)) {
-            if (!isset($this->form['u'])) {
-                $this->session['U'] = urldecode($matches[1]);
-            }
-            if (!isset($this->form['i'])) {
-                $this->session['I'] = urldecode($matches[2]);
-            }
-            if (!isset($this->form['c'])) {
-                $this->session['C'] = $matches[3];
+        if ($this->config['COOKIE']) {
+            $userData = \App\Services\CookieService::getUserCookieFromGlobal();
+            if ($userData) {
+                if (!isset($this->form['u'])) {
+                    $this->session['U'] = $userData['name'];
+                }
+                if (!isset($this->form['i'])) {
+                    $this->session['I'] = $userData['email'];
+                }
+                if (!isset($this->form['c'])) {
+                    $this->session['C'] = $userData['color'];
+                }
             }
         }
         # Get cookie for the UNDO button
-        if ($this->config['COOKIE'] and $this->config['ALLOW_UNDO'] and $_COOKIE['undo']
-            and preg_match('/p=([^&]*)&k=([^&]*)/', (string) $_COOKIE['undo'], $matches)) {
-            $this->session['UNDO_P'] = $matches[1];
-            $this->session['UNDO_K'] = $matches[2];
+        if ($this->config['COOKIE'] && $this->config['ALLOW_UNDO']) {
+            $undoData = \App\Services\CookieService::getUndoCookieFromGlobal();
+            if ($undoData) {
+                $this->session['UNDO_P'] = $undoData['post_id'];
+                $this->session['UNDO_K'] = $undoData['key'];
+            }
         }
         # Default query
         $this->session['QUERY'] = 'c='.$this->session['C'];
@@ -108,7 +112,6 @@ class Webapp
      */
     public function prterror($err_message)
     {
-        $this->sethttpheader();
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' Error',
             'ERR_MESSAGE' => $err_message,
@@ -137,7 +140,6 @@ class Webapp
      */
     public function prtredirect($redirecturl)
     {
-        $this->sethttpheader();
         print $this->prthtmlhead(
             $this->config['BBSTITLE'] . ' - URL redirection',
             "<meta http-equiv=\"refresh\" content=\"1;url={$redirecturl}\">\n"
@@ -499,21 +501,6 @@ class Webapp
     public function renderTwig($template, $data = [])
     {
         return \App\View::getInstance()->render($template, $data);
-    }
-
-    /**
-     * HTTP header settings
-     */
-    public function sethttpheader()
-    {
-        header('Content-Type: text/html; charset=UTF-8');
-        header('X-XSS-Protection: 1; mode=block');
-        // header('X-FRAME-OPTIONS:DENY');
-        // Remove X-Frame-Options (not needed when using CSP)
-        header_remove('X-Frame-Options');
-        // Allow embedding from anywhere
-        header('Content-Security-Policy: frame-ancestors *;');
-
     }
 
     /**

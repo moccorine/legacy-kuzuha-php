@@ -183,7 +183,6 @@ class Treeview extends Bbs
         $customstyle = $this->renderTwig('components/tree_customstyle.twig', $this->config);
 
         # HTML header partial output
-        $this->sethttpheader();
 
         # Form section
         $dtitle = '';
@@ -586,7 +585,6 @@ class Treeview extends Bbs
 
 __XHTML__;
 
-        $this->sethttpheader();
         
         // Output HTML header using Twig base template structure
         $data = array_merge($this->config, $this->session, [
