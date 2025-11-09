@@ -175,11 +175,23 @@ class Getlog extends Webapp
             $fsize = $fstat[7];
             $ftime = date('Y/m/d H:i:s', $fstat[9]);
             $ftitle = '';
-            $matches = [];
-            if (preg_match("/^(\d\d\d\d)(\d\d)(\d\d)\.$oldlogext/", $filename, $matches)) {
-                $ftitle = "{$matches[1]}/{$matches[2]}/{$matches[3]}";
-            } elseif (preg_match("/^(\d\d\d\d)(\d\d)\.$oldlogext/", $filename, $matches)) {
-                $ftitle = "{$matches[1]}/{$matches[2]}";
+            
+            // Parse log filename (YYYYMMDD.dat or YYYYMM.dat)
+            $info = pathinfo($filename);
+            if ($info['extension'] === $oldlogext && ctype_digit($info['filename'])) {
+                $len = strlen($info['filename']);
+                if ($len === 8) {
+                    // YYYYMMDD format
+                    $ftitle = substr($info['filename'], 0, 4) . '/' . 
+                              substr($info['filename'], 4, 2) . '/' . 
+                              substr($info['filename'], 6, 2);
+                } elseif ($len === 6) {
+                    // YYYYMM format
+                    $ftitle = substr($info['filename'], 0, 4) . '/' . 
+                              substr($info['filename'], 4, 2);
+                } else {
+                    $ftitle = $filename;
+                }
             } else {
                 $ftitle = $filename;
             }
@@ -353,7 +365,11 @@ class Getlog extends Webapp
         }
         $files = [];
         foreach ($formf as $filename) {
-            if (preg_match("/^\d+\./", (string) $filename) and is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
+            // Check if filename starts with digits and file exists
+            $info = pathinfo((string) $filename);
+            $hasNumericPrefix = isset($info['filename'][0]) && ctype_digit($info['filename'][0]);
+            
+            if ($hasNumericPrefix && is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
                 $files[] = $filename;
             }
         }
