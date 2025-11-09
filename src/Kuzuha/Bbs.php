@@ -709,7 +709,7 @@ class Bbs extends Webapp
 
         $fh = null;
         if ($this->form['ff']) {
-            if (preg_match("/^[\w.]+$/", (string) $this->form['ff'])) {
+            if (\App\Utils\ValidationRegex::isValidFilename((string) $this->form['ff'])) {
                 $fh = @fopen($this->config['OLDLOGFILEDIR'] . $this->form['ff'], 'rb');
             }
             if (!$fh) {
@@ -864,7 +864,7 @@ class Bbs extends Webapp
             $flgchgindex = -1;
             $cindex = 0;
             foreach ($colors as $confname) {
-                if (strlen((string) $this->form[$confname]) == 6 and preg_match('/^[0-9a-fA-F]{6}$/', (string) $this->form[$confname])
+                if (\App\Utils\ValidationRegex::isValidHexColor((string) $this->form[$confname])
                     and $this->form[$confname] != $this->config[$confname]) {
                     $this->config[$confname] = $this->form[$confname];
                     $flgchgindex = $cindex;
@@ -894,7 +894,7 @@ class Bbs extends Webapp
             }
         }
         # Redirect
-        if (preg_match("/^(https?):\/\//", (string) $this->config['CGIURL'])) {
+        if (\App\Utils\ValidationRegex::hasHttpProtocol((string) $this->config['CGIURL'])) {
             header("Location: {$redirecturl}");
         } else {
             $this->prtredirect(htmlentities((string) $redirecturl));
@@ -1402,7 +1402,7 @@ class Bbs extends Webapp
                         return;
                     }
                     while ($entry = readdir($dh)) {
-                        if ($entry != $currentfile and is_file($tmpdir . $entry) and preg_match("/^\d+\.html$/", $entry)) {
+                        if ($entry != $currentfile and is_file($tmpdir . $entry) and \App\Utils\ValidationRegex::isNumericFilename($entry, 'html')) {
                             $files[] = $entry;
                         }
                     }

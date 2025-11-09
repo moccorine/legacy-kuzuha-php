@@ -142,7 +142,7 @@ class Getlog extends Webapp
             $this->prterror('This directory could not be opened.');
         }
         while ($entry = readdir($dh)) {
-            if (is_file($dir . $entry) and preg_match("/^\d+\.$oldlogext$/", $entry)) {
+            if (is_file($dir . $entry) and \App\Utils\ValidationRegex::isNumericFilename($entry, $oldlogext)) {
                 $files[] = $entry;
             }
         }
@@ -400,7 +400,7 @@ class Getlog extends Webapp
         }
 
         # Illegal file name
-        if (!preg_match("/^\d+\.$oldlogext$/", (string) $filename)) {
+        if (!\App\Utils\ValidationRegex::isNumericFilename((string) $filename, $oldlogext)) {
             return 1;
         } elseif (!is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
             return 1;
@@ -452,7 +452,7 @@ class Getlog extends Webapp
         }
 
         # Illegal file name
-        if (!preg_match("/^\d+\.$oldlogext$/", (string) $filename)) {
+        if (!\App\Utils\ValidationRegex::isNumericFilename((string) $filename, $oldlogext)) {
             return 1;
         } elseif (!is_file($dir . $filename)) {
             return 1;
@@ -774,7 +774,7 @@ class Getlog extends Webapp
     {
 
         # Illegal file name
-        if (!preg_match("/^\d+\.dat$/", (string) $filename)) {
+        if (!\App\Utils\ValidationRegex::isNumericFilename((string) $filename, 'dat')) {
             return 1;
         } elseif (!is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
             return 1;
