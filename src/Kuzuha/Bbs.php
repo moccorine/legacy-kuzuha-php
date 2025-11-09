@@ -32,7 +32,7 @@ class Bbs extends Webapp
 {
     private ?AccessCounterRepositoryInterface $accessCounterRepo = null;
     private ?ParticipantCounterRepositoryInterface $participantCounterRepo = null;
-    private ?BbsLogRepositoryInterface $bbsLogRepo = null;
+    protected $bbsLogRepo = null;
     private array $pendingCookies = [];
     
     public function __construct(
