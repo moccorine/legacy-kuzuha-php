@@ -130,24 +130,15 @@ class Webapp
     }
 
     /**
-     * Render Twig template
-     *
-     * @access  public
-     * @param   String  $title        HTML title
-        return $copyright;
-    }
-
-    /**
      * Display message contents definition
      */
-    public function setmessage($message, $mode = 0, $tlog = '')
+    public function prepareMessageForDisplay($message, $mode = 0, $tlog = '')
     {
 
         if (count($message) < 10) {
             return $message;
         }
         $message['WDATE'] = DateHelper::getDateString($message['NDATE'], $this->config['DATEFORMAT']);
-        #20181102 Gikoneko: Escape special characters
         $message['MSG'] = TextEscape::escapeTwigChars((string) $message['MSG']);
 
         #20241016 Heyuri: Deprecated by ytthumb.js, embedding each video in browser slows stuff down a lot
@@ -308,7 +299,7 @@ class Webapp
      */
     public function renderMessage($message, $mode = 0, $tlog = '')
     {
-        $message = $this->setmessage($message, $mode, $tlog);
+        $message = $this->prepareMessageForDisplay($message, $mode, $tlog);
         
         $showEnv = !empty($message['ENVADDR']) || !empty($message['ENVUA']);
         
