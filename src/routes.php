@@ -60,8 +60,9 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
         // Get repositories from container (autowired)
         $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
         $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
+        $bbsLogRepo = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
         
-        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo);
+        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo, $bbsLogRepo);
         $bbs->main();
     }
 
@@ -97,8 +98,9 @@ $app->post('/', function (Request $request, Response $response) use ($container)
         // Get repositories from container (autowired)
         $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
         $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
+        $bbsLogRepo = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
         
-        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo);
+        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo, $bbsLogRepo);
         $bbs->main();
     }
 

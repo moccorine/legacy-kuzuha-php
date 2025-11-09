@@ -17,6 +17,7 @@ use App\Utils\StringHelper;
 use App\Utils\ValidationRegex;
 use App\Models\Repositories\AccessCounterRepositoryInterface;
 use App\Models\Repositories\ParticipantCounterRepositoryInterface;
+use App\Models\Repositories\BbsLogRepositoryInterface;
 
 /**
  * Standard bulletin board class - Bbs
@@ -31,19 +32,22 @@ class Bbs extends Webapp
 {
     private ?AccessCounterRepositoryInterface $accessCounterRepo = null;
     private ?ParticipantCounterRepositoryInterface $participantCounterRepo = null;
+    private ?BbsLogRepositoryInterface $bbsLogRepo = null;
     private array $pendingCookies = [];
     
-    /**
-     * Constructor
-     *
-     */
     public function __construct(
         ?AccessCounterRepositoryInterface $accessCounterRepo = null,
-        ?ParticipantCounterRepositoryInterface $participantCounterRepo = null
+        ?ParticipantCounterRepositoryInterface $participantCounterRepo = null,
+        ?BbsLogRepositoryInterface $bbsLogRepo = null
     ) {
         parent::__construct();
         $this->accessCounterRepo = $accessCounterRepo;
         $this->participantCounterRepo = $participantCounterRepo;
+        $this->bbsLogRepo = $bbsLogRepo;
+        
+        if ($bbsLogRepo) {
+            $this->setBbsLogRepository($bbsLogRepo);
+        }
     }
 
     /**

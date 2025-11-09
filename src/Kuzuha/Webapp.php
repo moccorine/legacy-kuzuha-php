@@ -11,6 +11,7 @@ use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
 use App\Utils\TextEscape;
 use App\View;
+use App\Models\Repositories\BbsLogRepositoryInterface;
 
 class Webapp
 {
@@ -25,6 +26,11 @@ class Webapp
     public function __construct()
     {
         $this->config = Config::getInstance()->all();
+    }
+
+    public function setBbsLogRepository($repo): void
+    {
+        $this->bbsLogRepo = $repo;
     }
 
     /*20210625 Neko/2chtrip http://www.mits-jp.com/2ch/ */
@@ -325,14 +331,21 @@ class Webapp
         if ($logfilename) {
             preg_match("/^([\w.]*)$/", $logfilename, $matches);
             $logfilename = $this->config['OLDLOGFILEDIR'].'/'.$matches[1];
-        } else {
-            $logfilename = $this->config['LOGFILENAME'];
+            if (!file_exists($logfilename)) {
+                $this->prterror(Translator::trans('error.failed_to_read'));
+            }
+            return file($logfilename);
         }
+        
+        if (isset($this->bbsLogRepo) && $this->bbsLogRepo) {
+            return $this->bbsLogRepo->getAll();
+        }
+        
+        $logfilename = $this->config['LOGFILENAME'];
         if (!file_exists($logfilename)) {
             $this->prterror(Translator::trans('error.failed_to_read'));
         }
-        $logdata = file($logfilename);
-        return $logdata;
+        return file($logfilename);
     }
 
     /**
