@@ -1,8 +1,19 @@
 <?php
 
 use App\Config;
+use App\Services\CookieService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+
+// Middleware: Set HTTP headers for all responses
+$app->add(function (Request $request, $handler) {
+    $response = $handler->handle($request);
+    return $response
+        ->withHeader('Content-Type', 'text/html; charset=UTF-8')
+        ->withHeader('X-XSS-Protection', '1; mode=block')
+        ->withoutHeader('X-Frame-Options')
+        ->withHeader('Content-Security-Policy', 'frame-ancestors *;');
+});
 
 // Middleware: Redirect legacy m= parameter to RESTful paths
 $app->add(function (Request $request, $handler) {
@@ -40,36 +51,8 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
     $_GET = $request->getQueryParams();
 
     $config = Config::getInstance();
-    if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
-        $imagebbs->main();
-    } else {
-        // Get repositories from container (autowired)
-        $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
-        $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
-        
-        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo);
-        $bbs->main();
-    }
-
-    $output = ob_get_clean();
-    if ($output !== false) {
-        if ($output !== false) {
-            $response->getBody()->write($output);
-        }
-    }
-    return $response;
-});
-
-// Post message
-$app->post('/', function (Request $request, Response $response) use ($container) {
-    ob_start();
-
-    // Set $_POST and $_GET for legacy code
-    $_POST = $request->getParsedBody() ?? [];
-    $_GET = $request->getQueryParams();
-
-    $config = Config::getInstance();
+    $bbs = null;
+    
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Imagebbs();
         $imagebbs->main();
@@ -86,6 +69,50 @@ $app->post('/', function (Request $request, Response $response) use ($container)
     if ($output !== false) {
         $response->getBody()->write($output);
     }
+    
+    // Apply pending cookies
+    if ($bbs) {
+        $cookieService = new CookieService();
+        $response = $cookieService->applyPendingCookies($response, $bbs->getPendingCookies());
+    }
+    
+    return $response;
+});
+
+// Post message
+$app->post('/', function (Request $request, Response $response) use ($container) {
+    ob_start();
+
+    // Set $_POST and $_GET for legacy code
+    $_POST = $request->getParsedBody() ?? [];
+    $_GET = $request->getQueryParams();
+
+    $config = Config::getInstance();
+    $bbs = null;
+    
+    if ($config->get('BBSMODE_IMAGE') == 1) {
+        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs->main();
+    } else {
+        // Get repositories from container (autowired)
+        $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
+        $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
+        
+        $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo);
+        $bbs->main();
+    }
+
+    $output = ob_get_clean();
+    if ($output !== false) {
+        $response->getBody()->write($output);
+    }
+    
+    // Apply pending cookies
+    if ($bbs) {
+        $cookieService = new CookieService();
+        $response = $cookieService->applyPendingCookies($response, $bbs->getPendingCookies());
+    }
+    
     return $response;
 });
 
