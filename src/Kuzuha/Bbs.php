@@ -6,6 +6,7 @@ use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\FileHelper;
+use App\Utils\KaomojiHelper;
 use App\Utils\NetworkHelper;
 use App\Utils\QuoteRegex;
 use App\Utils\RegexPatterns;
@@ -439,7 +440,7 @@ class Bbs extends Webapp
         $showSiCheck = isset($this->config['SHOWIMG']);
         
         # Kaomoji buttons
-        $kaomojiButtons = $this->generateKaomojiButtons();
+        $kaomojiButtons = KaomojiHelper::generateButtons();
         
         return array_merge($this->config, $this->session, [
             'MODE' => $mode,
@@ -535,32 +536,6 @@ class Bbs extends Webapp
             'TRANS_BOTTOM_BTN' => Translator::trans('form.bottom_btn'),
             'TRANS_LATEST_30' => Translator::trans('form.latest_30'),
         ]);
-    }
-
-    /**
-     * Generate kaomoji buttons HTML
-     */
-    private function generateKaomojiButtons()
-    {
-        $kaomojis = [
-            ['ヽ(´ー｀)ノ', '(´ー`)', '(;´Д`)', 'ヽ(´∇`)ノ', '(´∇`)σ', '(＾Д^)'],
-            ['(;^Д^)', '(ﾉД^､)σ', '(ﾟ∇ﾟ)', '(;ﾟ∇ﾟ)', 'Σ(;ﾟ∇ﾟ)', '(;ﾟДﾟ)', 'Σ(;ﾟДﾟ)'],
-            ['(｀∇´)', '(｀ー´)', '(｀～´)', '(;`-´)', 'ヽ(`Д´)ノ', '(`Д´)'],
-            ['(;`Д´)', '(ﾟ血ﾟ#)', '(╬⊙Д⊙)', '(ρ_;)', '(TДT)', '(ﾉД`､)', '(´Д`)'],
-            ['(´-｀)', '(´￢`)', 'ヽ(ﾟρﾟ)ノ', '(ﾟー｀)', '(´π｀)', '(ﾟДﾟ)', '(ﾟへﾟ)'],
-            ['(ﾟーﾟ)', '(ﾟｰﾟ)', '(*\'ｰ\')', '(\'ｰ\')', '(´人｀)', 'ъ( ﾟｰ^)', '（⌒∇⌒ゞ）'],
-            ['(^^;ﾜﾗ', 'ε≡三ヽ(´ー`)ﾉ', 'ε≡Ξヽ( ^Д^)ノ', 'ヽ(´Д`;)ノΞ≡3'],
-            ['(・∀・)', '( ´ω`)', 'Σ(ﾟдﾟlll)', '(´～`)', '┐(ﾟ～ﾟ)┌'],
-        ];
-        
-        $html = '';
-        foreach ($kaomojis as $row) {
-            foreach ($row as $kaomoji) {
-                $escaped = htmlspecialchars($kaomoji, ENT_QUOTES, 'UTF-8');
-                $html .= "<input type=\"button\" class=\"kaomoji\" onClick=\"insertThisInThere('{$escaped}','contents1')\" value=\"{$escaped}\" />\n\t\t";
-            }
-        }
-        return $html;
     }
 
     /**
