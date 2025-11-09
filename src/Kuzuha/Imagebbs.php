@@ -3,6 +3,7 @@
 namespace Kuzuha;
 
 use App\Config;
+use App\Utils\HtmlHelper;
 
 /*
 
@@ -205,8 +206,8 @@ class Imagebbs extends Bbs
                 $message['MSG'] = preg_replace("/\Q{$this->config['IMAGETEXT']}\E/", $message['FILETAG'], (string) $message['MSG'], 1);
                 $message['MSG'] = preg_replace("/\Q{$this->config['IMAGETEXT']}\E/", '', $message['MSG']);
             } else {
-                if (preg_match("/\r\r<a href=[^<]+>Reference: [^<]+<\/a>$/", (string) $message['MSG'])) {
-                    $message['MSG'] = preg_replace("/(\r\r<a href=[^<]+>Reference: [^<]+<\/a>)$/", "\r\r{$message['FILETAG']}$1", (string) $message['MSG'], 1);
+                if (HtmlHelper::hasReferenceLinkAtEnd((string) $message['MSG'])) {
+                    $message['MSG'] = HtmlHelper::insertBeforeReferenceLink((string) $message['MSG'], $message['FILETAG']);
                 } else {
                     $message['MSG'] .= "\r\r" . $message['FILETAG'];
                 }

@@ -5,6 +5,7 @@ namespace Kuzuha;
 use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\FileHelper;
+use App\Utils\HtmlHelper;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 
@@ -143,7 +144,7 @@ class Bbsadmin extends Webapp
         $messages = [];
         foreach ($logdata as $logline) {
             $message = $this->getmessage($logline);
-            $message['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', (string) $message['MSG'], 1);
+            $message['MSG'] = HtmlHelper::removeReferenceLink((string) $message['MSG']);
             $message['MSG'] = RegexPatterns::stripHtmlTags(ltrim($message['MSG']));
             $msgsplit = explode("\r", (string) $message['MSG']);
             $message['MSGDIGEST'] = $msgsplit[0];

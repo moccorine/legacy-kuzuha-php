@@ -5,6 +5,7 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
+use App\Utils\HtmlHelper;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
@@ -414,10 +415,10 @@ class Treeview extends Bbs
         foreach ($treemsgs as $pos => $treemsg) {
             if ($treemsg['POSTID'] == $parentid) {
 
-                # Delete reference
-                $treemsg['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', (string) $treemsg['MSG'], 1);
+                // Delete reference
+                $treemsg['MSG'] = HtmlHelper::removeReferenceLink((string) $treemsg['MSG']);
 
-                # Delete quotes
+                // Delete quotes
                 $treemsg['MSG'] = preg_replace("/(^|\r)&gt;[^\r]*/", '', $treemsg['MSG']);
                 $treemsg['MSG'] = preg_replace("/^\r+/", '', $treemsg['MSG']);
                 $treemsg['MSG'] = rtrim($treemsg['MSG']);

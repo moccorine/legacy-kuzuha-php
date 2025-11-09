@@ -5,6 +5,7 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\FileHelper;
+use App\Utils\HtmlHelper;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\ValidationRegex;
@@ -811,7 +812,7 @@ class Getlog extends Webapp
                 $tcount[$message['POSTID']] = 0;
 
                 $msg = ltrim((string) $message['MSG']);
-                $msg = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', $msg, 1);
+                $msg = HtmlHelper::removeReferenceLink($msg);
                 $msg = RegexPatterns::stripHtmlTags((string) $msg);
                 $msgsplit = explode("\r", (string) $msg);
                 $msgdigest = $msgsplit[0];
