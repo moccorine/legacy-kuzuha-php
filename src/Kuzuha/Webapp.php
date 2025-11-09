@@ -3,11 +3,14 @@
 namespace Kuzuha;
 
 use App\Config;
+use App\Services\CookieService;
 use App\Translator;
 use App\Utils\DateHelper;
+use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
 use App\Utils\TextEscape;
+use App\View;
 
 class Webapp
 {
@@ -66,7 +69,7 @@ class Webapp
         $this->session['TOPPOSTID'] = $this->form['p'];
         # Get settings information cookies
         if ($this->config['COOKIE']) {
-            $userData = \App\Services\CookieService::getUserCookieFromGlobal();
+            $userData = CookieService::getUserCookieFromGlobal();
             if ($userData) {
                 if (!isset($this->form['u'])) {
                     $this->session['U'] = $userData['name'];
@@ -81,7 +84,7 @@ class Webapp
         }
         # Get cookie for the UNDO button
         if ($this->config['COOKIE'] && $this->config['ALLOW_UNDO']) {
-            $undoData = \App\Services\CookieService::getUndoCookieFromGlobal();
+            $undoData = CookieService::getUndoCookieFromGlobal();
             if ($undoData) {
                 $this->session['UNDO_P'] = $undoData['post_id'];
                 $this->session['UNDO_K'] = $undoData['key'];
@@ -122,7 +125,7 @@ class Webapp
             'TRANS_RETURN' => Translator::trans('error.return'),
             'TRANS_RETURN_TITLE' => Translator::trans('error.return_title'),
         ]);
-        echo \App\View::getInstance()->render('error.twig', $data);
+        echo View::getInstance()->render('error.twig', $data);
         exit();
     }
 
@@ -303,7 +306,7 @@ class Webapp
      * @param   String  $tlog       Specified log file
      * @return  String  Message HTML data
      */
-    public function prtmessage($message, $mode = 0, $tlog = '')
+    public function renderMessage($message, $mode = 0, $tlog = '')
     {
         $message = $this->setmessage($message, $mode, $tlog);
         
@@ -479,15 +482,7 @@ class Webapp
      */
     public function renderTwig($template, $data = [])
     {
-        return \App\View::getInstance()->render($template, $data);
-    }
-
-    /**
-     * Start execution time measurement
-     */
-    public function setstarttime()
-    {
-        $this->session['START_TIME'] = microtime();
+        return View::getInstance()->render($template, $data);
     }
 
 }

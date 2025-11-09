@@ -5,6 +5,7 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
+use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
 
@@ -85,7 +86,7 @@ class Treeview extends Bbs
     {
 
         # Start measuring execution time
-        $this->setstarttime();
+        PerformanceTimer::start();
 
         # Form acquisiation preprocessing
         $this->procForm();
@@ -320,8 +321,8 @@ class Treeview extends Bbs
         # Duration
         $duration = null;
         $transPageGenerationTime = '';
-        if ($this->config['SHOW_PRCTIME'] && $this->session['START_TIME']) {
-            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
+        if ($this->config['SHOW_PRCTIME'] && PerformanceTimer::isRunning()) {
+            $duration = PerformanceTimer::elapsed();
             $duration = sprintf('%0.6f', $duration);
             $transPageGenerationTime = Translator::trans('main.page_generation_time', ['%duration%' => $duration]);
         }
@@ -610,7 +611,7 @@ __XHTML__;
         // Footer
         echo "<footer>\n";
         if ($this->config['SHOW_PRCTIME'] and $this->session['START_TIME']) {
-            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
+            $duration = PerformanceTimer::elapsed();
             $duration = sprintf('%0.6f', $duration);
             $pageGenLabel = Translator::trans('main.page_generation_time');
             $secondsLabel = Translator::trans('main.seconds');

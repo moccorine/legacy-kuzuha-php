@@ -5,6 +5,7 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\FileHelper;
+use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\ValidationRegex;
 
@@ -73,7 +74,7 @@ class Getlog extends Webapp
     {
 
         # Start measuring execution time
-        $this->setstarttime();
+        PerformanceTimer::start();
 
         # Form acquisition preprocessing
         $this->procForm();
@@ -504,26 +505,26 @@ class Getlog extends Webapp
                     $result = $this->msgsearch($message, $conditions);
                     # Search hit
                     if ($result == 1) {
-                        $prtmessage = $this->prtmessage($message, $msgmode, $filename);
+                        $messageHtml = $this->renderMessage($message, $msgmode, $filename);
                         # Highlight search keywords
                         if ($conditions['q']) {
                             $needle = "\Q{$conditions['q']}\E";
                             $quoteq = preg_quote((string) $conditions['q'], '/');
                             if ($conditions['ci']) {
-                                #$prtmessage = preg_replace("/($quoteq)/i", "<span class=\"sq\">$1</span>", $prtmessage);
-                                #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", $prtmessage)) {
-                                #  $prtmessage = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", "$1", $prtmessage, 1);
+                                #$messageHtml = preg_replace("/($quoteq)/i", "<span class=\"sq\">$1</span>", $messageHtml);
+                                #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", $messageHtml)) {
+                                #  $messageHtml = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/i", "$1", $messageHtml, 1);
                                 #}
-                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", '$1<span class="sq"><mark>$2</mark></span>', $prtmessage);
+                                $messageHtml = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/i", '$1<span class="sq"><mark>$2</mark></span>', $messageHtml);
                             } else {
-                                #$prtmessage = str_replace($conditions['q'], "<span class=\"sq\">{$conditions['q']}</span>", $prtmessage);
-                                #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", $prtmessage)) {
-                                #  $prtmessage = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", "$1", $prtmessage, 1);
+                                #$messageHtml = str_replace($conditions['q'], "<span class=\"sq\">{$conditions['q']}</span>", $messageHtml);
+                                #while (preg_match("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", $messageHtml)) {
+                                #  $messageHtml = preg_replace("/(<[^<>]*)<span class=\"sq\">$quoteq<\/span>/", "$1", $messageHtml, 1);
                                 #}
-                                $prtmessage = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", '$1<span class="sq"><mark>$2</mark></span>', $prtmessage);
+                                $messageHtml = preg_replace("/((?:\G|>)[^<]*?)($quoteq)/", '$1<span class="sq"><mark>$2</mark></span>', $messageHtml);
                             }
                         }
-                        print $prtmessage;
+                        print $messageHtml;
                         $resultcount++;
                     }
                     # End of search
@@ -535,7 +536,7 @@ class Getlog extends Webapp
             # Show all
             else {
                 while (($logline = FileHelper::getLine($fh)) !== false) {
-                    $messagestr = $this->prtmessage($this->getmessage($logline), $msgmode, $filename);
+                    $messagestr = $this->renderMessage($this->getmessage($logline), $msgmode, $filename);
                     print $messagestr;
                 }
             }

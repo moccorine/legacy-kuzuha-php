@@ -5,6 +5,7 @@ namespace Kuzuha;
 use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\FileHelper;
+use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 
 if (!defined('INCLUDED_FROM_BBS')) {
@@ -44,7 +45,7 @@ class Bbsadmin extends Webapp
         if (!defined('BBS_ACTIVATED')) {
 
             # Start measuring execution time
-            $this->setstarttime();
+            PerformanceTimer::start();
 
             # Form acquisition preprocessing
             $this->procForm();

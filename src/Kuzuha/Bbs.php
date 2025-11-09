@@ -9,6 +9,7 @@ use App\Utils\FileHelper;
 use App\Utils\AutoLink;
 use App\Utils\KaomojiHelper;
 use App\Utils\NetworkHelper;
+use App\Utils\PerformanceTimer;
 use App\Utils\QuoteRegex;
 use App\Utils\RegexPatterns;
 use App\Utils\SecurityHelper;
@@ -51,7 +52,7 @@ class Bbs extends Webapp
     public function main()
     {
         // Start execution time measurement
-        $this->setstarttime();
+        PerformanceTimer::start();
         // Form acquisition preprocessing
         $this->procForm();
         // Reflect user settings
@@ -230,7 +231,7 @@ class Bbs extends Webapp
 
         # Display message
         foreach ($logdatadisp as $msgdata) {
-            print $this->prtmessage($this->getmessage($msgdata), 0, 0);
+            print $this->renderMessage($this->getmessage($msgdata), 0, 0);
         }
         # Message information
         if ($this->session['MSGDISP'] < 0) {
@@ -258,11 +259,10 @@ class Bbs extends Webapp
         # Post as administrator
         $showAdminLogin = ($this->config['BBSMODE_ADMINONLY'] != 0);
 
-        # Duration
+        // Duration
         $duration = null;
-        if ($this->config['SHOW_PRCTIME'] && $this->session['START_TIME']) {
-            $duration = DateHelper::microtimeDiff($this->session['START_TIME'], microtime());
-            $duration = sprintf('%0.6f', $duration);
+        if ($this->config['SHOW_PRCTIME'] && PerformanceTimer::isRunning()) {
+            $duration = PerformanceTimer::elapsedFormatted(6);
         }
 
         # Lower main section
@@ -609,10 +609,7 @@ class Bbs extends Webapp
                 followLinkBase: route('follow', ['s' => ''])
             );
         } else {
-            $formmsg = $this->form['v'];
-            // Remove follow links from retry
-            $pattern = "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "[^\"]*\"[^>]*>[^<]+<\/a>/i";
-            $formmsg = preg_replace($pattern, '', (string) $formmsg);
+            $formmsg = $this->removeFollowLinks($this->form['v']);
         }
         $formmsg .= "\r";
 
@@ -622,7 +619,7 @@ class Bbs extends Webapp
         $filename ? $mode = 1 : $mode = 0;
 
         // Get message HTML using Twig
-        $messageHtml = $this->prtmessage($message, $mode, $filename);
+        $messageHtml = $this->renderMessage($message, $mode, $filename);
 
         // Get form HTML using Twig (hide form config on follow page)
         $formData = $this->getFormData('＞' . RegexPatterns::stripHtmlTags((string) $message['USER']) . $this->config['FSUBJ'], $formmsg, '');
@@ -693,7 +690,7 @@ class Bbs extends Webapp
         $result = $this->msgsearchlist($mode);
         $messages = '';
         foreach ($result as $message) {
-            $messages .= $this->prtmessage($message, $mode, $this->form['ff']);
+            $messages .= $this->renderMessage($message, $mode, $this->form['ff']);
         }
         $success = count($result);
 
@@ -917,7 +914,7 @@ class Bbs extends Webapp
                 $this->prterror(Translator::trans('error.post_not_found'));
             }
             $message = $this->getmessage($loglines[0]);
-            $undokey = substr((string) preg_replace("/\W/", '', crypt((string) $message['PROTECT'], (string) $this->config['ADMINPOST'])), -8);
+            $undokey = substr(StringHelper::removeNonAlphanumeric(crypt((string) $message['PROTECT'], (string) $this->config['ADMINPOST'])), -8);
             if ($undokey != $this->session['UNDO_K']) {
                 $this->prterror(Translator::trans('error.deletion_not_permitted'));
             }
@@ -1277,7 +1274,7 @@ class Bbs extends Webapp
         }
         
         // Generate trip code
-        $tripCode = substr(preg_replace("/\W/", '', crypt($afterHash, '00')), -7);
+        $tripCode = substr(StringHelper::removeNonAlphanumeric(crypt($afterHash, '00')), -7);
         $tripUse = $this->tripuse($username);
         
         return $nameBeforeHash . ' <span class="mut">◆' . $tripCode . $tripUse . '</span>';
@@ -1480,12 +1477,13 @@ class Bbs extends Webapp
                     $limitdate = date('Ymd', $limitdate);
                     $dh = opendir($dir);
                     while ($entry = readdir($dh)) {
-                        $matches = [];
-                        if (is_file($dir . $entry)
-                            and preg_match("/(\d+)\.$oldlogext$/", $entry, $matches)) {
-                            $timestamp = $matches[1];
-                            if (strlen($timestamp) == strlen($limitdate) and $timestamp < $limitdate) {
-                                unlink($dir . $entry);
+                        if (is_file($dir . $entry)) {
+                            $info = pathinfo($entry);
+                            if ($info['extension'] === $oldlogext && ctype_digit($info['filename'])) {
+                                $timestamp = $info['filename'];
+                                if (strlen($timestamp) == strlen($limitdate) && $timestamp < $limitdate) {
+                                    unlink($dir . $entry);
+                                }
                             }
                         }
                     }
@@ -1528,7 +1526,8 @@ class Bbs extends Webapp
                 if (!$checkedfile) {
                     return;
                 }
-                $zipfilename = preg_replace("/\.\w+$/", '.zip', $checkedfile);
+                $info = pathinfo($checkedfile);
+                $zipfilename = $info['dirname'] . '/' . $info['filename'] . '.zip';
 
                 # Create a ZIP file using PHP's ZipArchive
                 $zip = new \ZipArchive();
@@ -1590,7 +1589,7 @@ class Bbs extends Webapp
      */
     public function setUndoCookie($undoid, $pcode)
     {
-        $undokey = substr((string) preg_replace("/\W/", '', crypt((string) $pcode, (string) $this->config['ADMINPOST'])), -8);
+        $undokey = substr(StringHelper::removeNonAlphanumeric(crypt((string) $pcode, (string) $this->config['ADMINPOST'])), -8);
         $this->session['UNDO_P'] = $undoid;
         $this->session['UNDO_K'] = $undokey;
         $this->pendingCookies['undo'] = [
@@ -1605,5 +1604,18 @@ class Bbs extends Webapp
     public function getPendingCookies(): array
     {
         return $this->pendingCookies;
+    }
+
+    /**
+     * Remove follow links from message
+     * 
+     * @param string $message Message text
+     * @return string Message with follow links removed
+     */
+    private function removeFollowLinks(string $message): string
+    {
+        $followUrl = route('follow', ['s' => '']);
+        $pattern = '/<a href="' . preg_quote($followUrl, '/') . '[^"]*"[^>]*>[^<]+<\/a>/i';
+        return preg_replace($pattern, '', $message);
     }
 }

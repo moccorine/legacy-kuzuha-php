@@ -59,3 +59,17 @@ test('base64ToThreeByteHex converts correctly', function () {
     
     expect($result)->toBe('ffffff');
 });
+
+test('removeNonAlphanumeric removes non-alphanumeric characters', function () {
+    expect(StringHelper::removeNonAlphanumeric('abc123!@#'))->toBe('abc123');
+    expect(StringHelper::removeNonAlphanumeric('Hello World!'))->toBe('HelloWorld');
+    expect(StringHelper::removeNonAlphanumeric('test_-./123'))->toBe('test123');
+});
+
+test('removeNonAlphanumeric handles empty string', function () {
+    expect(StringHelper::removeNonAlphanumeric(''))->toBe('');
+});
+
+test('removeNonAlphanumeric handles only special characters', function () {
+    expect(StringHelper::removeNonAlphanumeric('!@#$%^&*()'))->toBe('');
+});

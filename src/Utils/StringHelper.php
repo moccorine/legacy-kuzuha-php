@@ -127,4 +127,15 @@ class StringHelper
         }
         return $value;
     }
+
+    /**
+     * Remove non-alphanumeric characters from string
+     * 
+     * @param string $text Input text
+     * @return string Text with only alphanumeric characters
+     */
+    public static function removeNonAlphanumeric(string $text): string
+    {
+        return implode('', array_filter(str_split($text), 'ctype_alnum'));
+    }
 }
