@@ -5,6 +5,7 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
+use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
 
 /*
@@ -432,7 +433,7 @@ class Treeview extends Bbs
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->config['ANONY_NAME']) {
                     $userLabel = Translator::trans('tree.user');
-                    $treeprint .= $userLabel . ': '.preg_replace('/<[^>]*>/', '', (string) $treemsg['USER'])."\r";
+                    $treeprint .= $userLabel . ': '.RegexPatterns::stripHtmlTags((string) $treemsg['USER'])."\r";
                 }
 
                 # Display new arrivals

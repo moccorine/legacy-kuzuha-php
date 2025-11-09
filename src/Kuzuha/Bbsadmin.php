@@ -5,6 +5,7 @@ namespace Kuzuha;
 use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\FileHelper;
+use App\Utils\RegexPatterns;
 
 if (!defined('INCLUDED_FROM_BBS')) {
     header('Location: ../bbs.php');
@@ -142,7 +143,7 @@ class Bbsadmin extends Webapp
         foreach ($logdata as $logline) {
             $message = $this->getmessage($logline);
             $message['MSG'] = preg_replace("/<a href=[^>]+>Reference: [^<]+<\/a>/i", '', (string) $message['MSG'], 1);
-            $message['MSG'] = preg_replace('/<[^>]+>/', '', ltrim($message['MSG']));
+            $message['MSG'] = RegexPatterns::stripHtmlTags(ltrim($message['MSG']));
             $msgsplit = explode("\r", (string) $message['MSG']);
             $message['MSGDIGEST'] = $msgsplit[0];
             $index = 1;
@@ -151,7 +152,7 @@ class Bbsadmin extends Webapp
                 $index++;
             }
             $message['WDATE'] = DateHelper::getDateString($message['NDATE']);
-            $message['USER_NOTAG'] = preg_replace('/<[^>]*>/', '', (string) $message['USER']);
+            $message['USER_NOTAG'] = RegexPatterns::stripHtmlTags((string) $message['USER']);
             $messages[] = $message;
         }
 

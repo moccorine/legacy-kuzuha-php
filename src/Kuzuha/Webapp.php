@@ -5,7 +5,9 @@ namespace Kuzuha;
 use App\Config;
 use App\Translator;
 use App\Utils\DateHelper;
+use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
+use App\Utils\TextEscape;
 
 class Webapp
 {
@@ -165,7 +167,7 @@ class Webapp
         }
         $message['WDATE'] = DateHelper::getDateString($message['NDATE'], $this->config['DATEFORMAT']);
         #20181102 Gikoneko: Escape special characters
-        $message['MSG'] = \App\Utils\TextEscape::escapeTwigChars((string) $message['MSG']);
+        $message['MSG'] = TextEscape::escapeTwigChars((string) $message['MSG']);
 
         #20241016 Heyuri: Deprecated by ytthumb.js, embedding each video in browser slows stuff down a lot
         ##20200524 Gikoneko: youtube embedding
@@ -233,7 +235,7 @@ class Webapp
             $message['BTNAUTHOR'] = '';
             if ($message['USER'] != $this->config['ANONY_NAME'] and $this->config['BBSMODE_ADMINONLY'] != 1) {
                 $message['BTNAUTHOR'] = "$spacer<a href=\"{$this->config['CGIURL']}"
-                    .'?m=s&amp;s='. urlencode(preg_replace('/<[^>]*>/', '', (string) $message['USER'])) .'&amp;'.$this->session['QUERY'];
+                    .'?m=s&amp;s='. urlencode(RegexPatterns::stripHtmlTags((string) $message['USER'])) .'&amp;'.$this->session['QUERY'];
                 if ($this->form['w']) {
                     $message['BTNAUTHOR'] .= '&amp;w='.$this->form['w'];
                 }
