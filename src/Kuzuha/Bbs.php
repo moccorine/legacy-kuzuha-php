@@ -36,21 +36,16 @@ class Bbs extends Webapp
     public const POST_ERROR_DUPLICATE = 1;
     public const POST_ERROR_RATE_LIMIT = 2;
 
-    private ?AccessCounterRepositoryInterface $accessCounterRepo = null;
-    private ?ParticipantCounterRepositoryInterface $participantCounterRepo = null;
-    protected $bbsLogRepository = null;
     protected $oldLogRepository = null;
     private array $pendingCookies = [];
 
     public function __construct(
-        ?AccessCounterRepositoryInterface $accessCounterRepo = null,
-        ?ParticipantCounterRepositoryInterface $participantCounterRepo = null,
+        private ?AccessCounterRepositoryInterface $accessCounterRepo = null,
+        private ?ParticipantCounterRepositoryInterface $participantCounterRepo = null,
         ?BbsLogRepositoryInterface $bbsLogRepository = null,
         ?OldLogRepositoryInterface $oldLogRepository = null
     ) {
         parent::__construct();
-        $this->accessCounterRepo = $accessCounterRepo;
-        $this->participantCounterRepo = $participantCounterRepo;
         $this->bbsLogRepository = $bbsLogRepository;
         $this->oldLogRepository = $oldLogRepository;
 
