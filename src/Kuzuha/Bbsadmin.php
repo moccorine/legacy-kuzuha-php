@@ -58,12 +58,12 @@ class Bbsadmin extends Webapp
         switch ($adminMode) {
             case 'l':
                 // Log file viewer
-                $this->prtlogview(true);
+                $this->renderLogFile(true);
                 break;
             
             case 'k':
                 // Message deletion mode
-                $this->prtkilllist();
+                $this->renderDeleteList();
                 break;
             
             case 'x':
@@ -71,17 +71,17 @@ class Bbsadmin extends Webapp
                 if (isset($this->form['x'])) {
                     $this->killmessage($this->form['x']);
                 }
-                $this->prtkilllist();
+                $this->renderDeleteList();
                 break;
             
             case 'p':
                 // Encrypted password generation page
-                $this->prtsetpass();
+                $this->renderPasswordSetup();
                 break;
             
             case 'ps':
                 // Encrypted password generation & display
-                $this->prtpass($this->form['ps'] ?? '');
+                $this->renderEncryptedPassword($this->form['ps'] ?? '');
                 break;
             
             case 'phpinfo':
@@ -92,9 +92,9 @@ class Bbsadmin extends Webapp
             default:
                 // Admin menu page
                 if (empty($this->config['ADMINPOST'])) {
-                    $this->prtsetpass();
+                    $this->renderPasswordSetup();
                 } else {
-                    $this->prtadminmenu();
+                    $this->renderAdminMenu();
                 }
                 break;
         }
@@ -105,12 +105,23 @@ class Bbsadmin extends Webapp
     }
 
     /**
-     * Admin menu page
+     * Display admin menu page
+     * 
+     * Shows main administration menu with links to:
+     * - Message deletion
+     * - Log file viewer
+     * - Password regeneration
+     * - PHP info
+     * 
+     * @return void
      */
-    public function prtadminmenu()
+    public function renderAdminMenu(): void
     {
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.menu_title'),
+            'V' => trim((string) $this->form['v']),
+            
+            // Translations
             'TRANS_ADMIN_MENU' => Translator::trans('admin.menu_title'),
             'TRANS_WARNING' => Translator::trans('admin.warning'),
             'TRANS_UNAUTHORIZED_ACCESS' => Translator::trans('admin.unauthorized_access'),
@@ -119,16 +130,19 @@ class Bbsadmin extends Webapp
             'TRANS_REGENERATE_PASSWORD' => Translator::trans('admin.regenerate_password'),
             'TRANS_PHP_INFO' => Translator::trans('admin.php_info'),
             'TRANS_CLOSE' => Translator::trans('admin.close'),
-            'V' => trim((string) $this->form['v']),
         ]);
+        
         echo $this->renderTwig('admin/menu.twig', $data);
     }
 
     /**
-     * Message deletion mode main page display
-     *
+     * Display message deletion list
+     * 
+     * Shows list of messages with checkboxes for deletion.
+     * 
+     * @return void
      */
-    public function prtkilllist()
+    public function renderDeleteList(): void
     {
         if (!file_exists($this->config['LOGFILENAME'])) {
             $this->prterror('Failed to load message');
@@ -291,10 +305,13 @@ class Bbsadmin extends Webapp
     }
 
     /**
-     * Encrypted password generation screen display
-     *
+     * Display password setup page
+     * 
+     * Shows form for generating encrypted admin password.
+     * 
+     * @return void
      */
-    public function prtsetpass()
+    public function renderPasswordSetup(): void
     {
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.password_settings_page'),
@@ -309,9 +326,14 @@ class Bbsadmin extends Webapp
     }
 
     /**
-     * Encrypted password generation & display
+     * Display encrypted password
+     * 
+     * Generates and displays encrypted password for admin configuration.
+     * 
+     * @param string $inputpass Plain text password
+     * @return void
      */
-    public function prtpass($inputpass)
+    public function renderEncryptedPassword(string $inputpass): void
     {
         if (!@$inputpass) {
             $this->prterror('No password has been set.');
@@ -334,9 +356,14 @@ class Bbsadmin extends Webapp
     }
 
     /**
-     * Log file display
+     * Display log file contents
+     * 
+     * Outputs raw log file as plain text.
+     * 
+     * @param bool $htmlescape Whether to escape HTML (currently unused)
+     * @return void
      */
-    public function prtlogview($htmlescape = false)
+    public function renderLogFile(bool $htmlescape = false): void
     {
         header('Content-type: text/plain; charset=UTF-8');
         readfile($this->config['LOGFILENAME']);
