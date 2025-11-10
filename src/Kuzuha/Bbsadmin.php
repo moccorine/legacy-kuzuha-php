@@ -189,16 +189,20 @@ class Bbsadmin extends Webapp
      * - Associated image files
      * 
      * @param array $postIds Array of post IDs to delete
-     * @return void
+     * @return bool True if any messages were deleted
      */
-    public function deleteMessages(array $postIds): void
+    public function deleteMessages(array $postIds): bool
     {
         if (empty($postIds)) {
-            return;
+            return false;
         }
 
         // Delete from main log and get deleted lines
         $deletedLines = $this->bbsLogRepository->deleteMessages($postIds);
+
+        if (empty($deletedLines)) {
+            return false;
+        }
 
         // Extract timestamps for archive deletion
         $timestamps = [];
@@ -216,6 +220,8 @@ class Bbsadmin extends Webapp
         if ($this->config['OLDLOGFILEDIR']) {
             $this->deleteFromArchiveLogs($timestamps);
         }
+
+        return true;
     }
 
     /**
