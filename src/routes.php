@@ -192,10 +192,14 @@ $app->map(['GET', 'POST'], '/thread', function (Request $request, Response $resp
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->loadAndSanitizeInput();
+        $imagebbs->applyUserPreferences();
+        $imagebbs->initializeSession();
         $imagebbs->prtsearchlist();
     } else {
         $bbs = new \Kuzuha\Bbs();
         $bbs->loadAndSanitizeInput();
+        $bbs->applyUserPreferences();
+        $bbs->initializeSession();
         $bbs->prtsearchlist();
     }
 
@@ -217,10 +221,14 @@ $app->map(['GET', 'POST'], '/follow', function (Request $request, Response $resp
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->loadAndSanitizeInput();
+        $imagebbs->applyUserPreferences();
+        $imagebbs->initializeSession();
         $imagebbs->prtfollow();
     } else {
         $bbs = new \Kuzuha\Bbs();
         $bbs->loadAndSanitizeInput();
+        $bbs->applyUserPreferences();
+        $bbs->initializeSession();
         $bbs->prtfollow();
     }
 
