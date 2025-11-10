@@ -69,7 +69,7 @@ class Bbsadmin extends Webapp
             
             case 'x':
                 // Message deletion process
-                if (isset($this->form['x'])) {
+                if (isset($this->form['x']) && is_array($this->form['x'])) {
                     $this->deleteMessages($this->form['x']);
                 }
                 $this->renderDeleteList();
@@ -188,20 +188,17 @@ class Bbsadmin extends Webapp
      * - Archive log files (daily/monthly)
      * - Associated image files
      * 
-     * @param array|string $postIds Post ID(s) to delete
+     * @param array $postIds Array of post IDs to delete
      * @return void
      */
-    public function deleteMessages($postIds): void
+    public function deleteMessages(array $postIds): void
     {
-        if (!$postIds) {
+        if (empty($postIds)) {
             return;
         }
 
-        // Normalize to array
-        $postIdsArray = is_array($postIds) ? $postIds : [$postIds];
-
         // Delete from main log and get deleted lines
-        $deletedLines = $this->bbsLogRepository->deleteMessages($postIdsArray);
+        $deletedLines = $this->bbsLogRepository->deleteMessages($postIds);
 
         // Extract timestamps for archive deletion
         $timestamps = [];
