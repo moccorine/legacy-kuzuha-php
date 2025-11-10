@@ -19,19 +19,14 @@ use App\Utils\RegexPatterns;
 class Bbsadmin extends Webapp
 {
     /**
-     * @var BbsLogRepositoryInterface BBS log repository
-     */
-    private $bbsLogRepository;
-
-    /**
      * Constructor
      * 
      * @param BbsLogRepositoryInterface $bbsLogRepository BBS log repository
      */
-    public function __construct(BbsLogRepositoryInterface $bbsLogRepository)
-    {
+    public function __construct(
+        private BbsLogRepositoryInterface $bbsLogRepository
+    ) {
         parent::__construct();
-        $this->bbsLogRepository = $bbsLogRepository;
         $this->setBbsLogRepository($bbsLogRepository);
     }
 
