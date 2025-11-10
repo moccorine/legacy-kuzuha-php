@@ -77,7 +77,7 @@ class BbsPostValidator
         if ($this->form['p']) {
             $message['PCODE'] = StringHelper::checkValue((string) $this->form['p']);
         } else {
-            $message['PCODE'] = SecurityHelper::generateProtectionCode();
+            $message['PCODE'] = SecurityHelper::generateProtectCode();
         }
 
         // Host and agent

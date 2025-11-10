@@ -211,25 +211,46 @@ $app->map(['GET', 'POST'], '/thread', function (Request $request, Response $resp
 });
 
 // Follow-up post page
-$app->map(['GET', 'POST'], '/follow', function (Request $request, Response $response) {
+$app->map(['GET', 'POST'], '/follow', function (Request $request, Response $response) use ($container) {
     ob_start();
 
     $_GET = $request->getQueryParams();
     $_POST = $request->getParsedBody() ?? [];
 
     $config = Config::getInstance();
-    if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
-        $imagebbs->loadAndSanitizeInput();
-        $imagebbs->applyUserPreferences();
-        $imagebbs->initializeSession();
-        $imagebbs->prtfollow();
+    
+    // POST request: handle as post submission via main()
+    if ($request->getMethod() === 'POST' && !empty($_POST['v'])) {
+        $_POST['m'] = 'p';  // Set mode to post
+        $_POST['f'] = $_POST['f'] ?? $_GET['s'] ?? '';  // Ensure follow-up ID is set
+        
+        if ($config->get('BBSMODE_IMAGE') == 1) {
+            $imagebbs = new \Kuzuha\Bbs\ImageBbs();
+            $imagebbs->main();
+        } else {
+            $accessCounterRepo = $container->get(\App\Models\Repositories\AccessCounterRepositoryInterface::class);
+            $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
+            $bbsLogRepo = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
+            $oldLogRepo = $container->get(\App\Models\Repositories\OldLogRepositoryInterface::class);
+            
+            $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo, $bbsLogRepo, $oldLogRepo);
+            $bbs->main();
+        }
     } else {
-        $bbs = new \Kuzuha\Bbs();
-        $bbs->loadAndSanitizeInput();
-        $bbs->applyUserPreferences();
-        $bbs->initializeSession();
-        $bbs->prtfollow();
+        // GET request: display follow-up form
+        if ($config->get('BBSMODE_IMAGE') == 1) {
+            $imagebbs = new \Kuzuha\Bbs\ImageBbs();
+            $imagebbs->loadAndSanitizeInput();
+            $imagebbs->applyUserPreferences();
+            $imagebbs->initializeSession();
+            $imagebbs->prtfollow();
+        } else {
+            $bbs = new \Kuzuha\Bbs();
+            $bbs->loadAndSanitizeInput();
+            $bbs->applyUserPreferences();
+            $bbs->initializeSession();
+            $bbs->prtfollow();
+        }
     }
 
     $output = ob_get_clean();
