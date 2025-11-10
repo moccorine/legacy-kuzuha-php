@@ -335,12 +335,11 @@ class Bbsadmin extends Webapp
      */
     public function renderEncryptedPassword(string $inputpass): void
     {
-        if (!@$inputpass) {
+        if (empty($inputpass)) {
             $this->prterror('No password has been set.');
         }
 
-        $salt = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2);
-        $cryptpass = crypt($inputpass, $salt);
+        $cryptpass = $this->encryptPassword($inputpass);
         $inputsize = strlen($cryptpass) + 10;
 
         $data = array_merge($this->config, $this->session, [
@@ -353,6 +352,21 @@ class Bbsadmin extends Webapp
             'TRANS_BULLETIN_BOARD' => Translator::trans('admin.bulletin_board'),
         ]);
         echo $this->renderTwig('admin/pass.twig', $data);
+    }
+
+    /**
+     * Encrypt password using crypt()
+     * 
+     * TODO: Replace with password_hash() for better security
+     * Current implementation uses legacy crypt() for backward compatibility
+     * 
+     * @param string $password Plain text password
+     * @return string Encrypted password
+     */
+    private function encryptPassword(string $password): string
+    {
+        $salt = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2);
+        return crypt($password, $salt);
     }
 
     /**
