@@ -70,7 +70,7 @@ class Bbsadmin extends Webapp
             case 'x':
                 // Message deletion process
                 if (isset($this->form['x'])) {
-                    $this->killmessage($this->form['x']);
+                    $this->deleteMessages($this->form['x']);
                 }
                 $this->renderDeleteList();
                 break;
@@ -183,22 +183,25 @@ class Bbsadmin extends Webapp
     /**
      * Delete messages by post IDs
      * 
-     * Deletes messages from main log and archives, including associated images.
+     * Deletes messages from:
+     * - Main log file (via repository)
+     * - Archive log files (daily/monthly)
+     * - Associated image files
      * 
-     * @param array|string $killids Post ID(s) to delete
+     * @param array|string $postIds Post ID(s) to delete
      * @return void
      */
-    public function killmessage($killids): void
+    public function deleteMessages($postIds): void
     {
-        if (!$killids) {
+        if (!$postIds) {
             return;
         }
 
         // Normalize to array
-        $postIds = is_array($killids) ? $killids : [$killids];
+        $postIdsArray = is_array($postIds) ? $postIds : [$postIds];
 
         // Delete from main log and get deleted lines
-        $deletedLines = $this->bbsLogRepository->deleteMessages($postIds);
+        $deletedLines = $this->bbsLogRepository->deleteMessages($postIdsArray);
 
         // Extract timestamps for archive deletion
         $timestamps = [];
@@ -220,6 +223,9 @@ class Bbsadmin extends Webapp
 
     /**
      * Delete images referenced in deleted messages
+     * 
+     * @param array $messageLines Deleted message lines
+     * @return void
      */
     private function deleteImagesFromMessages(array $messageLines): void
     {
@@ -234,6 +240,11 @@ class Bbsadmin extends Webapp
 
     /**
      * Delete messages from archive logs
+     * 
+     * Removes messages from daily/monthly archive files.
+     * 
+     * @param array $timestamps Map of postId => timestamp
+     * @return void
      */
     private function deleteFromArchiveLogs(array $timestamps): void
     {
