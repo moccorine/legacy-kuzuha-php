@@ -615,9 +615,9 @@ class Bbs extends Webapp
             $this->prterror(Translator::trans('error.no_parameters'));
         }
 
-        # Administrator authentication
+        // Administrator authentication
         if ($this->config['BBSMODE_ADMINONLY'] == 1
-            and crypt((string) $this->form['u'], (string) $this->config['ADMINPOST']) != $this->config['ADMINPOST']) {
+            && !SecurityHelper::verifyAdminPassword((string) $this->form['u'], (string) $this->config['ADMINPOST'])) {
             $this->prterror(Translator::trans('error.incorrect_password'));
         }
         $filename = '';
@@ -674,9 +674,9 @@ class Bbs extends Webapp
      */
     public function prtnewpost($retry = false)
     {
-        # Administrator authentication
+        // Administrator authentication
         if ($this->config['BBSMODE_ADMINONLY'] != 0
-            and crypt((string) $this->form['u'], (string) $this->config['ADMINPOST']) != $this->config['ADMINPOST']) {
+            && !SecurityHelper::verifyAdminPassword((string) $this->form['u'], (string) $this->config['ADMINPOST'])) {
             $this->prterror(Translator::trans('error.incorrect_password'));
         }
         # Form section
@@ -1075,8 +1075,10 @@ class Bbs extends Webapp
             return;
         }
 
-        $isValidAdmin = crypt((string) $this->form['u'], (string) $this->config['ADMINPOST'])
-            == $this->config['ADMINPOST'];
+        $isValidAdmin = SecurityHelper::verifyAdminPassword(
+            (string) $this->form['u'],
+            (string) $this->config['ADMINPOST']
+        );
 
         if (!$isValidAdmin) {
             $this->prterror(Translator::trans('error.admin_only'));
@@ -1262,7 +1264,7 @@ class Bbs extends Webapp
         }
 
         // Admin authentication
-        if ($this->config['ADMINPOST'] && crypt($username, (string) $this->config['ADMINPOST']) == $this->config['ADMINPOST']) {
+        if ($this->config['ADMINPOST'] && SecurityHelper::verifyAdminPassword($username, (string) $this->config['ADMINPOST'])) {
             // Check for admin mode entry
             if ($this->config['ADMINKEY'] && trim($message) == $this->config['ADMINKEY']) {
                 return 3; // Admin mode entry code
@@ -1316,7 +1318,7 @@ class Bbs extends Webapp
 
         // 20210702 猫・管理パスばれ防止
         // Admin with trip code (prevent password leak)
-        if ($this->config['ADMINPOST'] && crypt($nameBeforeHash, (string) $this->config['ADMINPOST']) == $this->config['ADMINPOST']) {
+        if ($this->config['ADMINPOST'] && SecurityHelper::verifyAdminPassword($nameBeforeHash, (string) $this->config['ADMINPOST'])) {
             return "<span class=\"muh\"><a href=\"mailto:{$this->config['ADMINMAIL']}\">{$this->config['ADMINNAME']}</a></span>" . $afterHash;
         }
 

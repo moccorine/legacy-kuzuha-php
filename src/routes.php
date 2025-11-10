@@ -2,6 +2,7 @@
 
 use App\Config;
 use App\Services\CookieService;
+use App\Utils\SecurityHelper;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -161,7 +162,7 @@ $app->map(['GET', 'POST'], '/admin', function (Request $request, Response $respo
     $config = Config::getInstance();
     if ($config->get('ADMINPOST') && $config->get('ADMINKEY')
         && $_POST['v'] == $config->get('ADMINKEY')
-        && crypt((string) $_POST['u'], (string) $config->get('ADMINPOST')) == $config->get('ADMINPOST')) {
+        && SecurityHelper::verifyAdminPassword((string) $_POST['u'], (string) $config->get('ADMINPOST'))) {
         $bbsLogRepository = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
         $bbsadmin = new \Kuzuha\Bbsadmin($bbsLogRepository);
         $bbsadmin->main();
