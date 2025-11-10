@@ -159,4 +159,43 @@ class BbsLogFileRepository implements BbsLogRepositoryInterface
         $this->lockedFile->flock(LOCK_UN);
         $this->lockedFile = null;
     }
+
+    /**
+     * Delete messages by post IDs
+     *
+     * @param array $postIds Array of post IDs to delete
+     * @return array Deleted message lines
+     */
+    public function deleteMessages(array $postIds): array
+    {
+        $this->lock();
+
+        try {
+            $allLines = $this->getAll();
+            $deletedLines = [];
+            $remainingLines = [];
+
+            foreach ($allLines as $line) {
+                $items = explode(',', $line, 3);
+                if (count($items) > 2 && in_array($items[1], $postIds, true)) {
+                    $deletedLines[] = $line;
+                } else {
+                    $remainingLines[] = $line;
+                }
+            }
+
+            // Rewrite file with remaining messages
+            $handle = fopen($this->logFile, 'w');
+            if ($handle === false) {
+                throw new \RuntimeException("Failed to open log file for writing: {$this->logFile}");
+            }
+
+            fwrite($handle, implode('', $remainingLines));
+            fclose($handle);
+
+            return $deletedLines;
+        } finally {
+            $this->unlock();
+        }
+    }
 }

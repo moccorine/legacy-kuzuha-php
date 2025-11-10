@@ -181,128 +181,118 @@ class Bbsadmin extends Webapp
     }
 
     /**
-     * Message deletion process
-     *
+     * Delete messages by post IDs
+     * 
+     * Deletes messages from main log and archives, including associated images.
+     * 
+     * @param array|string $killids Post ID(s) to delete
+     * @return void
      */
-    public function killmessage($killids)
+    public function killmessage($killids): void
     {
-
         if (!$killids) {
             return;
         }
-        if (!is_array($killids)) {
-            $tmp = $killids;
-            $killids = [];
-            $killids[] = $tmp;
-        }
 
-        $fh = @fopen($this->config['LOGFILENAME'], 'r+');
-        if (!$fh) {
-            $this->prterror('Failed to load message');
-        }
-        flock($fh, 2);
-        fseek($fh, 0, 0);
+        // Normalize to array
+        $postIds = is_array($killids) ? $killids : [$killids];
 
-        $logdata = [];
-        while (($logline = FileHelper::getLine($fh)) !== false) {
-            $logdata[] = $logline;
-        }
+        // Delete from main log and get deleted lines
+        $deletedLines = $this->bbsLogRepository->deleteMessages($postIds);
 
-        $killntimes = [];
-        $killlogdata = [];
-        $newlogdata = [];
-        $i = 0;
-        while ($i < count($logdata)) {
-            $items = explode(',', $logdata[$i], 3);
-            if (count($items) > 2 and array_search($items[1], $killids) !== false) {
-                $killntimes[$items[1]] = $items[0];
-                $killlogdata[] = $logdata[$i];
-            } else {
-                $newlogdata[] = $logdata[$i];
+        // Extract timestamps for archive deletion
+        $timestamps = [];
+        foreach ($deletedLines as $line) {
+            $items = explode(',', $line, 3);
+            if (count($items) > 2) {
+                $timestamps[$items[1]] = (int) $items[0]; // postId => timestamp
             }
-            $i++;
         }
-        {
-            fseek($fh, 0, 0);
+
+        // Delete associated images
+        $this->deleteImagesFromMessages($deletedLines);
+
+        // Delete from archive logs
+        if ($this->config['OLDLOGFILEDIR']) {
+            $this->deleteFromArchiveLogs($timestamps);
+        }
+    }
+
+    /**
+     * Delete images referenced in deleted messages
+     */
+    private function deleteImagesFromMessages(array $messageLines): void
+    {
+        foreach ($messageLines as $line) {
+            if (preg_match('/<img [^>]*?src="([^"]+)"[^>]+>/i', $line, $matches)) {
+                if (file_exists($matches[1])) {
+                    unlink($matches[1]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Delete messages from archive logs
+     */
+    private function deleteFromArchiveLogs(array $timestamps): void
+    {
+        $oldlogext = $this->config['OLDLOGFMT'] ? 'dat' : 'html';
+
+        foreach ($timestamps as $postId => $timestamp) {
+            $filename = $this->config['OLDLOGSAVESW']
+                ? date('Ym', $timestamp) . ".$oldlogext"
+                : date('Ymd', $timestamp) . ".$oldlogext";
+
+            $filepath = $this->config['OLDLOGFILEDIR'] . $filename;
+
+            if (!file_exists($filepath)) {
+                continue;
+            }
+
+            $fh = @fopen($filepath, 'r+');
+            if (!$fh) {
+                continue;
+            }
+
+            flock($fh, LOCK_EX);
+            fseek($fh, 0);
+
+            $newlogdata = [];
+            $hit = false;
+
+            if ($this->config['OLDLOGFMT']) {
+                // DAT format
+                $needle = $timestamp . ',' . $postId . ',';
+                while (($logline = FileHelper::getLine($fh)) !== false) {
+                    if (!$hit && str_starts_with($logline, $needle)) {
+                        $hit = true;
+                    } else {
+                        $newlogdata[] = $logline;
+                    }
+                }
+            } else {
+                // HTML format
+                $needle = "<div class=\"m\" id=\"m{$postId}\">";
+                $flgbuffer = false;
+                while (($htmlline = FileHelper::getLine($fh)) !== false) {
+                    if (!$hit && str_contains($htmlline, $needle)) {
+                        $hit = true;
+                        $flgbuffer = true;
+                    } elseif ($flgbuffer && str_contains($htmlline, '<hr')) {
+                        $flgbuffer = false;
+                    } elseif (!$flgbuffer) {
+                        $newlogdata[] = $htmlline;
+                    }
+                }
+            }
+
+            fseek($fh, 0);
             ftruncate($fh, 0);
             fwrite($fh, implode('', $newlogdata));
+            flock($fh, LOCK_UN);
+            fclose($fh);
         }
-        flock($fh, 3);
-        fclose($fh);
-
-        # Image deletion
-        foreach ($killlogdata as $eachlogdata) {
-            if (preg_match('/<img [^>]*?src="([^"]+)"[^>]+>/i', $eachlogdata, $matches) and file_exists($matches[1])) {
-                unlink($matches[1]);
-            }
-        }
-
-        # Message log line deletion
-        if ($this->config['OLDLOGFILEDIR']) {
-            foreach (array_keys($killntimes) as $killid) {
-                $oldlogfilename = '';
-                if ($this->config['OLDLOGFMT']) {
-                    $oldlogext = 'dat';
-                } else {
-                    $oldlogext = 'html';
-                }
-                if ($this->config['OLDLOGSAVESW']) {
-                    $oldlogfilename = date('Ym', $killntimes[$killid]) . ".$oldlogext";
-                } else {
-                    $oldlogfilename = date('Ymd', $killntimes[$killid]) . ".$oldlogext";
-                }
-                $fh = @fopen($this->config['OLDLOGFILEDIR'] . $oldlogfilename, 'r+');
-                if ($fh) {
-                    flock($fh, 2);
-                    fseek($fh, 0, 0);
-
-                    $newlogdata = [];
-                    $hit = false;
-
-                    if ($this->config['OLDLOGFMT']) {
-                        $needle = $killntimes[$killid] . ',' . $killid . ',';
-                        while (($logline = FileHelper::getLine($fh)) !== false) {
-                            if (!$hit and str_contains($logline, $needle) and str_starts_with($logline, $needle)) {
-                                $hit = true;
-                            } else {
-                                $newlogdata[] = $logline;
-                            }
-                        }
-                    } else {
-                        $needle = "<div class=\"m\" id=\"m{$killid}\">";
-                        $flgbuffer = false;
-                        while (($htmlline = FileHelper::getLine($fh)) !== false) {
-
-                            # Start of message
-                            if (!$hit and str_contains($htmlline, $needle)) {
-                                $hit = true;
-                                $flgbuffer = true;
-                            }
-                            # End of message
-                            elseif ($flgbuffer and str_contains($htmlline, '<hr')) {
-                                $flgbuffer = false;
-                            }
-                            # Inside message
-                            elseif ($flgbuffer) {
-                            } else {
-                                $newlogdata[] = $htmlline;
-                            }
-                        }
-                    }
-
-                    {
-                        fseek($fh, 0, 0);
-                        ftruncate($fh, 0);
-                        fwrite($fh, implode('', $newlogdata));
-                    }
-                    flock($fh, 3);
-                    fclose($fh);
-                } else {
-                    #$this->prterror ( 'Failed to load message log' );
-                }
-            }
-        }
-
     }
 
     /**

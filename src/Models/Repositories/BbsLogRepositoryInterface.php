@@ -80,4 +80,11 @@ interface BbsLogRepositoryInterface
      * @return void
      */
     public function unlock(): void;
+    /**
+     * Delete messages by post IDs
+     *
+     * @param array $postIds Array of post IDs to delete
+     * @return array Deleted message lines (for image cleanup, etc.)
+     */
+    public function deleteMessages(array $postIds): array;
 }
