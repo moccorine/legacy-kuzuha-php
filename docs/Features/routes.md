@@ -2,6 +2,29 @@
 
 Legacy Kuzuha PHP BBS の全ルート定義と機能説明
 
+## ルート一覧表
+
+| メソッド | パス | 機能 | 使用クラス | 主要パラメータ |
+|---------|------|------|-----------|--------------|
+| GET | `/` | メインページ表示 | `Bbs::main()` | `c`, `d`, `p`, `setup` |
+| POST | `/` | 新規投稿送信 | `Bbs::main()` | `u`, `t`, `v`, `pc`, `f` |
+| GET/POST | `/search` | ログ検索・閲覧 | `Getlog::main()` | `word`, `key`, `ff`, `st`, `et` |
+| GET/POST | `/tree` | ツリー表示 | `Bbs\TreeView::main()` | `s`, `c`, `d` |
+| GET/POST | `/thread` | スレッド表示 | `Bbs::prtsearchlist()` | `s`, `c`, `d`, `p` |
+| GET | `/follow` | 返信フォーム表示 | `Bbs::prtfollow()` | `s`, `ff`, `c`, `d` |
+| POST | `/follow` | 返信投稿送信 | `Bbs::main()` | `u`, `t`, `v`, `f`, `ff`, `pc` |
+| GET/POST | `/admin` | 管理モード | `Bbs\Admin::main()` | `m`, `v`, `x` |
+
+### レガシーURL（301リダイレクト）
+
+| 旧URL | 新URL | 説明 |
+|-------|-------|------|
+| `/?m=g` | `/search` | ログ検索 |
+| `/?m=tree` | `/tree` | ツリー表示 |
+| `/?m=t` | `/thread` | スレッド表示 |
+| `/?m=f` | `/follow` | 返信フォーム |
+| `/?m=ad` | `/admin` | 管理モード |
+
 ## 目次
 - [メインページ](#メインページ)
 - [検索・ログ閲覧](#検索ログ閲覧)
