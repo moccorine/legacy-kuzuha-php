@@ -9,11 +9,6 @@ use App\Utils\HtmlHelper;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 
-if (!defined('INCLUDED_FROM_BBS')) {
-    header('Location: ../bbs.php');
-    exit();
-}
-
 /**
  * Admin mode module
  *
@@ -104,10 +99,8 @@ class Bbsadmin extends Webapp
         }
     }
 
-
     /**
      * Admin menu page
-     *
      */
     public function prtadminmenu()
     {
@@ -125,10 +118,6 @@ class Bbsadmin extends Webapp
         ]);
         echo $this->renderTwig('admin/menu.twig', $data);
     }
-
-
-
-
 
     /**
      * Message deletion mode main page display
@@ -170,10 +159,6 @@ class Bbsadmin extends Webapp
         ]);
         echo $this->renderTwig('admin/killlist.twig', $data);
     }
-
-
-
-
 
     /**
      * Message deletion process
@@ -300,10 +285,6 @@ class Bbsadmin extends Webapp
 
     }
 
-
-
-
-
     /**
      * Encrypted password generation screen display
      *
@@ -324,7 +305,6 @@ class Bbsadmin extends Webapp
 
     /**
      * Encrypted password generation & display
-     *
      */
     public function prtpass($inputpass)
     {
@@ -348,23 +328,12 @@ class Bbsadmin extends Webapp
         echo $this->renderTwig('admin/pass.twig', $data);
     }
 
-
-
-
-
     /**
      * Log file display
-     *
      */
     public function prtlogview($htmlescape = false)
     {
         header('Content-type: text/plain; charset=UTF-8');
         readfile($this->config['LOGFILENAME']);
     }
-
-
-
-
-
-
 }

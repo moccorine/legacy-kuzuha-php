@@ -17,11 +17,6 @@ BBS with image upload function module
 
 */
 
-if (!defined('INCLUDED_FROM_BBS')) {
-    header('Location: ../bbs.php');
-    exit();
-}
-
 
 /*
  * Module-specific settings

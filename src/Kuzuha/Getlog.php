@@ -21,11 +21,6 @@ Message log viewer module
 
 */
 
-if (!defined('INCLUDED_FROM_BBS')) {
-    header('Location: ../bbs.php?m=g');
-    exit();
-}
-
 
 /*
  * Module-specific settings
