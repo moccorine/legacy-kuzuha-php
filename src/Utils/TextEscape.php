@@ -4,7 +4,7 @@ namespace App\Utils;
 
 /**
  * Text escaping utilities
- * 
+ *
  * Provides fast character escaping methods, replacing regex with str_replace
  * where appropriate for better performance.
  */
@@ -12,10 +12,10 @@ class TextEscape
 {
     /**
      * Escape Twig special characters
-     * 
+     *
      * Replaces { and } with HTML entities to prevent Twig parsing issues.
      * Uses str_replace instead of preg_replace for 10x performance improvement.
-     * 
+     *
      * @param string $text Text to escape
      * @return string Escaped text
      */
@@ -27,10 +27,10 @@ class TextEscape
             $text
         );
     }
-    
+
     /**
      * Escape HTML special characters
-     * 
+     *
      * @param string $text Text to escape
      * @return string HTML-escaped text
      */

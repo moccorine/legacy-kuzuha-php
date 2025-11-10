@@ -2,6 +2,7 @@
 
 use App\Config;
 use App\Services\CookieService;
+use App\Utils\SecurityHelper;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -18,7 +19,7 @@ $app->add(function (Request $request, $handler) {
 // Middleware: Redirect legacy m= parameter to RESTful paths
 $app->add(function (Request $request, $handler) {
     $queryParams = $request->getQueryParams();
-    
+
     if (isset($queryParams['m'])) {
         $m = $queryParams['m'];
         $pathMap = [
@@ -28,18 +29,18 @@ $app->add(function (Request $request, $handler) {
             'f' => '/follow',
             'ad' => '/admin',
         ];
-        
+
         if (isset($pathMap[$m])) {
             unset($queryParams['m']);
             $newQuery = http_build_query($queryParams);
             $newPath = $pathMap[$m] . ($newQuery ? '?' . $newQuery : '');
-            
+
             return $handler->handle($request)
                 ->withStatus(301)
                 ->withHeader('Location', $newPath);
         }
     }
-    
+
     return $handler->handle($request);
 });
 
@@ -52,9 +53,9 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
 
     $config = Config::getInstance();
     $bbs = null;
-    
+
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->main();
     } else {
         // Get repositories from container (autowired)
@@ -62,7 +63,7 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
         $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
         $bbsLogRepo = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
         $oldLogRepo = $container->get(\App\Models\Repositories\OldLogRepositoryInterface::class);
-        
+
         $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo, $bbsLogRepo, $oldLogRepo);
         $bbs->main();
     }
@@ -71,13 +72,13 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
     if ($output !== false) {
         $response->getBody()->write($output);
     }
-    
+
     // Apply pending cookies
     if ($bbs) {
         $cookieService = new CookieService();
         $response = $cookieService->applyPendingCookies($response, $bbs->getPendingCookies());
     }
-    
+
     return $response;
 });
 
@@ -91,9 +92,9 @@ $app->post('/', function (Request $request, Response $response) use ($container)
 
     $config = Config::getInstance();
     $bbs = null;
-    
+
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->main();
     } else {
         // Get repositories from container (autowired)
@@ -101,7 +102,7 @@ $app->post('/', function (Request $request, Response $response) use ($container)
         $participantCounterRepo = $container->get(\App\Models\Repositories\ParticipantCounterRepositoryInterface::class);
         $bbsLogRepo = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
         $oldLogRepo = $container->get(\App\Models\Repositories\OldLogRepositoryInterface::class);
-        
+
         $bbs = new \Kuzuha\Bbs($accessCounterRepo, $participantCounterRepo, $bbsLogRepo, $oldLogRepo);
         $bbs->main();
     }
@@ -110,13 +111,13 @@ $app->post('/', function (Request $request, Response $response) use ($container)
     if ($output !== false) {
         $response->getBody()->write($output);
     }
-    
+
     // Apply pending cookies
     if ($bbs) {
         $cookieService = new CookieService();
         $response = $cookieService->applyPendingCookies($response, $bbs->getPendingCookies());
     }
-    
+
     return $response;
 });
 
@@ -139,7 +140,7 @@ $app->map(['GET', 'POST'], '/search', function (Request $request, Response $resp
 $app->map(['GET', 'POST'], '/tree', function (Request $request, Response $response) {
     ob_start();
 
-    $treeview = new \Kuzuha\Treeview();
+    $treeview = new \Kuzuha\Bbs\TreeView();
     $treeview->main();
 
     $output = ob_get_clean();
@@ -161,11 +162,12 @@ $app->map(['GET', 'POST'], '/admin', function (Request $request, Response $respo
     $config = Config::getInstance();
     if ($config->get('ADMINPOST') && $config->get('ADMINKEY')
         && $_POST['v'] == $config->get('ADMINKEY')
-        && crypt((string) $_POST['u'], (string) $config->get('ADMINPOST')) == $config->get('ADMINPOST')) {
-        $bbsadmin = new \Kuzuha\Bbsadmin();
+        && SecurityHelper::verifyAdminPassword((string) $_POST['u'], (string) $config->get('ADMINPOST'))) {
+        $bbsLogRepository = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
+        $bbsadmin = new \Kuzuha\Bbs\Admin($bbsLogRepository);
         $bbsadmin->main();
     } elseif ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->main();
     } else {
         $bbs = new \Kuzuha\Bbs();
@@ -188,12 +190,12 @@ $app->map(['GET', 'POST'], '/thread', function (Request $request, Response $resp
 
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
-        $imagebbs->procForm();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
+        $imagebbs->loadAndSanitizeInput();
         $imagebbs->prtsearchlist();
     } else {
         $bbs = new \Kuzuha\Bbs();
-        $bbs->procForm();
+        $bbs->loadAndSanitizeInput();
         $bbs->prtsearchlist();
     }
 
@@ -213,12 +215,12 @@ $app->map(['GET', 'POST'], '/follow', function (Request $request, Response $resp
 
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
-        $imagebbs->procForm();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
+        $imagebbs->loadAndSanitizeInput();
         $imagebbs->prtfollow();
     } else {
         $bbs = new \Kuzuha\Bbs();
-        $bbs->procForm();
+        $bbs->loadAndSanitizeInput();
         $bbs->prtfollow();
     }
 

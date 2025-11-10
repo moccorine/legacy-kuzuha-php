@@ -22,12 +22,12 @@ class View
             'auto_reload' => true,
             'debug' => true,
         ]);
-        
+
         // Add route() function to Twig
         $this->twig->addFunction(new TwigFunction('route', function (string $path, array $params = []) {
             return route($path, $params);
         }));
-        
+
         // Add home() function to Twig
         $this->twig->addFunction(new TwigFunction('home', function (array $params = []) {
             return home($params);

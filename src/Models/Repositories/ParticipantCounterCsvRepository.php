@@ -19,11 +19,11 @@ class ParticipantCounterCsvRepository implements ParticipantCounterRepositoryInt
 
         if (is_writable($this->filename)) {
             $cntData = file($this->filename);
-            
+
             foreach ($cntData as $cntValue) {
                 if (strrpos($cntValue, ',') !== false) {
                     [$cuser, $ctime] = explode(',', trim($cntValue));
-                    
+
                     if ($cuser == $userKey) {
                         // Update current user's timestamp
                         $newCntData[] = "$userKey,$timestamp\n";
@@ -70,7 +70,7 @@ class ParticipantCounterCsvRepository implements ParticipantCounterRepositoryInt
         foreach ($cntData as $cntValue) {
             if (strrpos($cntValue, ',') !== false) {
                 [$cuser, $ctime] = explode(',', trim($cntValue));
-                
+
                 if (($ctime + $timeoutSeconds) >= $currentTime) {
                     $mbrCount++;
                 }

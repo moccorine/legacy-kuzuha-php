@@ -11,7 +11,7 @@ class HtmlParser
 {
     /**
      * Parse message from HTML buffer
-     * 
+     *
      * @param string $html HTML content
      * @return array Parsed message data
      */
@@ -68,7 +68,7 @@ class HtmlParser
 
     /**
      * Extract text from specific CSS selector
-     * 
+     *
      * @param string $html HTML content
      * @param string $selector CSS selector
      * @return string|null Extracted text or null if not found
@@ -85,7 +85,7 @@ class HtmlParser
 
     /**
      * Check if HTML contains specific element
-     * 
+     *
      * @param string $html HTML content
      * @param string $selector CSS selector
      * @return bool True if element exists

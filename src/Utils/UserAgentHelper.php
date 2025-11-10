@@ -22,7 +22,7 @@ class UserAgentHelper
 
     /**
      * Check if browser supports download (modern browser check)
-     * 
+     *
      * @return bool True if browser is modern enough
      */
     public static function supportsDownload(): bool
@@ -32,9 +32,9 @@ class UserAgentHelper
         }
 
         $detect = self::getDetector();
-        
+
         // Modern browsers (Chrome, Firefox, Safari, Edge, Opera)
-        if ($detect->is('Chrome') || $detect->is('Firefox') || 
+        if ($detect->is('Chrome') || $detect->is('Firefox') ||
             $detect->is('Safari') || $detect->is('Edge') || $detect->is('Opera')) {
             return true;
         }
@@ -55,13 +55,13 @@ class UserAgentHelper
 
     /**
      * Get browser name
-     * 
+     *
      * @return string Browser name
      */
     public static function getBrowserName(): string
     {
         $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        
+
         if (stripos($ua, 'Edg/') !== false || stripos($ua, 'Edge/') !== false) {
             return 'Edge';
         }
@@ -80,30 +80,30 @@ class UserAgentHelper
         if (stripos($ua, 'MSIE') !== false || stripos($ua, 'Trident/') !== false) {
             return 'IE';
         }
-        
+
         return 'Unknown';
     }
 
     /**
      * Get browser version
-     * 
+     *
      * @param string|null $browser Browser name (auto-detect if null)
      * @return string|false Browser version or false if not detected
      */
     public static function getBrowserVersion(?string $browser = null)
     {
         $detect = self::getDetector();
-        
+
         if ($browser === null) {
             $browser = self::getBrowserName();
         }
-        
+
         return $detect->version($browser);
     }
 
     /**
      * Check if OS is Mac
-     * 
+     *
      * @return bool True if Mac OS
      */
     public static function isMac(): bool
@@ -114,7 +114,7 @@ class UserAgentHelper
 
     /**
      * Check if OS is Windows
-     * 
+     *
      * @return bool True if Windows
      */
     public static function isWindows(): bool
@@ -125,7 +125,7 @@ class UserAgentHelper
 
     /**
      * Check if mobile device
-     * 
+     *
      * @return bool True if mobile
      */
     public static function isMobile(): bool
@@ -136,7 +136,7 @@ class UserAgentHelper
 
     /**
      * Check if tablet device
-     * 
+     *
      * @return bool True if tablet
      */
     public static function isTablet(): bool
@@ -147,13 +147,13 @@ class UserAgentHelper
 
     /**
      * Get OS name
-     * 
+     *
      * @return string OS name
      */
     public static function getOSName(): string
     {
         $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        
+
         // Check iOS first (before Mac OS X check)
         if (stripos($ua, 'iPhone') !== false || stripos($ua, 'iPad') !== false || stripos($ua, 'iPod') !== false) {
             return 'iOS';
@@ -170,7 +170,7 @@ class UserAgentHelper
         if (stripos($ua, 'Linux') !== false) {
             return 'Linux';
         }
-        
+
         return 'Unknown';
     }
 }

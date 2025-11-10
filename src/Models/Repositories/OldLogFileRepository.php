@@ -25,7 +25,7 @@ class OldLogFileRepository implements OldLogRepositoryInterface
     public function append(string $message): void
     {
         $filename = $this->getCurrentFilename();
-        
+
         if ($this->getSize() > $this->maxSize) {
             throw new \RuntimeException('Log size limit exceeded');
         }
@@ -71,14 +71,14 @@ class OldLogFileRepository implements OldLogRepositoryInterface
     public function getAll(string $filename): array
     {
         $filepath = $this->logDir . $filename;
-        
+
         if (!file_exists($filepath)) {
             throw new \RuntimeException("Archive file does not exist: {$filename}");
         }
 
         $file = new \SplFileObject($filepath, 'rb');
         $file->flock(LOCK_SH);
-        
+
         $lines = [];
         while (!$file->eof()) {
             $line = $file->fgets();
@@ -86,9 +86,9 @@ class OldLogFileRepository implements OldLogRepositoryInterface
                 $lines[] = $line;
             }
         }
-        
+
         $file->flock(LOCK_UN);
-        
+
         return $lines;
     }
 }

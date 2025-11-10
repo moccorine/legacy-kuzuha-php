@@ -88,7 +88,6 @@ if (\App\Utils\NetworkHelper::hostnameMatch($config->get('HOSTNAME_BANNED'), $co
 
 // Define constants
 define('CURRENT_TIME', time() - $config->get('DIFFTIME') * 60 * 60 + $config->get('DIFFSEC'));
-define('INCLUDED_FROM_BBS', true);
 
 // Create PHP-DI container with autowiring
 $container = new Container();

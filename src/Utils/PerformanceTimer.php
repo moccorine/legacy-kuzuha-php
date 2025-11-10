@@ -19,7 +19,7 @@ class PerformanceTimer
 
     /**
      * Get elapsed time since start
-     * 
+     *
      * @return float|null Elapsed time in seconds, or null if not started
      */
     public static function elapsed(): ?float
@@ -33,14 +33,14 @@ class PerformanceTimer
 
     /**
      * Get formatted elapsed time
-     * 
+     *
      * @param int $precision Number of decimal places (default: 6)
      * @return string|null Formatted elapsed time, or null if not started
      */
     public static function elapsedFormatted(int $precision = 6): ?string
     {
         $elapsed = self::elapsed();
-        
+
         if ($elapsed === null) {
             return null;
         }
@@ -58,7 +58,7 @@ class PerformanceTimer
 
     /**
      * Check if timer is running
-     * 
+     *
      * @return bool
      */
     public static function isRunning(): bool

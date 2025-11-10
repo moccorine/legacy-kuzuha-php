@@ -5,6 +5,36 @@ namespace App\Utils;
 class NetworkHelper
 {
     /**
+     * Get remote IP address
+     *
+     * @return string Remote IP address
+     */
+    public static function getRemoteAddr(): string
+    {
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
+
+    /**
+     * Get HTTP referer
+     *
+     * @return string|null HTTP referer or null if not set
+     */
+    public static function getReferer(): ?string
+    {
+        return $_SERVER['HTTP_REFERER'] ?? null;
+    }
+
+    /**
+     * Get user agent
+     *
+     * @return string User agent string
+     */
+    public static function getUserAgent(): string
+    {
+        return $_SERVER['HTTP_USER_AGENT'] ?? '';
+    }
+
+    /**
      * Get user environment information
      *
      * @return array [addr, host, proxyflg, realaddr, realhost]

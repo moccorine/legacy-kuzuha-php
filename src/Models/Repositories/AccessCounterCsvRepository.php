@@ -17,7 +17,7 @@ class AccessCounterCsvRepository implements AccessCounterRepositoryInterface
     {
         $count = [];
         $filenumber = [];
-        
+
         // Read all counter files
         for ($i = 0; $i < $this->fileCount; $i++) {
             $filename = "{$this->filePrefix}{$i}.dat";
@@ -29,12 +29,12 @@ class AccessCounterCsvRepository implements AccessCounterRepositoryInterface
             }
             $filenumber[$count[$i]] = $i;
         }
-        
+
         // Find min and max
         sort($count, SORT_NUMERIC);
         $mincount = $count[0];
         $maxcount = $count[$this->fileCount - 1] + 1;
-        
+
         // Write max+1 to file with min value
         $filename = "{$this->filePrefix}{$filenumber[$mincount]}.dat";
         if ($fh = @fopen($filename, 'w')) {
@@ -42,14 +42,14 @@ class AccessCounterCsvRepository implements AccessCounterRepositoryInterface
             fclose($fh);
             return $maxcount;
         }
-        
+
         throw new \RuntimeException('Counter file write error');
     }
 
     public function getCurrent(): int
     {
         $maxCount = 0;
-        
+
         for ($i = 0; $i < $this->fileCount; $i++) {
             $filename = "{$this->filePrefix}{$i}.dat";
             if (file_exists($filename)) {
@@ -59,10 +59,10 @@ class AccessCounterCsvRepository implements AccessCounterRepositoryInterface
                 }
             }
         }
-        
+
         return $maxCount;
     }
-    
+
     public function getCountLevel(): int|false
     {
         return $this->fileCount;

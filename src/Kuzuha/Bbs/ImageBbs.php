@@ -1,9 +1,10 @@
 <?php
 
-namespace Kuzuha;
+namespace Kuzuha\Bbs;
 
 use App\Config;
 use App\Utils\HtmlHelper;
+use Kuzuha\Bbs;
 
 /*
 
@@ -16,11 +17,6 @@ BBS with image upload function module
 
 
 */
-
-if (!defined('INCLUDED_FROM_BBS')) {
-    header('Location: ../bbs.php');
-    exit();
-}
 
 
 /*
@@ -85,7 +81,7 @@ $GLOBALS['CONF_IMAGEBBS'] = [
  * @package strangeworld.cnscript
  * @access  public
  */
-class Imagebbs extends Bbs
+class ImageBbs extends Bbs
 {
     /**
      * Constructor
@@ -105,14 +101,13 @@ class Imagebbs extends Bbs
 
 
     /**
-     * Reflect personal settings
+     * Apply user preferences with image mode enabled
      */
     #[\Override]
-    public function refcustom()
+    public function applyUserPreferences(string $colorString = ''): string
     {
         $this->config['SHOWIMG'] = 1;
-
-        parent::refcustom();
+        return parent::applyUserPreferences($colorString);
     }
 
 

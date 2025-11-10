@@ -1,6 +1,6 @@
 <?php
 
-namespace Kuzuha;
+namespace Kuzuha\Bbs;
 
 use App\Config;
 use App\Translator;
@@ -9,6 +9,7 @@ use App\Utils\HtmlHelper;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
+use Kuzuha\Bbs;
 
 /*
 
@@ -23,11 +24,6 @@ http://www.hlla.is.tsukuba.ac.jp/~yas/gen/it-2002-10-28/
 
 
 */
-
-if (!defined('INCLUDED_FROM_BBS')) {
-    header('Location: ../bbs.php?m=tree');
-    exit();
-}
 
 
 /*
@@ -63,7 +59,7 @@ $GLOBALS['CONF_TREEVIEW'] = [
  * @package strangeworld.cnscript
  * @access  public
  */
-class Treeview extends Bbs
+class TreeView extends Bbs
 {
     /**
      * Constructor
@@ -90,14 +86,14 @@ class Treeview extends Bbs
         PerformanceTimer::start();
 
         # Form acquisiation preprocessing
-        $this->procForm();
+        $this->loadAndSanitizeInput();
 
         # Reflect personal settings
         if (@$this->form['treem'] == 'p') {
             $this->form['m'] = 'p';
         }
-        $this->refcustom();
-        $this->setusersession();
+        $this->applyUserPreferences();
+        $this->initializeSession();
 
         # gzip compressed transfer
         if ($this->config['GZIPU'] && ob_get_level() === 0) {
@@ -133,7 +129,7 @@ class Treeview extends Bbs
             # Admin mode transition
             elseif ($posterr == 3) {
                 define('BBS_ACTIVATED', true);
-                $bbsadmin = new Bbsadmin($this);
+                $bbsadmin = new Admin($this->bbsLogRepository);
                 $bbsadmin->main();
             }
             # Post completion page
@@ -197,7 +193,7 @@ class Treeview extends Bbs
             $dlink = @$this->form['l'];
         }
         $forminput = '<input type="hidden" name="m" value="tree" /><input type="hidden" name="treem" value="p" />';
-        
+
         # Get form HTML using Twig
         $formData = $this->getFormData($dtitle, $dmsg, $dlink, $forminput);
         $formHtml = $this->renderTwig('components/form.twig', $formData);
@@ -225,7 +221,7 @@ class Treeview extends Bbs
         # Process in order of threads with the latest post time
         while (count($logdata) > 0) {
 
-            $msgcurrent = $this->getmessage(array_shift($logdata));
+            $msgcurrent = $this->parseLogLine(array_shift($logdata));
             if (!$msgcurrent['THREAD']) {
                 $msgcurrent['THREAD'] = $msgcurrent['POSTID'];
             }
@@ -234,7 +230,7 @@ class Treeview extends Bbs
             $thread = [$msgcurrent];
             $i = 0;
             while ($i < count($logdata)) {
-                $message = $this->getmessage($logdata[$i]);
+                $message = $this->parseLogLine($logdata[$i]);
                 if ($message['THREAD'] == $msgcurrent['THREAD']
                     or $message['POSTID'] == $msgcurrent['THREAD']) {
                     array_splice($logdata, $i, 1);
@@ -362,7 +358,7 @@ class Treeview extends Bbs
         $threadParams = ['s' => $msgcurrent['THREAD']];
         parse_str($this->session['QUERY'], $queryParams);
         $threadParams = array_merge($threadParams, $queryParams);
-        print "<pre class=\"msgtree\"><a href=\"" . route('thread', $threadParams) . "\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
+        print '<pre class="msgtree"><a href="' . route('thread', $threadParams) . "\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
         $msgcurrent['WDATE'] = DateHelper::getDateString($msgcurrent['NDATE']);
         $dateUpdatedLabel = Translator::trans('tree.date_updated');
         print "<span class=\"update\"> [{$dateUpdatedLabel}: {$msgcurrent['WDATE']}]</span>\r";
@@ -430,7 +426,7 @@ class Treeview extends Bbs
                 $followParams = ['s' => $parentid];
                 parse_str($this->session['QUERY'], $queryParams);
                 $followParams = array_merge($followParams, $queryParams);
-                $treeprint .= "<a href=\"" . route('follow', $followParams) . "\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
+                $treeprint .= '<a href="' . route('follow', $followParams) . "\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
 
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->config['ANONY_NAME']) {
@@ -511,7 +507,7 @@ class Treeview extends Bbs
     public function getdispmessage()
     {
 
-        $logdata = $this->loadmessage();
+        $logdata = $this->getLogLines();
 
         # Unread pointer (latest POSTID)
         $items = @explode(',', (string) $logdata[0], 3);
@@ -588,7 +584,7 @@ class Treeview extends Bbs
 
 __XHTML__;
 
-        
+
         // Output HTML header using Twig base template structure
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'),
@@ -618,7 +614,7 @@ __XHTML__;
             $secondsLabel = Translator::trans('main.seconds');
             echo "<p><span class=\"msgmore\">{$pageGenLabel}: {$duration} {$secondsLabel}</span>　<a href=\"#top\" title=\"" . Translator::trans('main.top') . "\">▲</a></p>\n";
         } else {
-            echo "<p><a href=\"#top\" title=\"" . Translator::trans('main.top') . "\">▲</a></p>\n";
+            echo '<p><a href="#top" title="' . Translator::trans('main.top') . "\">▲</a></p>\n";
         }
         echo "</footer>\n</body>\n</html>\n";
 

@@ -66,4 +66,31 @@ class SecurityHelper
         }
         return $timestamp;
     }
+
+    /**
+     * Encrypt admin password using crypt()
+     * 
+     * TODO: Replace with password_hash() for better security
+     * Current implementation uses legacy crypt() for backward compatibility
+     * 
+     * @param string $password Plain text password
+     * @return string Encrypted password
+     */
+    public static function encryptAdminPassword(string $password): string
+    {
+        $salt = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2);
+        return crypt($password, $salt);
+    }
+
+    /**
+     * Verify admin password
+     * 
+     * @param string $password Plain text password
+     * @param string $hash Encrypted password hash
+     * @return bool True if password matches
+     */
+    public static function verifyAdminPassword(string $password, string $hash): bool
+    {
+        return crypt($password, $hash) === $hash;
+    }
 }

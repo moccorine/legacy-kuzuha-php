@@ -3,15 +3,14 @@
 namespace Kuzuha;
 
 use App\Config;
+use App\Models\Repositories\OldLogRepositoryInterface;
 use App\Translator;
-use App\Utils\FileHelper;
 use App\Utils\HtmlHelper;
 use App\Utils\HtmlParser;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\UserAgentHelper;
 use App\Utils\ValidationRegex;
-use App\Models\Repositories\OldLogRepositoryInterface;
 
 /*
 
@@ -21,11 +20,6 @@ Message log viewer module
 * Todo
 
 */
-
-if (!defined('INCLUDED_FROM_BBS')) {
-    header('Location: ../bbs.php?m=g');
-    exit();
-}
 
 
 /*
@@ -66,7 +60,7 @@ class Getlog extends Webapp
     public function __construct(?OldLogRepositoryInterface $oldLogRepository = null)
     {
         $this->oldLogRepository = $oldLogRepository;
-        
+
         $config = Config::getInstance();
         foreach ($GLOBALS['CONF_GETLOG'] as $key => $value) {
             $config->set($key, $value);
@@ -85,11 +79,11 @@ class Getlog extends Webapp
         PerformanceTimer::start();
 
         # Form acquisition preprocessing
-        $this->procForm();
+        $this->loadAndSanitizeInput();
 
         # Reflect personal settings
-        $this->refcustom();
-        $this->setusersession();
+        $this->applyUserPreferences();
+        $this->initializeSession();
 
         # gzip compressed transfer
         if ($this->config['GZIPU'] && ob_get_level() === 0) {
@@ -178,19 +172,19 @@ class Getlog extends Webapp
             $fsize = $fstat[7];
             $ftime = date('Y/m/d H:i:s', $fstat[9]);
             $ftitle = '';
-            
+
             // Parse log filename (YYYYMMDD.dat or YYYYMM.dat)
             $info = pathinfo($filename);
             if ($info['extension'] === $oldlogext && ctype_digit($info['filename'])) {
                 $len = strlen($info['filename']);
                 if ($len === 8) {
                     // YYYYMMDD format
-                    $ftitle = substr($info['filename'], 0, 4) . '/' . 
-                              substr($info['filename'], 4, 2) . '/' . 
+                    $ftitle = substr($info['filename'], 0, 4) . '/' .
+                              substr($info['filename'], 4, 2) . '/' .
                               substr($info['filename'], 6, 2);
                 } elseif ($len === 6) {
                     // YYYYMM format
-                    $ftitle = substr($info['filename'], 0, 4) . '/' . 
+                    $ftitle = substr($info['filename'], 0, 4) . '/' .
                               substr($info['filename'], 4, 2);
                 } else {
                     $ftitle = $filename;
@@ -200,7 +194,7 @@ class Getlog extends Webapp
             }
 
             $checked = ($filename == $checkedfile);
-            
+
             $fileList[] = [
                 'FILENAME' => $filename,
                 'FTITLE' => $ftitle,
@@ -371,7 +365,7 @@ class Getlog extends Webapp
             // Check if filename starts with digits and file exists
             $info = pathinfo((string) $filename);
             $hasNumericPrefix = isset($info['filename'][0]) && ctype_digit($info['filename'][0]);
-            
+
             if ($hasNumericPrefix && is_file($this->config['OLDLOGFILEDIR'] . $filename)) {
                 $files[] = $filename;
             }
@@ -530,7 +524,7 @@ class Getlog extends Webapp
             if (!@$conditions['showall']) {
                 $result = 0;
                 foreach ($logdata as $logline) {
-                    $message = $this->getmessage($logline);
+                    $message = $this->parseLogLine($logline);
                     $result = $this->msgsearch($message, $conditions);
                     # Search hit
                     if ($result == 1) {
@@ -566,7 +560,7 @@ class Getlog extends Webapp
             else {
                 foreach ($logdata as $index => $logline) {
                     error_log("Line {$index}: " . var_export($logline, true));
-                    $message = $this->getmessage($logline);
+                    $message = $this->parseLogLine($logline);
                     error_log("Message {$index}: " . var_export($message, true));
                     if ($message) {
                         $messagestr = $this->renderMessage($message, $msgmode, $filename);
@@ -689,7 +683,7 @@ class Getlog extends Webapp
         $message['USER'] = $parsed['USER'];
         $message['TITLE'] = $parsed['TITLE'];
         $message['MSG'] = $parsed['MSG'];
-        
+
         if (isset($parsed['date_parts'])) {
             $dp = $parsed['date_parts'];
             if (@$conditions['savesw']) {
@@ -823,7 +817,7 @@ class Getlog extends Webapp
         $ttime = [];
         $tindex = 0;
         foreach ($logdata as $logline) {
-            $message = $this->getmessage($logline);
+            $message = $this->parseLogLine($logline);
             if (!$message['THREAD'] or $message['THREAD'] == $message['POSTID'] or !@$ttitle[$message['THREAD']]) {
                 $tid[$tindex] = $message['POSTID'];
                 $tcount[$message['POSTID']] = 0;
@@ -942,7 +936,7 @@ class Getlog extends Webapp
      */
     /**
      * Check if browser supports download
-     * 
+     *
      * @return bool True if browser is modern enough
      */
     public function dlchk()

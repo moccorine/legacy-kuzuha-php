@@ -9,7 +9,7 @@ class KaomojiHelper
 {
     /**
      * Generate kaomoji buttons HTML
-     * 
+     *
      * @return string HTML for kaomoji buttons
      */
     public static function generateButtons(): string
@@ -24,7 +24,7 @@ class KaomojiHelper
             ['(^^;ﾜﾗ', 'ε≡三ヽ(´ー`)ﾉ', 'ε≡Ξヽ( ^Д^)ノ', 'ヽ(´Д`;)ノΞ≡3'],
             ['(・∀・)', '( ´ω`)', 'Σ(ﾟдﾟlll)', '(´～`)', '┐(ﾟ～ﾟ)┌'],
         ];
-        
+
         $html = '';
         foreach ($kaomojis as $row) {
             foreach ($row as $kaomoji) {
@@ -34,10 +34,10 @@ class KaomojiHelper
         }
         return $html;
     }
-    
+
     /**
      * Get all kaomoji as array
-     * 
+     *
      * @return array Array of kaomoji strings
      */
     public static function getAll(): array
