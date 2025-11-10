@@ -9,6 +9,7 @@ use App\Utils\FileHelper;
 use App\Utils\HtmlHelper;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
+use App\Utils\SecurityHelper;
 
 /**
  * Admin mode module
@@ -339,7 +340,7 @@ class Bbsadmin extends Webapp
             $this->prterror('No password has been set.');
         }
 
-        $cryptpass = $this->encryptPassword($inputpass);
+        $cryptpass = SecurityHelper::encryptAdminPassword($inputpass);
         $inputsize = strlen($cryptpass) + 10;
 
         $data = array_merge($this->config, $this->session, [
@@ -352,21 +353,6 @@ class Bbsadmin extends Webapp
             'TRANS_BULLETIN_BOARD' => Translator::trans('admin.bulletin_board'),
         ]);
         echo $this->renderTwig('admin/pass.twig', $data);
-    }
-
-    /**
-     * Encrypt password using crypt()
-     * 
-     * TODO: Replace with password_hash() for better security
-     * Current implementation uses legacy crypt() for backward compatibility
-     * 
-     * @param string $password Plain text password
-     * @return string Encrypted password
-     */
-    private function encryptPassword(string $password): string
-    {
-        $salt = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 2);
-        return crypt($password, $salt);
     }
 
     /**
