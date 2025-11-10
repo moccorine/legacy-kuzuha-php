@@ -2,6 +2,7 @@
 
 namespace Kuzuha;
 
+use App\Models\Repositories\BbsLogRepositoryInterface;
 use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\FileHelper;
@@ -17,20 +18,21 @@ use App\Utils\RegexPatterns;
  */
 class Bbsadmin extends Webapp
 {
-    public $bbs;
+    /**
+     * @var BbsLogRepositoryInterface BBS log repository
+     */
+    private $bbsLogRepository;
 
     /**
      * Constructor
+     * 
+     * @param BbsLogRepositoryInterface $bbsLogRepository BBS log repository
      */
-    public function __construct()
+    public function __construct(BbsLogRepositoryInterface $bbsLogRepository)
     {
         parent::__construct();
-        if (func_num_args() > 0) {
-            $this->bbs = func_get_arg(0);
-            $this->config = &$this->bbs->config;
-            $this->form = &$this->bbs->form;
-        }
-        // Template loading removed - using Twig now
+        $this->bbsLogRepository = $bbsLogRepository;
+        $this->setBbsLogRepository($bbsLogRepository);
     }
 
     /**

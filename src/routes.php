@@ -162,7 +162,8 @@ $app->map(['GET', 'POST'], '/admin', function (Request $request, Response $respo
     if ($config->get('ADMINPOST') && $config->get('ADMINKEY')
         && $_POST['v'] == $config->get('ADMINKEY')
         && crypt((string) $_POST['u'], (string) $config->get('ADMINPOST')) == $config->get('ADMINPOST')) {
-        $bbsadmin = new \Kuzuha\Bbsadmin();
+        $bbsLogRepository = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
+        $bbsadmin = new \Kuzuha\Bbsadmin($bbsLogRepository);
         $bbsadmin->main();
     } elseif ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Imagebbs();
