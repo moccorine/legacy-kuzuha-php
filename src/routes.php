@@ -55,7 +55,7 @@ $app->get('/', function (Request $request, Response $response) use ($container) 
     $bbs = null;
 
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->main();
     } else {
         // Get repositories from container (autowired)
@@ -94,7 +94,7 @@ $app->post('/', function (Request $request, Response $response) use ($container)
     $bbs = null;
 
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->main();
     } else {
         // Get repositories from container (autowired)
@@ -140,7 +140,7 @@ $app->map(['GET', 'POST'], '/search', function (Request $request, Response $resp
 $app->map(['GET', 'POST'], '/tree', function (Request $request, Response $response) {
     ob_start();
 
-    $treeview = new \Kuzuha\Treeview();
+    $treeview = new \Kuzuha\Bbs\TreeView();
     $treeview->main();
 
     $output = ob_get_clean();
@@ -164,10 +164,10 @@ $app->map(['GET', 'POST'], '/admin', function (Request $request, Response $respo
         && $_POST['v'] == $config->get('ADMINKEY')
         && SecurityHelper::verifyAdminPassword((string) $_POST['u'], (string) $config->get('ADMINPOST'))) {
         $bbsLogRepository = $container->get(\App\Models\Repositories\BbsLogRepositoryInterface::class);
-        $bbsadmin = new \Kuzuha\Bbsadmin($bbsLogRepository);
+        $bbsadmin = new \Kuzuha\Bbs\Admin($bbsLogRepository);
         $bbsadmin->main();
     } elseif ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->main();
     } else {
         $bbs = new \Kuzuha\Bbs();
@@ -190,7 +190,7 @@ $app->map(['GET', 'POST'], '/thread', function (Request $request, Response $resp
 
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->loadAndSanitizeInput();
         $imagebbs->prtsearchlist();
     } else {
@@ -215,7 +215,7 @@ $app->map(['GET', 'POST'], '/follow', function (Request $request, Response $resp
 
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
-        $imagebbs = new \Kuzuha\Imagebbs();
+        $imagebbs = new \Kuzuha\Bbs\ImageBbs();
         $imagebbs->loadAndSanitizeInput();
         $imagebbs->prtfollow();
     } else {

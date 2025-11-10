@@ -1,6 +1,6 @@
 <?php
 
-namespace Kuzuha;
+namespace Kuzuha\Bbs;
 
 use App\Models\Repositories\BbsLogRepositoryInterface;
 use App\Translator;
@@ -11,6 +11,7 @@ use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\SecurityHelper;
 use App\Utils\StringHelper;
+use Kuzuha\Webapp;
 
 /**
  * Admin mode module
@@ -18,7 +19,7 @@ use App\Utils\StringHelper;
  * @package strangeworld.cnscript
  * @access  public
  */
-class Bbsadmin extends Webapp
+class Admin extends Webapp
 {
     /**
      * Constructor

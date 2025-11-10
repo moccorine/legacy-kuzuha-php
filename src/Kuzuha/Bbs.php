@@ -75,8 +75,8 @@ class Bbs extends Webapp
 
         // If ADMINPOST is empty and not setting password, show password setup page
         if (empty($this->config['ADMINPOST']) && $this->form['m'] != 'ad') {
-            $bbsadmin = new Bbsadmin($this);
-            $bbsadmin->prtsetpass();
+            $bbsadmin = new \Bbs\Admin($this->bbsLogRepository);
+            $bbsadmin->renderPasswordSetup();
             return;
         }
 
@@ -139,7 +139,7 @@ class Bbs extends Webapp
         }
 
         // Get environment variables
-        $this->setuserenv();
+        $this->loadUserEnvironment();
 
         // Create validator and validate post
         $validator = new BbsPostValidator($this->config, $this->form, $this->session);
@@ -181,7 +181,7 @@ class Bbs extends Webapp
             case BbsPostValidator::ADMIN_MODE:
                 // Admin mode activation (special code from validator)
                 define('BBS_ACTIVATED', true);
-                $bbsadmin = new Bbsadmin($this);
+                $bbsadmin = new \Bbs\Admin($this->bbsLogRepository);
                 $bbsadmin->main();
                 break;
 
@@ -409,7 +409,7 @@ class Bbs extends Webapp
         $mbrcount = '';
         $showMbrCount = false;
         if ($this->config['CNTFILENAME'] && $this->participantCounterRepo !== null) {
-            $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $remoteAddr = NetworkHelper::getRemoteAddr();
             $userKey = (string) hexdec(substr(md5($remoteAddr), 0, 8));
             $mbrcount = number_format(
                 $this->participantCounterRepo->recordVisit($userKey, CURRENT_TIME, $this->config['CNTLIMIT'])
@@ -461,6 +461,22 @@ class Bbs extends Webapp
 
     /**
      * Prepare form data for Twig rendering
+     * 
+     * Builds a comprehensive data array for the post form template,
+     * including:
+     * - Form field default values (title, message, link)
+     * - Security tokens (protect code)
+     * - Counter and statistics
+     * - Checkbox states (autolink, hideform, etc.)
+     * - Visibility flags for conditional rendering
+     * - Kaomoji buttons
+     * - All translation strings
+     * 
+     * @param string $dtitle Default title value
+     * @param string $dmsg Default message value
+     * @param string $dlink Default link value
+     * @param string $mode Form mode ('p' for post, 'f' for follow-up)
+     * @return array<string, mixed> Template data array
      */
     protected function getFormData($dtitle, $dmsg, $dlink, $mode = '')
     {
@@ -975,8 +991,8 @@ class Bbs extends Webapp
                 $this->prterror(Translator::trans('error.deletion_not_permitted'));
             }
             # Erase operation
-            $bbsadmin = new Bbsadmin();
-            $bbsadmin->killmessage($this->session['UNDO_P']);
+            $bbsadmin = new \Bbs\Admin($this->bbsLogRepository);
+            $bbsadmin->deleteMessages([$this->session['UNDO_P']]);
 
             $this->session['UNDO_P'] = '';
             $this->session['UNDO_K'] = '';
@@ -1090,12 +1106,13 @@ class Bbs extends Webapp
      */
     private function validateReferer()
     {
-        if (!$_SERVER['HTTP_REFERER'] || !$this->config['REFCHECKURL']) {
+        $referer = NetworkHelper::getReferer();
+        
+        if (!$referer || !$this->config['REFCHECKURL']) {
             return;
         }
 
         // Referer check
-        $referer = (string) $_SERVER['HTTP_REFERER'];
         $checkUrl = (string) $this->config['REFCHECKURL'];
 
         if (!str_contains($referer, $checkUrl) || strpos($referer, $checkUrl) > 0) {
@@ -1618,26 +1635,38 @@ class Bbs extends Webapp
     }
 
     /**
-     * Get environment variables
+     * Load user environment variables (IP, host, user agent)
+     * 
+     * Captures user's network information and browser details
+     * based on configuration settings (IPREC, UAREC).
+     * 
+     * @return bool True if any environment data was loaded
      */
-    public function setuserenv()
+    public function loadUserEnvironment(): bool
     {
+        $loaded = false;
 
+        // Record user agent if enabled
         if ($this->config['UAREC']) {
-            $agent = $_SERVER['HTTP_USER_AGENT'];
+            $agent = NetworkHelper::getUserAgent();
             $agent = StringHelper::htmlEscape($agent);
             $this->session['AGENT'] = $agent;
+            $loaded = true;
         }
-        if (!$this->config['IPREC']) {
-            return;
-        }
-        [$addr, $host, $proxyflg, $realaddr, $realhost] = NetworkHelper::getUserEnv();
 
-        $this->session['ADDR'] = $addr;
-        $this->session['HOST'] = $host;
-        $this->session['PROXYFLG'] = $proxyflg;
-        $this->session['REALADDR'] = $realaddr;
-        $this->session['REALHOST'] = $realhost;
+        // Record IP address and host if enabled
+        if ($this->config['IPREC']) {
+            [$addr, $host, $proxyflg, $realaddr, $realhost] = NetworkHelper::getUserEnv();
+
+            $this->session['ADDR'] = $addr;
+            $this->session['HOST'] = $host;
+            $this->session['PROXYFLG'] = $proxyflg;
+            $this->session['REALADDR'] = $realaddr;
+            $this->session['REALHOST'] = $realhost;
+            $loaded = true;
+        }
+
+        return $loaded;
     }
 
     /**

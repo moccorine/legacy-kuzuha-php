@@ -1,9 +1,10 @@
 <?php
 
-namespace Kuzuha;
+namespace Kuzuha\Bbs;
 
 use App\Config;
 use App\Utils\HtmlHelper;
+use Kuzuha\Bbs;
 
 /*
 
@@ -80,7 +81,7 @@ $GLOBALS['CONF_IMAGEBBS'] = [
  * @package strangeworld.cnscript
  * @access  public
  */
-class Imagebbs extends Bbs
+class ImageBbs extends Bbs
 {
     /**
      * Constructor

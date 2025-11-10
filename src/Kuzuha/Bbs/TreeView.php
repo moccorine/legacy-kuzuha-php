@@ -1,6 +1,6 @@
 <?php
 
-namespace Kuzuha;
+namespace Kuzuha\Bbs;
 
 use App\Config;
 use App\Translator;
@@ -9,6 +9,7 @@ use App\Utils\HtmlHelper;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
+use Kuzuha\Bbs;
 
 /*
 
@@ -58,7 +59,7 @@ $GLOBALS['CONF_TREEVIEW'] = [
  * @package strangeworld.cnscript
  * @access  public
  */
-class Treeview extends Bbs
+class TreeView extends Bbs
 {
     /**
      * Constructor
@@ -128,7 +129,7 @@ class Treeview extends Bbs
             # Admin mode transition
             elseif ($posterr == 3) {
                 define('BBS_ACTIVATED', true);
-                $bbsadmin = new Bbsadmin($this);
+                $bbsadmin = new Admin($this->bbsLogRepository);
                 $bbsadmin->main();
             }
             # Post completion page

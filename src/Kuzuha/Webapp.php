@@ -24,7 +24,7 @@ use App\View;
  * - Message display preparation
  * - Template rendering
  *
- * Extended by: Bbs, Getlog, Bbsadmin, Treeview, Imagebbs
+ * Extended by: Bbs, Getlog, Bbs\Admin, Bbs\TreeView, Bbs\ImageBbs
  */
 class Webapp
 {
