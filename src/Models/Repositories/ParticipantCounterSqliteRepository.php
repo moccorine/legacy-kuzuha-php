@@ -4,7 +4,7 @@ namespace App\Models\Repositories;
 
 /**
  * SQLite implementation for Participant Counter (Future implementation)
- * 
+ *
  * Schema:
  * CREATE TABLE participants (
  *     user_key TEXT PRIMARY KEY,
@@ -24,32 +24,32 @@ class ParticipantCounterSqliteRepository implements ParticipantCounterRepository
 
     private function initializeSchema(): void
     {
-        $this->db->exec("
+        $this->db->exec('
             CREATE TABLE IF NOT EXISTS participants (
                 user_key TEXT PRIMARY KEY,
                 last_seen INTEGER NOT NULL
             )
-        ");
-        
-        $this->db->exec("
+        ');
+
+        $this->db->exec('
             CREATE INDEX IF NOT EXISTS idx_participants_last_seen 
             ON participants(last_seen)
-        ");
+        ');
     }
 
     public function recordVisit(string $userKey, int $timestamp, int $timeoutSeconds): int
     {
         // Upsert participant
         $stmt = $this->db->prepare(
-            "INSERT OR REPLACE INTO participants (user_key, last_seen) VALUES (?, ?)"
+            'INSERT OR REPLACE INTO participants (user_key, last_seen) VALUES (?, ?)'
         );
         $stmt->execute([$userKey, $timestamp]);
-        
+
         // Cleanup expired entries
         $expireTime = $timestamp - $timeoutSeconds;
-        $stmt = $this->db->prepare("DELETE FROM participants WHERE last_seen < ?");
+        $stmt = $this->db->prepare('DELETE FROM participants WHERE last_seen < ?');
         $stmt->execute([$expireTime]);
-        
+
         return $this->getActiveCount($timestamp, $timeoutSeconds);
     }
 
@@ -57,7 +57,7 @@ class ParticipantCounterSqliteRepository implements ParticipantCounterRepository
     {
         $expireTime = $currentTime - $timeoutSeconds;
         $stmt = $this->db->prepare(
-            "SELECT COUNT(*) FROM participants WHERE last_seen >= ?"
+            'SELECT COUNT(*) FROM participants WHERE last_seen >= ?'
         );
         $stmt->execute([$expireTime]);
         return (int) $stmt->fetchColumn();

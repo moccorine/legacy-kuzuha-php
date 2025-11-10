@@ -97,24 +97,24 @@ class BbsMessageService
             }
 
             $items[9] = rtrim($items[9]);
-            
+
             // Check for duplicate message content (only check recent posts)
             if ($i < $this->config['CHECKCOUNT'] && $message['MSG'] == $items[9]) {
                 return ['error' => self::POST_ERROR_DUPLICATE, 'thread' => null];
             }
-            
+
             // Check IP-based rate limit
-            if ($this->config['IPREC'] 
+            if ($this->config['IPREC']
                 && CURRENT_TIME < ($items[0] + $this->config['SPTIME'])
                 && $this->session['HOST'] == $items[4]) {
                 return ['error' => self::POST_ERROR_RATE_LIMIT, 'thread' => null];
             }
-            
+
             // Check for PCODE conflict (same protection code)
             if ($message['PCODE'] == $items[2]) {
                 return ['error' => self::POST_ERROR_RATE_LIMIT, 'thread' => null];
             }
-            
+
             // Find thread ID from reference message
             if ($message['REFID'] && $items[1] == $message['REFID']) {
                 $thread = $items[3] ?: $items[1];

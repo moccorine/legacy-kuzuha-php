@@ -9,7 +9,7 @@ class HtmlHelper
 {
     /**
      * Remove reference link from message
-     * 
+     *
      * @param string $message Message HTML
      * @return string Message with reference link removed
      */
@@ -20,7 +20,7 @@ class HtmlHelper
 
     /**
      * Check if message has reference link at the end
-     * 
+     *
      * @param string $message Message HTML
      * @return bool True if reference link exists at the end
      */
@@ -31,14 +31,18 @@ class HtmlHelper
 
     /**
      * Insert content before reference link at the end
-     * 
+     *
      * @param string $message Message HTML
      * @param string $content Content to insert
      * @return string Modified message
      */
     public static function insertBeforeReferenceLink(string $message, string $content): string
     {
-        return preg_replace('/(\r\r<a href=[^<]+>Reference: [^<]+<\/a>)$/', 
-            "\r\r{$content}$1", $message, 1);
+        return preg_replace(
+            '/(\r\r<a href=[^<]+>Reference: [^<]+<\/a>)$/',
+            "\r\r{$content}$1",
+            $message,
+            1
+        );
     }
 }

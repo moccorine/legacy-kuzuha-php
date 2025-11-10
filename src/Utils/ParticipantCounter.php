@@ -6,7 +6,7 @@ class ParticipantCounter
 {
     /**
      * Count and update participant count based on unique IP addresses
-     * 
+     *
      * @param string $cntFilename Path to the count file
      * @param int $cntLimit Time limit in seconds for counting participants
      * @param int $currentTime Current timestamp
@@ -26,11 +26,11 @@ class ParticipantCounter
 
         if (is_writable($cntFilename)) {
             $cntData = file($cntFilename);
-            
+
             foreach ($cntData as $cntValue) {
                 if (strrpos($cntValue, ',') !== false) {
                     [$cuser, $ctime] = explode(',', trim($cntValue));
-                    
+
                     if ($cuser == $ukey) {
                         // Update current user's timestamp
                         $newCntData[] = "$ukey,$currentTime\n";

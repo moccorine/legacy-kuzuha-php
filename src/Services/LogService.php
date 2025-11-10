@@ -6,7 +6,7 @@ use App\Models\Repositories\BbsLogRepositoryInterface;
 
 /**
  * Log Service
- * 
+ *
  * Handles log file reading and CSV parsing operations.
  */
 class LogService
@@ -68,19 +68,19 @@ class LogService
         if (count($logsplit) < 10) {
             return null;
         }
-        
+
         // Restore commas in message fields (positions 5-9)
         for ($i = 5; $i <= 9; $i++) {
             $logsplit[$i] = strtr($logsplit[$i], "\0", ',');
             $logsplit[$i] = str_replace('&#44;', ',', $logsplit[$i]);
         }
-        
+
         $messageKey = [
             'NDATE', 'POSTID', 'PROTECT', 'THREAD', 'PHOST', 'AGENT',
             'USER', 'MAIL', 'TITLE', 'MSG', 'REFID',
-            'RESERVED1', 'RESERVED2', 'RESERVED3'
+            'RESERVED1', 'RESERVED2', 'RESERVED3',
         ];
-        
+
         $message = [];
         foreach ($logsplit as $i => $value) {
             if ($i > 12) {
@@ -88,7 +88,7 @@ class LogService
             }
             $message[$messageKey[$i]] = $value;
         }
-        
+
         return $message;
     }
 
@@ -100,11 +100,11 @@ class LogService
         // Sanitize filename
         preg_match("/^([\w.]*)$/", $filename, $matches);
         $filepath = $this->oldLogDir . '/' . $matches[1];
-        
+
         if (!file_exists($filepath)) {
             throw new \RuntimeException("Archive log file not found: {$filename}");
         }
-        
+
         return file($filepath);
     }
 
@@ -116,7 +116,7 @@ class LogService
         if (!file_exists($this->logFilename)) {
             throw new \RuntimeException("Main log file not found: {$this->logFilename}");
         }
-        
+
         return file($this->logFilename);
     }
 }

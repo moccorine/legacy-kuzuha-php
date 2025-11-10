@@ -2,12 +2,11 @@
 
 namespace App\Services;
 
+use Dflydev\FigCookies\FigResponseCookies;
+use Dflydev\FigCookies\Modifier\SameSite;
+use Dflydev\FigCookies\SetCookie;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Dflydev\FigCookies\SetCookie;
-use Dflydev\FigCookies\FigResponseCookies;
-use Dflydev\FigCookies\FigRequestCookies;
-use Dflydev\FigCookies\Modifier\SameSite;
 
 class CookieService
 {
@@ -17,7 +16,7 @@ class CookieService
     public function setUserCookie(ResponseInterface $response, string $name, string $email, string $color): ResponseInterface
     {
         $cookieStr = "u={$name}&i={$email}&c={$color}";
-        
+
         return FigResponseCookies::set(
             $response,
             SetCookie::create('c')
@@ -29,7 +28,7 @@ class CookieService
                 ->withSameSite(SameSite::lax())
         );
     }
-    
+
     /**
      * Get user info from cookie
      */
@@ -37,11 +36,11 @@ class CookieService
     {
         $cookies = $request->getCookieParams();
         $value = $cookies['c'] ?? null;
-        
+
         if (!$value) {
             return null;
         }
-        
+
         if (preg_match('/u=([^&]*)&i=([^&]*)&c=([^&]*)/', $value, $matches)) {
             return [
                 'name' => $matches[1] ?? '',
@@ -49,17 +48,17 @@ class CookieService
                 'color' => $matches[3] ?? '',
             ];
         }
-        
+
         return null;
     }
-    
+
     /**
      * Set undo cookie
      */
     public function setUndoCookie(ResponseInterface $response, string $undoId, string $undoKey): ResponseInterface
     {
         $cookieStr = "p={$undoId}&k={$undoKey}";
-        
+
         return FigResponseCookies::set(
             $response,
             SetCookie::create('undo')
@@ -71,7 +70,7 @@ class CookieService
                 ->withSameSite(SameSite::lax())
         );
     }
-    
+
     /**
      * Get undo info from cookie
      */
@@ -79,21 +78,21 @@ class CookieService
     {
         $cookies = $request->getCookieParams();
         $value = $cookies['undo'] ?? null;
-        
+
         if (!$value) {
             return null;
         }
-        
+
         if (preg_match('/p=([^&]*)&k=([^&]*)/', $value, $matches)) {
             return [
                 'post_id' => $matches[1] ?? '',
                 'key' => $matches[2] ?? '',
             ];
         }
-        
+
         return null;
     }
-    
+
     /**
      * Delete cookie
      */
@@ -107,7 +106,7 @@ class CookieService
                 ->withPath('/')
         );
     }
-    
+
     /**
      * Apply pending cookies to response
      */
@@ -122,7 +121,7 @@ class CookieService
                 $user['color'] ?? ''
             );
         }
-        
+
         if (isset($pendingCookies['undo'])) {
             $undo = $pendingCookies['undo'];
             $response = $this->setUndoCookie(
@@ -131,27 +130,27 @@ class CookieService
                 $undo['key'] ?? ''
             );
         }
-        
+
         if (isset($pendingCookies['delete'])) {
             foreach ($pendingCookies['delete'] as $cookieName) {
                 $response = $this->deleteCookie($response, $cookieName);
             }
         }
-        
+
         return $response;
     }
-    
+
     /**
      * Get user info from $_COOKIE superglobal
      */
     public static function getUserCookieFromGlobal(): ?array
     {
         $value = $_COOKIE['c'] ?? null;
-        
+
         if (!$value) {
             return null;
         }
-        
+
         if (preg_match('/u=([^&]*)&i=([^&]*)&c=([^&]*)/', $value, $matches)) {
             return [
                 'name' => urldecode($matches[1] ?? ''),
@@ -159,28 +158,28 @@ class CookieService
                 'color' => $matches[3] ?? '',
             ];
         }
-        
+
         return null;
     }
-    
+
     /**
      * Get undo info from $_COOKIE superglobal
      */
     public static function getUndoCookieFromGlobal(): ?array
     {
         $value = $_COOKIE['undo'] ?? null;
-        
+
         if (!$value) {
             return null;
         }
-        
+
         if (preg_match('/p=([^&]*)&k=([^&]*)/', $value, $matches)) {
             return [
                 'post_id' => $matches[1] ?? '',
                 'key' => $matches[2] ?? '',
             ];
         }
-        
+
         return null;
     }
 }

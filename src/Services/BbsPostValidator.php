@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Translator;
 use App\Utils\SecurityHelper;
 use App\Utils\StringHelper;
 
@@ -66,25 +65,25 @@ class BbsPostValidator
     public function buildMessage(): array
     {
         $message = [];
-        
+
         // Basic fields
         $message['USER'] = StringHelper::checkValue((string) $this->form['u']);
         $message['MAIL'] = StringHelper::checkValue((string) $this->form['m']);
         $message['TITLE'] = StringHelper::checkValue((string) $this->form['t']);
         $message['MSG'] = StringHelper::checkValue((string) $this->form['v']);
         $message['REFID'] = (int) ($this->form['s'] ?? 0);
-        
+
         // Protection code
         if ($this->form['p']) {
             $message['PCODE'] = StringHelper::checkValue((string) $this->form['p']);
         } else {
             $message['PCODE'] = SecurityHelper::generateProtectionCode();
         }
-        
+
         // Host and agent
         $message['PHOST'] = $this->session['HOST'];
         $message['AGENT'] = $this->session['AGENT'];
-        
+
         return $message;
     }
 }

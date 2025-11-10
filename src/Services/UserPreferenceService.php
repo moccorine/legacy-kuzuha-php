@@ -6,7 +6,7 @@ use App\Utils\StringHelper;
 
 /**
  * User Preference Service
- * 
+ *
  * Handles encoding/decoding of user preferences from URL parameter 'c'.
  * Format: [2-char flags in Base32][32-char colors in Base64]
  */
@@ -50,7 +50,7 @@ class UserPreferenceService
         if ($encodedLen > 5) {
             $flagStr = substr($encoded, 0, 2);
             $pos = 2;
-            
+
             foreach (self::COLOR_KEYS as $key) {
                 $colorVal = StringHelper::base64ToThreeByteHex(substr($encoded, $pos, 4));
                 if (strlen($colorVal) === 6 && strcasecmp($config[$key], $colorVal) !== 0) {
@@ -125,7 +125,7 @@ class UserPreferenceService
         if ($colorChanged) {
             return $flagValue . substr($originalEncoded, 2);
         }
-        
+
         return $flagValue;
     }
 

@@ -197,7 +197,7 @@ class Treeview extends Bbs
             $dlink = @$this->form['l'];
         }
         $forminput = '<input type="hidden" name="m" value="tree" /><input type="hidden" name="treem" value="p" />';
-        
+
         # Get form HTML using Twig
         $formData = $this->getFormData($dtitle, $dmsg, $dlink, $forminput);
         $formHtml = $this->renderTwig('components/form.twig', $formData);
@@ -362,7 +362,7 @@ class Treeview extends Bbs
         $threadParams = ['s' => $msgcurrent['THREAD']];
         parse_str($this->session['QUERY'], $queryParams);
         $threadParams = array_merge($threadParams, $queryParams);
-        print "<pre class=\"msgtree\"><a href=\"" . route('thread', $threadParams) . "\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
+        print '<pre class="msgtree"><a href="' . route('thread', $threadParams) . "\" target=\"link\">{$this->config['TXTTHREAD']}</a>";
         $msgcurrent['WDATE'] = DateHelper::getDateString($msgcurrent['NDATE']);
         $dateUpdatedLabel = Translator::trans('tree.date_updated');
         print "<span class=\"update\"> [{$dateUpdatedLabel}: {$msgcurrent['WDATE']}]</span>\r";
@@ -430,7 +430,7 @@ class Treeview extends Bbs
                 $followParams = ['s' => $parentid];
                 parse_str($this->session['QUERY'], $queryParams);
                 $followParams = array_merge($followParams, $queryParams);
-                $treeprint .= "<a href=\"" . route('follow', $followParams) . "\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
+                $treeprint .= '<a href="' . route('follow', $followParams) . "\" target=\"link\">{$this->config['TXTFOLLOW']}</a>";
 
                 # Username
                 if ($treemsg['USER'] and $treemsg['USER'] != $this->config['ANONY_NAME']) {
@@ -588,7 +588,7 @@ class Treeview extends Bbs
 
 __XHTML__;
 
-        
+
         // Output HTML header using Twig base template structure
         $data = array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('tree.tree_view'),
@@ -618,7 +618,7 @@ __XHTML__;
             $secondsLabel = Translator::trans('main.seconds');
             echo "<p><span class=\"msgmore\">{$pageGenLabel}: {$duration} {$secondsLabel}</span>　<a href=\"#top\" title=\"" . Translator::trans('main.top') . "\">▲</a></p>\n";
         } else {
-            echo "<p><a href=\"#top\" title=\"" . Translator::trans('main.top') . "\">▲</a></p>\n";
+            echo '<p><a href="#top" title="' . Translator::trans('main.top') . "\">▲</a></p>\n";
         }
         echo "</footer>\n</body>\n</html>\n";
 

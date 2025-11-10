@@ -130,7 +130,7 @@ class StringHelper
 
     /**
      * Remove non-alphanumeric characters from string
-     * 
+     *
      * @param string $text Input text
      * @return string Text with only alphanumeric characters
      */

@@ -3,28 +3,27 @@
 namespace Kuzuha;
 
 use App\Config;
+use App\Models\Repositories\BbsLogRepositoryInterface;
 use App\Services\CookieService;
 use App\Services\LogService;
 use App\Services\UserPreferenceService;
 use App\Translator;
 use App\Utils\DateHelper;
-use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\StringHelper;
 use App\Utils\TextEscape;
 use App\View;
-use App\Models\Repositories\BbsLogRepositoryInterface;
 
 /**
  * Webapp - Base class for BBS application
- * 
+ *
  * Provides core functionality for all BBS pages:
  * - Input processing and sanitization
  * - Session and user preference management
  * - Log file reading and parsing (via LogService)
  * - Message display preparation
  * - Template rendering
- * 
+ *
  * Extended by: Bbs, Getlog, Bbsadmin, Treeview, Imagebbs
  */
 class Webapp
@@ -32,36 +31,36 @@ class Webapp
     // ========================================
     // Public Properties (accessed by child classes and templates)
     // ========================================
-    
+
     /**
      * @var array Application configuration
      */
     public $config;
-    
+
     /**
      * @var array Sanitized form input data
      */
     public $form = [];
-    
+
     /**
      * @var array Session data (user info, display settings, query strings)
      */
     public $session = [];
-    
+
     // ========================================
     // Protected/Private Properties
     // ========================================
-    
+
     /**
      * @var BbsLogRepositoryInterface|null BBS log repository
      */
     protected $bbsLogRepository;
-    
+
     /**
      * @var UserPreferenceService User preference service
      */
     private $preferenceService;
-    
+
     /**
      * @var LogService Log reading and parsing service
      */
@@ -69,7 +68,7 @@ class Webapp
 
     /**
      * Constructor
-     * 
+     *
      * Initializes configuration and service instances.
      */
     public function __construct()
@@ -105,7 +104,7 @@ class Webapp
 
     /**
      * Set BBS log repository
-     * 
+     *
      * @param BbsLogRepositoryInterface $repo Repository instance
      * @return void
      */
@@ -119,7 +118,7 @@ class Webapp
 
     /**
      * Load and sanitize form input from HTTP request
-     * 
+     *
      * Receives form data from POST/GET requests, sanitizes it, and stores in $this->form.
      * Provides three-layer security: size limit, host validation, and HTML escaping.
      *
@@ -136,10 +135,10 @@ class Webapp
         if ($this->config['BBSHOST'] && $_SERVER['HTTP_HOST'] != $this->config['BBSHOST']) {
             $this->prterror(Translator::trans('error.invalid_caller'));
         }
-        
+
         // Get input data from POST or GET
         $input = $_SERVER['REQUEST_METHOD'] === 'POST' ? $_POST : $_GET;
-        
+
         // HTML escape all input values to prevent XSS attacks
         $this->form = array_map(function ($value) {
             return is_array($value)
@@ -150,16 +149,16 @@ class Webapp
 
     /**
      * Initialize session data
-     * 
+     *
      * Sets up session variables from form input and cookies:
      * - User data (name, email, color)
      * - Display settings (message count, top post ID)
      * - UNDO data (if available)
      * - Query string for URL persistence
      * - Default URL
-     * 
+     *
      * Priority: Form input > Cookie data > Config defaults
-     * 
+     *
      * @return void
      */
     public function initializeSession(): void
@@ -177,8 +176,8 @@ class Webapp
         $this->session['U'] = $this->form['u'] ?? null;
         $this->session['I'] = $this->form['i'] ?? null;
         $this->session['C'] = $this->form['c'] ?? null;
-        $this->session['MSGDISP'] = (isset($this->form['d']) && $this->form['d'] != -1) 
-            ? $this->form['d'] 
+        $this->session['MSGDISP'] = (isset($this->form['d']) && $this->form['d'] != -1)
+            ? $this->form['d']
             : $this->config['MSGDISP'];
         $this->session['TOPPOSTID'] = $this->form['p'] ?? null;
     }
@@ -217,21 +216,21 @@ class Webapp
     {
         // Build query string for URL persistence
         $queryParts = ['c=' . $this->session['C']];
-        
+
         if (!empty($this->session['MSGDISP'])) {
             $queryParts[] = 'd=' . $this->session['MSGDISP'];
         }
         if (!empty($this->session['TOPPOSTID'])) {
             $queryParts[] = 'p=' . $this->session['TOPPOSTID'];
         }
-        
+
         $this->session['QUERY'] = implode('&', $queryParts);
         $this->session['DEFURL'] = $this->config['CGIURL'] . '?' . $this->session['QUERY'];
     }
 
     /**
      * Prepare message data for display
-     * 
+     *
      * Transforms raw message data into display-ready format by:
      * - Formatting date/time
      * - Escaping special characters for Twig
@@ -273,11 +272,11 @@ class Webapp
 
     /**
      * Process reference links in message
-     * 
+     *
      * Converts follow links based on display mode:
      * - Mode 0 (BBS): Full URL with query parameters
      * - Mode 1+ (Search): Anchor links to same page
-     * 
+     *
      * @param string $msg Message content
      * @param int $mode Display mode
      * @return string Processed message
@@ -286,20 +285,20 @@ class Webapp
     {
         if (!$mode) {
             $msg = preg_replace(
-                "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"" . route('follow', ['s' => '$1']) . "&{$this->session['QUERY']}\">$2</a>",
+                '/<a href="' . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
+                '<a href="' . route('follow', ['s' => '$1']) . "&{$this->session['QUERY']}\">$2</a>",
                 $msg,
                 1
             );
             $msg = preg_replace(
                 "/<a href=\"mode=follow&search=(\d+)[^>]+>([^<]+)<\/a>$/i",
-                "<a href=\"" . route('follow', ['s' => '$1']) . "&{$this->session['QUERY']}\">$2</a>",
+                '<a href="' . route('follow', ['s' => '$1']) . "&{$this->session['QUERY']}\">$2</a>",
                 $msg,
                 1
             );
         } else {
             $msg = preg_replace(
-                "/<a href=\"" . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
+                '/<a href="' . preg_quote(route('follow', ['s' => '']), '/') . "(\d+)[^>]+>([^<]+)<\/a>$/i",
                 '<a href="#a$1">$2</a>',
                 $msg,
                 1
@@ -316,10 +315,10 @@ class Webapp
 
     /**
      * Process quote markers in message
-     * 
+     *
      * Wraps lines starting with '>' in <span class="q"> tags.
      * Optimizes consecutive quote lines to avoid redundant tags.
-     * 
+     *
      * @param string $msg Message content
      * @return string Processed message with quote styling
      */
@@ -331,11 +330,11 @@ class Webapp
 
     /**
      * Process image tags in message
-     * 
+     *
      * Converts image tags to text links if:
      * - SHOWIMG config is disabled
      * - Image file does not exist
-     * 
+     *
      * @param string $msg Message content
      * @return string Processed message
      */
@@ -354,14 +353,14 @@ class Webapp
 
     /**
      * Build action button URLs for message display
-     * 
+     *
      * Generates URLs for message action buttons (follow, author search, thread, tree, undo).
      * Button availability depends on:
      * - Display mode (BBS vs search results)
      * - Admin-only mode setting
      * - Message author (anonymous vs named)
      * - UNDO availability
-     * 
+     *
      * @param array $message Message data with POSTID, USER, THREAD
      * @param int $mode Display mode (0: BBS, 1: Search with buttons, 2+: Search without buttons)
      * @param string $tlog Archive log filename (for search results)
@@ -428,7 +427,7 @@ class Webapp
 
         $params = [
             'm' => 's',
-            's' => RegexPatterns::stripHtmlTags($user)
+            's' => RegexPatterns::stripHtmlTags($user),
         ];
         $params = $this->addCommonParams($params, $mode, $tlog);
         return $this->config['CGIURL'] . '?' . http_build_query($params) . '&' . $this->session['QUERY'];
@@ -459,8 +458,8 @@ class Webapp
      */
     private function buildUndoUrl(string $postId): ?string
     {
-        if (!$this->config['ALLOW_UNDO'] || 
-            !isset($this->session['UNDO_P']) || 
+        if (!$this->config['ALLOW_UNDO'] ||
+            !isset($this->session['UNDO_P']) ||
             $this->session['UNDO_P'] != $postId) {
             return null;
         }
@@ -483,7 +482,7 @@ class Webapp
     public function renderMessage($message, $mode = 0, $tlog = '')
     {
         $message = $this->prepareMessageForDisplay($message, $mode, $tlog);
-        
+
         return $this->renderTwig('components/message.twig', array_merge($message, [
             'TRANS_USER' => Translator::trans('message.user'),
             'TRANS_POST_DATE' => Translator::trans('message.post_date'),
@@ -527,38 +526,38 @@ class Webapp
 
     /**
      * Apply user preferences to configuration
-     * 
+     *
      * Processes user preferences from URL parameter 'c' and form input:
      * - Decodes preferences from Base32/Base64 encoded string
      * - Updates config with color and flag settings
      * - Applies form-based overrides
      * - Re-encodes preferences for URL persistence
-     * 
+     *
      * @param string $colorString Optional Base64 color string to append
      * @return string Encoded preference string for URL parameter
      */
     public function applyUserPreferences(string $colorString = ''): string
     {
         $this->preferenceService->initializeDefaults($this->config);
-        
+
         $colorChanged = false;
         if (!empty($this->form['c'])) {
             $colorChanged = $this->preferenceService->applyPreferences($this->config, $this->form['c']);
         }
-        
+
         $this->preferenceService->updateFromForm($this->config, $this->form);
         $this->preferenceService->applySpecialConditions($this->config, $this->form);
-        
+
         $encoded = $this->preferenceService->encodePreferences(
             $this->config,
             $this->form['c'] ?? '',
             $colorChanged || !empty($colorString)
         );
-        
+
         if ($colorString) {
             $encoded = substr($encoded, 0, 2) . $colorString;
         }
-        
+
         $this->form['c'] = $encoded;
         return $encoded;
     }
