@@ -36,62 +36,70 @@ class Bbsadmin extends Webapp
     public function main()
     {
         if (!defined('BBS_ACTIVATED')) {
-
-            # Start measuring execution time
+            // Start execution time measurement
             PerformanceTimer::start();
-
-            # Form acquisition preprocessing
+            
+            // Form acquisition preprocessing
             $this->loadAndSanitizeInput();
-
-            # Reflect user settings
+            
+            // Reflect user settings
             $this->applyUserPreferences();
             $this->initializeSession();
-
-            # gzip compressed transfer
+            
+            // gzip compression transfer
             if ($this->config['GZIPU'] && ob_get_level() === 0) {
                 ob_start('ob_gzhandler');
             }
         }
 
-        # Log file viewer
-        if (@$this->form['ad'] == 'l') {
-            $this->prtlogview(true);
-        }
-        # Message deletion mode
-        elseif (@$this->form['ad'] == 'k') {
-            $this->prtkilllist();
-        }
-        # Message deletion process
-        elseif (@$this->form['ad'] == 'x') {
-            if (isset($this->form['x'])) {
-                $this->killmessage($this->form['x']);
-            }
-            $this->prtkilllist();
-        }
-        # Encrypted password generation page
-        elseif (@$this->form['ad'] == 'p') {
-            $this->prtsetpass();
-        }
-        # Encrypted password generation & display
-        elseif (@$this->form['ad'] == 'ps') {
-            $this->prtpass(@$this->form['ps']);
-        }
-        # Display server PHP configuration information
-        elseif (@$this->form['ad'] == 'phpinfo') {
-            phpinfo();
-        }
-        # Admin menu page
-        else {
-            // If ADMINPOST is empty, show password setup page
-            if (empty($this->config['ADMINPOST'])) {
+        // Route to appropriate handler based on admin mode
+        $adminMode = $this->form['ad'] ?? '';
+        
+        switch ($adminMode) {
+            case 'l':
+                // Log file viewer
+                $this->prtlogview(true);
+                break;
+            
+            case 'k':
+                // Message deletion mode
+                $this->prtkilllist();
+                break;
+            
+            case 'x':
+                // Message deletion process
+                if (isset($this->form['x'])) {
+                    $this->killmessage($this->form['x']);
+                }
+                $this->prtkilllist();
+                break;
+            
+            case 'p':
+                // Encrypted password generation page
                 $this->prtsetpass();
-            } else {
-                $this->prtadminmenu();
-            }
+                break;
+            
+            case 'ps':
+                // Encrypted password generation & display
+                $this->prtpass($this->form['ps'] ?? '');
+                break;
+            
+            case 'phpinfo':
+                // Display server PHP configuration information
+                phpinfo();
+                break;
+            
+            default:
+                // Admin menu page
+                if (empty($this->config['ADMINPOST'])) {
+                    $this->prtsetpass();
+                } else {
+                    $this->prtadminmenu();
+                }
+                break;
         }
 
-
-        if (!defined('BBS_ACTIVATED') and $this->config['GZIPU']) {
+        if (!defined('BBS_ACTIVATED') && $this->config['GZIPU']) {
             ob_end_flush();
         }
     }
