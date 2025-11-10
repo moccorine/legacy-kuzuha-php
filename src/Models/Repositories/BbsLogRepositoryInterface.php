@@ -87,4 +87,15 @@ interface BbsLogRepositoryInterface
      * @return array Deleted message lines (for image cleanup, etc.)
      */
     public function deleteMessages(array $postIds): array;
+
+    /**
+     * Delete message from archive file
+     *
+     * @param string $filepath Archive file path
+     * @param string $postId Post ID to delete
+     * @param int $timestamp Post timestamp
+     * @param bool $isDatFormat True for DAT format, false for HTML format
+     * @return bool True if deleted, false if not found or failed
+     */
+    public function deleteFromArchive(string $filepath, string $postId, int $timestamp, bool $isDatFormat): bool;
 }

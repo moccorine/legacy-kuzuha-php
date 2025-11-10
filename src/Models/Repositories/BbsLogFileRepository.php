@@ -198,4 +198,92 @@ class BbsLogFileRepository implements BbsLogRepositoryInterface
             $this->unlock();
         }
     }
+
+    /**
+     * Delete message from archive file
+     *
+     * @param string $filepath Archive file path
+     * @param string $postId Post ID to delete
+     * @param int $timestamp Post timestamp
+     * @param bool $isDatFormat True for DAT format, false for HTML format
+     * @return bool True if deleted, false if not found or failed
+     */
+    public function deleteFromArchive(string $filepath, string $postId, int $timestamp, bool $isDatFormat): bool
+    {
+        $fh = @fopen($filepath, 'r+');
+        if (!$fh) {
+            return false;
+        }
+
+        flock($fh, LOCK_EX);
+        fseek($fh, 0);
+
+        $result = $isDatFormat
+            ? $this->filterDatFormat($fh, $postId, $timestamp)
+            : $this->filterHtmlFormat($fh, $postId);
+
+        $deleted = $result['deleted'];
+        $newlogdata = $result['lines'];
+
+        fseek($fh, 0);
+        ftruncate($fh, 0);
+        fwrite($fh, implode('', $newlogdata));
+        flock($fh, LOCK_UN);
+        fclose($fh);
+
+        return $deleted;
+    }
+
+    /**
+     * Filter DAT format archive, removing target message
+     *
+     * @param resource $fh File handle
+     * @param string $postId Post ID to remove
+     * @param int $timestamp Post timestamp
+     * @return array{deleted: bool, lines: array<int, string>}
+     */
+    private function filterDatFormat($fh, string $postId, int $timestamp): array
+    {
+        $newlogdata = [];
+        $needle = $timestamp . ',' . $postId . ',';
+        $deleted = false;
+
+        while (($line = fgets($fh)) !== false) {
+            if (!$deleted && str_starts_with($line, $needle)) {
+                $deleted = true;
+            } else {
+                $newlogdata[] = $line;
+            }
+        }
+
+        return ['deleted' => $deleted, 'lines' => $newlogdata];
+    }
+
+    /**
+     * Filter HTML format archive, removing target message
+     *
+     * @param resource $fh File handle
+     * @param string $postId Post ID to remove
+     * @return array{deleted: bool, lines: array<int, string>}
+     */
+    private function filterHtmlFormat($fh, string $postId): array
+    {
+        $newlogdata = [];
+        $needle = "<div class=\"m\" id=\"m{$postId}\">";
+        $inTargetMessage = false;
+        $deleted = false;
+
+        while (($line = fgets($fh)) !== false) {
+            if (!$inTargetMessage && str_contains($line, $needle)) {
+                $inTargetMessage = true;
+                $deleted = true;
+            } elseif ($inTargetMessage && str_contains($line, '<hr')) {
+                $inTargetMessage = false;
+            } elseif (!$inTargetMessage) {
+                $newlogdata[] = $line;
+            }
+        }
+
+        return ['deleted' => $deleted, 'lines' => $newlogdata];
+    }
 }

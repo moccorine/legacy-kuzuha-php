@@ -10,6 +10,7 @@ use App\Utils\HtmlHelper;
 use App\Utils\PerformanceTimer;
 use App\Utils\RegexPatterns;
 use App\Utils\SecurityHelper;
+use App\Utils\StringHelper;
 
 /**
  * Admin mode module
@@ -70,7 +71,8 @@ class Bbsadmin extends Webapp
             case 'x':
                 // Message deletion process
                 if (isset($this->form['x']) && is_array($this->form['x'])) {
-                    $this->deleteMessages($this->form['x']);
+                    $result = $this->deleteMessages($this->form['x']);
+                    // Result can be used for logging or user feedback
                 }
                 $this->renderDeleteList();
                 break;
@@ -148,26 +150,43 @@ class Bbsadmin extends Webapp
         if (!file_exists($this->config['LOGFILENAME'])) {
             $this->prterror('Failed to load message');
         }
-        $logdata = file($this->config['LOGFILENAME']);
 
+        $messages = $this->loadMessagesForDeletion();
+        $data = $this->buildDeleteListData($messages);
+        echo $this->renderTwig('admin/delete-list.twig', $data);
+    }
+
+    /**
+     * Load and format messages for deletion list
+     * 
+     * @return array<int, array<string, mixed>>
+     */
+    private function loadMessagesForDeletion(): array
+    {
+        $logdata = file($this->config['LOGFILENAME']);
         $messages = [];
+
         foreach ($logdata as $logline) {
             $message = $this->parseLogLine($logline);
-            $message['MSG'] = HtmlHelper::removeReferenceLink((string) $message['MSG']);
-            $message['MSG'] = RegexPatterns::stripHtmlTags(ltrim($message['MSG']));
-            $msgsplit = explode("\r", (string) $message['MSG']);
-            $message['MSGDIGEST'] = $msgsplit[0];
-            $index = 1;
-            while ($index < count($msgsplit) - 1 and strlen($message['MSGDIGEST'] . $msgsplit[$index]) < 50) {
-                $message['MSGDIGEST'] .= $msgsplit[$index];
-                $index++;
-            }
+            $message['MSG'] = StringHelper::cleanMessageText((string) $message['MSG']);
+            $message['MSGDIGEST'] = StringHelper::createMessageDigest($message['MSG']);
             $message['WDATE'] = DateHelper::getDateString($message['NDATE']);
             $message['USER_NOTAG'] = RegexPatterns::stripHtmlTags((string) $message['USER']);
             $messages[] = $message;
         }
 
-        $data = array_merge($this->config, $this->session, [
+        return $messages;
+    }
+
+    /**
+     * Build template data for delete list
+     * 
+     * @param array<int, array<string, mixed>> $messages
+     * @return array<string, mixed>
+     */
+    private function buildDeleteListData(array $messages): array
+    {
+        return array_merge($this->config, $this->session, [
             'TITLE' => $this->config['BBSTITLE'] . ' ' . Translator::trans('admin.deletion_mode'),
             'TRANS_DELETION_MODE' => Translator::trans('admin.deletion_mode'),
             'TRANS_RETURN' => Translator::trans('admin.return'),
@@ -177,7 +196,6 @@ class Bbsadmin extends Webapp
             'V' => trim((string) $this->form['v']),
             'messages' => $messages,
         ]);
-        echo $this->renderTwig('admin/killlist.twig', $data);
     }
 
     /**
@@ -189,19 +207,19 @@ class Bbsadmin extends Webapp
      * - Associated image files
      * 
      * @param array $postIds Array of post IDs to delete
-     * @return bool True if any messages were deleted
+     * @return array{success: bool, messagesDeleted: int, imagesDeleted: int, archivesDeleted: bool} Deletion results
      */
-    public function deleteMessages(array $postIds): bool
+    public function deleteMessages(array $postIds): array
     {
         if (empty($postIds)) {
-            return false;
+            return ['success' => false, 'messagesDeleted' => 0, 'imagesDeleted' => 0, 'archivesDeleted' => false];
         }
 
         // Delete from main log and get deleted lines
         $deletedLines = $this->bbsLogRepository->deleteMessages($postIds);
 
         if (empty($deletedLines)) {
-            return false;
+            return ['success' => false, 'messagesDeleted' => 0, 'imagesDeleted' => 0, 'archivesDeleted' => false];
         }
 
         // Extract timestamps for archive deletion
@@ -214,31 +232,41 @@ class Bbsadmin extends Webapp
         }
 
         // Delete associated images
-        $this->deleteImagesFromMessages($deletedLines);
+        $imagesDeleted = $this->deleteImagesFromMessages($deletedLines);
 
         // Delete from archive logs
+        $archivesDeleted = false;
         if ($this->config['OLDLOGFILEDIR']) {
-            $this->deleteFromArchiveLogs($timestamps);
+            $archivesDeleted = $this->deleteFromArchiveLogs($timestamps);
         }
 
-        return true;
+        return [
+            'success' => true,
+            'messagesDeleted' => count($deletedLines),
+            'imagesDeleted' => $imagesDeleted,
+            'archivesDeleted' => $archivesDeleted,
+        ];
     }
 
     /**
      * Delete images referenced in deleted messages
      * 
      * @param array $messageLines Deleted message lines
-     * @return void
+     * @return int Number of images deleted
      */
-    private function deleteImagesFromMessages(array $messageLines): void
+    private function deleteImagesFromMessages(array $messageLines): int
     {
+        $deletedCount = 0;
+
         foreach ($messageLines as $line) {
             if (preg_match('/<img [^>]*?src="([^"]+)"[^>]+>/i', $line, $matches)) {
-                if (file_exists($matches[1])) {
-                    unlink($matches[1]);
+                if (file_exists($matches[1]) && unlink($matches[1])) {
+                    $deletedCount++;
                 }
             }
         }
+
+        return $deletedCount;
     }
 
     /**
@@ -247,66 +275,43 @@ class Bbsadmin extends Webapp
      * Removes messages from daily/monthly archive files.
      * 
      * @param array $timestamps Map of postId => timestamp
-     * @return void
+     * @return bool True if at least one message was deleted
      */
-    private function deleteFromArchiveLogs(array $timestamps): void
+    private function deleteFromArchiveLogs(array $timestamps): bool
     {
         $oldlogext = $this->config['OLDLOGFMT'] ? 'dat' : 'html';
+        $isDatFormat = (bool) $this->config['OLDLOGFMT'];
+        $anyDeleted = false;
 
         foreach ($timestamps as $postId => $timestamp) {
-            $filename = $this->config['OLDLOGSAVESW']
-                ? date('Ym', $timestamp) . ".$oldlogext"
-                : date('Ymd', $timestamp) . ".$oldlogext";
-
-            $filepath = $this->config['OLDLOGFILEDIR'] . $filename;
-
+            $filepath = $this->getArchiveFilePath($timestamp, $oldlogext);
+            
             if (!file_exists($filepath)) {
                 continue;
             }
 
-            $fh = @fopen($filepath, 'r+');
-            if (!$fh) {
-                continue;
+            if ($this->logRepository->deleteFromArchive($filepath, $postId, $timestamp, $isDatFormat)) {
+                $anyDeleted = true;
             }
-
-            flock($fh, LOCK_EX);
-            fseek($fh, 0);
-
-            $newlogdata = [];
-            $hit = false;
-
-            if ($this->config['OLDLOGFMT']) {
-                // DAT format
-                $needle = $timestamp . ',' . $postId . ',';
-                while (($logline = FileHelper::getLine($fh)) !== false) {
-                    if (!$hit && str_starts_with($logline, $needle)) {
-                        $hit = true;
-                    } else {
-                        $newlogdata[] = $logline;
-                    }
-                }
-            } else {
-                // HTML format
-                $needle = "<div class=\"m\" id=\"m{$postId}\">";
-                $flgbuffer = false;
-                while (($htmlline = FileHelper::getLine($fh)) !== false) {
-                    if (!$hit && str_contains($htmlline, $needle)) {
-                        $hit = true;
-                        $flgbuffer = true;
-                    } elseif ($flgbuffer && str_contains($htmlline, '<hr')) {
-                        $flgbuffer = false;
-                    } elseif (!$flgbuffer) {
-                        $newlogdata[] = $htmlline;
-                    }
-                }
-            }
-
-            fseek($fh, 0);
-            ftruncate($fh, 0);
-            fwrite($fh, implode('', $newlogdata));
-            flock($fh, LOCK_UN);
-            fclose($fh);
         }
+
+        return $anyDeleted;
+    }
+
+    /**
+     * Get archive file path for timestamp
+     * 
+     * @param int $timestamp Unix timestamp
+     * @param string $extension File extension
+     * @return string Archive file path
+     */
+    private function getArchiveFilePath(int $timestamp, string $extension): string
+    {
+        $filename = $this->config['OLDLOGSAVESW']
+            ? date('Ym', $timestamp) . ".$extension"
+            : date('Ymd', $timestamp) . ".$extension";
+
+        return $this->config['OLDLOGFILEDIR'] . $filename;
     }
 
     /**

@@ -138,4 +138,35 @@ class StringHelper
     {
         return implode('', array_filter(str_split($text), 'ctype_alnum'));
     }
+
+    /**
+     * Clean message text by removing HTML and reference links
+     *
+     * @param string $message Message text
+     * @return string Cleaned message text
+     */
+    public static function cleanMessageText(string $message): string
+    {
+        $message = HtmlHelper::removeReferenceLink($message);
+        return RegexPatterns::stripHtmlTags(ltrim($message));
+    }
+
+    /**
+     * Create message digest (first ~50 characters)
+     *
+     * @param string $message Message text
+     * @param int $maxLength Maximum length of digest
+     * @return string Message digest
+     */
+    public static function createMessageDigest(string $message, int $maxLength = 50): string
+    {
+        $lines = explode("\r", $message);
+        $digest = $lines[0];
+
+        for ($i = 1; $i < count($lines) - 1 && strlen($digest . $lines[$i]) < $maxLength; $i++) {
+            $digest .= $lines[$i];
+        }
+
+        return $digest;
+    }
 }
