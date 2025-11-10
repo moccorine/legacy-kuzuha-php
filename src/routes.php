@@ -189,11 +189,11 @@ $app->map(['GET', 'POST'], '/thread', function (Request $request, Response $resp
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Imagebbs();
-        $imagebbs->procForm();
+        $imagebbs->loadAndSanitizeInput();
         $imagebbs->prtsearchlist();
     } else {
         $bbs = new \Kuzuha\Bbs();
-        $bbs->procForm();
+        $bbs->loadAndSanitizeInput();
         $bbs->prtsearchlist();
     }
 
@@ -214,11 +214,11 @@ $app->map(['GET', 'POST'], '/follow', function (Request $request, Response $resp
     $config = Config::getInstance();
     if ($config->get('BBSMODE_IMAGE') == 1) {
         $imagebbs = new \Kuzuha\Imagebbs();
-        $imagebbs->procForm();
+        $imagebbs->loadAndSanitizeInput();
         $imagebbs->prtfollow();
     } else {
         $bbs = new \Kuzuha\Bbs();
-        $bbs->procForm();
+        $bbs->loadAndSanitizeInput();
         $bbs->prtfollow();
     }
 

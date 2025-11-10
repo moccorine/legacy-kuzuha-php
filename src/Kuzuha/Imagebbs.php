@@ -105,14 +105,13 @@ class Imagebbs extends Bbs
 
 
     /**
-     * Reflect personal settings
+     * Apply user preferences with image mode enabled
      */
     #[\Override]
-    public function refcustom()
+    public function applyUserPreferences(string $colorString = ''): string
     {
         $this->config['SHOWIMG'] = 1;
-
-        parent::refcustom();
+        return parent::applyUserPreferences($colorString);
     }
 
 

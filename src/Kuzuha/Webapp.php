@@ -4,6 +4,8 @@ namespace Kuzuha;
 
 use App\Config;
 use App\Services\CookieService;
+use App\Services\LogService;
+use App\Services\UserPreferenceService;
 use App\Translator;
 use App\Utils\DateHelper;
 use App\Utils\PerformanceTimer;
@@ -13,113 +15,78 @@ use App\Utils\TextEscape;
 use App\View;
 use App\Models\Repositories\BbsLogRepositoryInterface;
 
+/**
+ * Webapp - Base class for BBS application
+ * 
+ * Provides core functionality for all BBS pages:
+ * - Input processing and sanitization
+ * - Session and user preference management
+ * - Log file reading and parsing (via LogService)
+ * - Message display preparation
+ * - Template rendering
+ * 
+ * Extended by: Bbs, Getlog, Bbsadmin, Treeview, Imagebbs
+ */
 class Webapp
 {
-    public $config; /* Settings information */
-    public $form; /* Form input */
-    public $session = []; /* Session-specific information such as the user's host */
+    // ========================================
+    // Public Properties (accessed by child classes and templates)
+    // ========================================
+    
+    /**
+     * @var array Application configuration
+     */
+    public $config;
+    
+    /**
+     * @var array Sanitized form input data
+     */
+    public $form = [];
+    
+    /**
+     * @var array Session data (user info, display settings, query strings)
+     */
+    public $session = [];
+    
+    // ========================================
+    // Protected/Private Properties
+    // ========================================
+    
+    /**
+     * @var BbsLogRepositoryInterface|null BBS log repository
+     */
+    protected $bbsLogRepository;
+    
+    /**
+     * @var UserPreferenceService User preference service
+     */
+    private $preferenceService;
+    
+    /**
+     * @var LogService Log reading and parsing service
+     */
+    private $logService;
 
     /**
      * Constructor
-     *
+     * 
+     * Initializes configuration and service instances.
      */
     public function __construct()
     {
         $this->config = Config::getInstance()->all();
-    }
-
-    public function setBbsLogRepository($repo): void
-    {
-        $this->bbsLogRepo = $repo;
-    }
-
-    /*20210625 Neko/2chtrip http://www.mits-jp.com/2ch/ */
-
-    public function procForm()
-    {
-        if (!$this->config['BBSMODE_IMAGE'] and $_SERVER['CONTENT_LENGTH'] > $this->config['MAXMSGSIZE'] * 5) {
-            $this->prterror(Translator::trans('error.post_too_large'));
-        }
-        if ($this->config['BBSHOST'] and $_SERVER['HTTP_HOST'] != $this->config['BBSHOST']) {
-            $this->prterror(Translator::trans('error.invalid_caller'));
-        }
-        # Limited to POST or GET only
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $this->f = $_POST;
-        } else {
-            $this->f = $_GET;
-        }
-        # String replacement
-        foreach ($this->f as $name => $value) {
-            if (is_array($value)) {
-                foreach (array_keys($value) as $valuekey) {
-                    $value[$valuekey] = StringHelper::htmlEscape($value[$valuekey]);
-                }
-            } else {
-                $value = StringHelper::htmlEscape($value);
-            }
-            $this->form[$name] = $value;
-        }
+        $this->preferenceService = new UserPreferenceService();
+        $this->logService = new LogService(
+            $this->config['LOGFILENAME'],
+            $this->config['OLDLOGFILEDIR']
+        );
     }
 
     /**
-     * Session-specific information settings
-     */
-    public function setusersession()
-    {
-
-        $this->session['U'] = $this->form['u'];
-        $this->session['I'] = $this->form['i'];
-        $this->session['C'] = $this->form['c'];
-        $this->session['MSGDISP'] = (isset($this->form['d']) && $this->form['d'] != -1) ? $this->form['d'] : $this->config['MSGDISP'];
-        $this->session['TOPPOSTID'] = $this->form['p'];
-        # Get settings information cookies
-        if ($this->config['COOKIE']) {
-            $userData = CookieService::getUserCookieFromGlobal();
-            if ($userData) {
-                if (!isset($this->form['u'])) {
-                    $this->session['U'] = $userData['name'];
-                }
-                if (!isset($this->form['i'])) {
-                    $this->session['I'] = $userData['email'];
-                }
-                if (!isset($this->form['c'])) {
-                    $this->session['C'] = $userData['color'];
-                }
-            }
-        }
-        # Get cookie for the UNDO button
-        if ($this->config['COOKIE'] && $this->config['ALLOW_UNDO']) {
-            $undoData = CookieService::getUndoCookieFromGlobal();
-            if ($undoData) {
-                $this->session['UNDO_P'] = $undoData['post_id'];
-                $this->session['UNDO_K'] = $undoData['key'];
-            }
-        }
-        # Default query
-        $this->session['QUERY'] = 'c='.$this->session['C'];
-        if ($this->session['MSGDISP']) {
-            $this->session['QUERY'] .= '&d='.$this->session['MSGDISP'];
-        }
-        if ($this->session['TOPPOSTID']) {
-            $this->session['QUERY'] .= '&p='.$this->session['TOPPOSTID'];
-        }
-        # Default URL
-        $this->session['DEFURL'] = $this->config['CGIURL'] . '?' . $this->session['QUERY'];
-        # Initialize template variables
-        $tmp = array_merge($this->config, $this->session);
-        foreach ($tmp as $key => $val) {
-            if (is_array($val)) {
-                unset($tmp[$key]);
-            }
-        }
-    }
-
-    /**
-     * Error indication
+     * Display error page and exit
      *
-     * @access  public
-     * @param   String  $err_message  Error message
+     * @param string $err_message Error message to display
+     * @return void
      */
     public function prterror($err_message)
     {
@@ -133,6 +100,133 @@ class Webapp
         ]);
         echo View::getInstance()->render('error.twig', $data);
         exit();
+    }
+
+
+    /**
+     * Set BBS log repository
+     * 
+     * @param BbsLogRepositoryInterface $repo Repository instance
+     * @return void
+     */
+    public function setBbsLogRepository($repo): void
+    {
+        $this->bbsLogRepository = $repo;
+        $this->logService->setBbsLogRepository($repo);
+    }
+
+    /*20210625 Neko/2chtrip http://www.mits-jp.com/2ch/ */
+
+    /**
+     * Load and sanitize form input from HTTP request
+     * 
+     * Receives form data from POST/GET requests, sanitizes it, and stores in $this->form.
+     * Provides three-layer security: size limit, host validation, and HTML escaping.
+     *
+     * @access  public
+     * @return  void
+     */
+    public function loadAndSanitizeInput()
+    {
+        // Check POST data size to prevent DoS attacks
+        if (!$this->config['BBSMODE_IMAGE'] && $_SERVER['CONTENT_LENGTH'] > $this->config['MAXMSGSIZE'] * 5) {
+            $this->prterror(Translator::trans('error.post_too_large'));
+        }
+        // Validate request host to prevent CSRF attacks
+        if ($this->config['BBSHOST'] && $_SERVER['HTTP_HOST'] != $this->config['BBSHOST']) {
+            $this->prterror(Translator::trans('error.invalid_caller'));
+        }
+        
+        // Get input data from POST or GET
+        $input = $_SERVER['REQUEST_METHOD'] === 'POST' ? $_POST : $_GET;
+        
+        // HTML escape all input values to prevent XSS attacks
+        $this->form = array_map(function ($value) {
+            return is_array($value)
+                ? array_map([StringHelper::class, 'htmlEscape'], $value)
+                : StringHelper::htmlEscape($value);
+        }, $input);
+    }
+
+    /**
+     * Initialize session data
+     * 
+     * Sets up session variables from form input and cookies:
+     * - User data (name, email, color)
+     * - Display settings (message count, top post ID)
+     * - UNDO data (if available)
+     * - Query string for URL persistence
+     * - Default URL
+     * 
+     * Priority: Form input > Cookie data > Config defaults
+     * 
+     * @return void
+     */
+    public function initializeSession(): void
+    {
+        $this->loadFormDataToSession();
+        $this->loadCookieDataToSession();
+        $this->buildSessionUrls();
+    }
+
+    /**
+     * Load form data to session
+     */
+    private function loadFormDataToSession(): void
+    {
+        $this->session['U'] = $this->form['u'] ?? null;
+        $this->session['I'] = $this->form['i'] ?? null;
+        $this->session['C'] = $this->form['c'] ?? null;
+        $this->session['MSGDISP'] = (isset($this->form['d']) && $this->form['d'] != -1) 
+            ? $this->form['d'] 
+            : $this->config['MSGDISP'];
+        $this->session['TOPPOSTID'] = $this->form['p'] ?? null;
+    }
+
+    /**
+     * Load cookie data to session (if not set by form)
+     */
+    private function loadCookieDataToSession(): void
+    {
+        if (!$this->config['COOKIE']) {
+            return;
+        }
+
+        // Load user data from cookie
+        $userData = CookieService::getUserCookieFromGlobal();
+        if ($userData) {
+            $this->session['U'] = $this->session['U'] ?? $userData['name'];
+            $this->session['I'] = $this->session['I'] ?? $userData['email'];
+            $this->session['C'] = $this->session['C'] ?? $userData['color'];
+        }
+
+        // Load UNDO data from cookie
+        if ($this->config['ALLOW_UNDO']) {
+            $undoData = CookieService::getUndoCookieFromGlobal();
+            if ($undoData) {
+                $this->session['UNDO_P'] = $undoData['post_id'];
+                $this->session['UNDO_K'] = $undoData['key'];
+            }
+        }
+    }
+
+    /**
+     * Build query string and default URL
+     */
+    private function buildSessionUrls(): void
+    {
+        // Build query string for URL persistence
+        $queryParts = ['c=' . $this->session['C']];
+        
+        if (!empty($this->session['MSGDISP'])) {
+            $queryParts[] = 'd=' . $this->session['MSGDISP'];
+        }
+        if (!empty($this->session['TOPPOSTID'])) {
+            $queryParts[] = 'p=' . $this->session['TOPPOSTID'];
+        }
+        
+        $this->session['QUERY'] = implode('&', $queryParts);
+        $this->session['DEFURL'] = $this->config['CGIURL'] . '?' . $this->session['QUERY'];
     }
 
     /**
@@ -177,6 +271,17 @@ class Webapp
         return $message;
     }
 
+    /**
+     * Process reference links in message
+     * 
+     * Converts follow links based on display mode:
+     * - Mode 0 (BBS): Full URL with query parameters
+     * - Mode 1+ (Search): Anchor links to same page
+     * 
+     * @param string $msg Message content
+     * @param int $mode Display mode
+     * @return string Processed message
+     */
     private function processReferenceLinks($msg, $mode)
     {
         if (!$mode) {
@@ -209,12 +314,31 @@ class Webapp
         return $msg;
     }
 
+    /**
+     * Process quote markers in message
+     * 
+     * Wraps lines starting with '>' in <span class="q"> tags.
+     * Optimizes consecutive quote lines to avoid redundant tags.
+     * 
+     * @param string $msg Message content
+     * @return string Processed message with quote styling
+     */
     private function processQuotes($msg)
     {
         $msg = preg_replace("/(^|\r)(\&gt;[^\r]*)/", '$1<span class="q">$2</span>', (string) $msg);
         return str_replace("</span>\r<span class=\"q\">", "\r", $msg);
     }
 
+    /**
+     * Process image tags in message
+     * 
+     * Converts image tags to text links if:
+     * - SHOWIMG config is disabled
+     * - Image file does not exist
+     * 
+     * @param string $msg Message content
+     * @return string Processed message
+     */
     private function processImages($msg)
     {
         if (!$this->config['SHOWIMG']) {
@@ -228,6 +352,21 @@ class Webapp
         return $msg;
     }
 
+    /**
+     * Build action button URLs for message display
+     * 
+     * Generates URLs for message action buttons (follow, author search, thread, tree, undo).
+     * Button availability depends on:
+     * - Display mode (BBS vs search results)
+     * - Admin-only mode setting
+     * - Message author (anonymous vs named)
+     * - UNDO availability
+     * 
+     * @param array $message Message data with POSTID, USER, THREAD
+     * @param int $mode Display mode (0: BBS, 1: Search with buttons, 2+: Search without buttons)
+     * @param string $tlog Archive log filename (for search results)
+     * @return array Button URLs and settings
+     */
     private function buildActionButtons($message, $mode, $tlog)
     {
         $buttons = [
@@ -245,49 +384,88 @@ class Webapp
 
         parse_str($this->session['QUERY'], $queryParams);
 
-        $followParams = array_merge(['s' => $message['POSTID']], $queryParams);
-        if ($this->form['w']) {
-            $followParams['w'] = $this->form['w'];
-        }
-        if ($mode == 1) {
-            $followParams['ff'] = $tlog;
-        }
-        $buttons['FOLLOW_URL'] = route('follow', $followParams);
-
-        if ($message['USER'] != $this->config['ANONY_NAME']) {
-            $authorParams = [
-                'm' => 's',
-                's' => RegexPatterns::stripHtmlTags((string) $message['USER'])
-            ];
-            if ($this->form['w']) {
-                $authorParams['w'] = $this->form['w'];
-            }
-            if ($mode == 1) {
-                $authorParams['ff'] = $tlog;
-            }
-            $buttons['AUTHOR_URL'] = $this->config['CGIURL'] . '?' . http_build_query($authorParams) . '&' . $this->session['QUERY'];
-        }
-
-        $threadParams = array_merge(['s' => $message['THREAD']], $queryParams);
-        if ($mode == 1) {
-            $threadParams['ff'] = $tlog;
-        }
-        $buttons['THREAD_URL'] = route('thread', $threadParams);
-
-        $treeParams = [
-            'm' => 'tree',
-            's' => $message['THREAD']
-        ];
-        if ($mode == 1) {
-            $treeParams['ff'] = $tlog;
-        }
-        $buttons['TREE_URL'] = $this->config['CGIURL'] . '?' . http_build_query($treeParams) . '&' . $this->session['QUERY'];
-
-        if ($this->config['ALLOW_UNDO'] && isset($this->session['UNDO_P']) && $this->session['UNDO_P'] == $message['POSTID']) {
-            $buttons['UNDO_URL'] = $this->config['CGIURL'] . '?m=u&s=' . $message['POSTID'] . '&' . $this->session['QUERY'];
-        }
+        $buttons['FOLLOW_URL'] = $this->buildFollowUrl($message['POSTID'], $queryParams, $mode, $tlog);
+        $buttons['AUTHOR_URL'] = $this->buildAuthorUrl($message['USER'], $mode, $tlog);
+        $buttons['THREAD_URL'] = $this->buildThreadUrl($message['THREAD'], $queryParams, $mode, $tlog);
+        $buttons['TREE_URL'] = $this->buildTreeUrl($message['THREAD'], $mode, $tlog);
+        $buttons['UNDO_URL'] = $this->buildUndoUrl($message['POSTID']);
 
         return $buttons;
+    }
+
+    /**
+     * Add common parameters to URL params
+     */
+    private function addCommonParams(array $params, int $mode, string $tlog): array
+    {
+        if (!empty($this->form['w'])) {
+            $params['w'] = $this->form['w'];
+        }
+        if ($mode == 1) {
+            $params['ff'] = $tlog;
+        }
+        return $params;
+    }
+
+    /**
+     * Build follow button URL
+     */
+    private function buildFollowUrl(string $postId, array $queryParams, int $mode, string $tlog): string
+    {
+        $params = array_merge(['s' => $postId], $queryParams);
+        $params = $this->addCommonParams($params, $mode, $tlog);
+        return route('follow', $params);
+    }
+
+    /**
+     * Build author search URL (null for anonymous)
+     */
+    private function buildAuthorUrl(string $user, int $mode, string $tlog): ?string
+    {
+        if ($user == $this->config['ANONY_NAME']) {
+            return null;
+        }
+
+        $params = [
+            'm' => 's',
+            's' => RegexPatterns::stripHtmlTags($user)
+        ];
+        $params = $this->addCommonParams($params, $mode, $tlog);
+        return $this->config['CGIURL'] . '?' . http_build_query($params) . '&' . $this->session['QUERY'];
+    }
+
+    /**
+     * Build thread view URL
+     */
+    private function buildThreadUrl(string $threadId, array $queryParams, int $mode, string $tlog): string
+    {
+        $params = array_merge(['s' => $threadId], $queryParams);
+        $params = $this->addCommonParams($params, $mode, $tlog);
+        return route('thread', $params);
+    }
+
+    /**
+     * Build tree view URL
+     */
+    private function buildTreeUrl(string $threadId, int $mode, string $tlog): string
+    {
+        $params = ['m' => 'tree', 's' => $threadId];
+        $params = $this->addCommonParams($params, $mode, $tlog);
+        return $this->config['CGIURL'] . '?' . http_build_query($params) . '&' . $this->session['QUERY'];
+    }
+
+    /**
+     * Build undo URL (null if not available)
+     */
+    private function buildUndoUrl(string $postId): ?string
+    {
+        if (!$this->config['ALLOW_UNDO'] || 
+            !isset($this->session['UNDO_P']) || 
+            $this->session['UNDO_P'] != $postId) {
+            return null;
+        }
+
+        return $this->config['CGIURL'] . '?m=u&s=' . $postId . '&' . $this->session['QUERY'];
     }
 
     /**
@@ -318,168 +496,71 @@ class Webapp
     }
 
     /**
-     * Log reading
+     * Get log lines from file
      *
-     * Reads the log file, returns it as a line array.
+     * Delegates to LogService for log reading operations.
      *
-     * @access  public
-     * @param   String  $logfilename  Log file name (optional)
-     * @return  Array   Log line array
+     * @param string $logfilename Log file name (optional)
+     * @return array Raw log lines
      */
-    public function loadmessage($logfilename = '')
+    public function getLogLines(string $logfilename = ''): array
     {
-        if ($logfilename) {
-            preg_match("/^([\w.]*)$/", $logfilename, $matches);
-            $logfilename = $this->config['OLDLOGFILEDIR'].'/'.$matches[1];
-            if (!file_exists($logfilename)) {
-                $this->prterror(Translator::trans('error.failed_to_read'));
-            }
-            return file($logfilename);
-        }
-        
-        if (isset($this->bbsLogRepository) && $this->bbsLogRepository) {
-            return $this->bbsLogRepository->getAll();
-        }
-        
-        $logfilename = $this->config['LOGFILENAME'];
-        if (!file_exists($logfilename)) {
+        try {
+            return $this->logService->getLogLines($logfilename);
+        } catch (\RuntimeException $e) {
             $this->prterror(Translator::trans('error.failed_to_read'));
         }
-        return file($logfilename);
     }
 
     /**
-     * Get single message
+     * Parse log line to message array
      *
-     * Converts a log line to a message array and returns it.
+     * Delegates to LogService for CSV parsing.
      *
-     * @access  public
-     * @param   String  $logline  Log line
-     * @return  Array   Message array
+     * @param string $logline Raw log line
+     * @return array|null Message array or null if invalid
      */
-    public function getmessage($logline)
+    public function parseLogLine(string $logline): ?array
     {
-
-        $logsplit = @explode(',', rtrim($logline));
-        if (count($logsplit) < 10) {
-            return;
-        }
-        $i = 5;
-        while ($i <= 9) {
-            $logsplit[$i] = strtr($logsplit[$i], "\0", ',');
-            $logsplit[$i] = str_replace('&#44;', ',', $logsplit[$i]);
-            $i++;
-        }
-        $message = [];
-        $messagekey = ['NDATE', 'POSTID', 'PROTECT', 'THREAD', 'PHOST', 'AGENT', 'USER', 'MAIL', 'TITLE', 'MSG', 'REFID', 'RESERVED1', 'RESERVED2', 'RESERVED3', ];
-        $logsplitcount = count($logsplit);
-        $i = 0;
-        while ($i < $logsplitcount) {
-            if ($i > 12) {
-                break;
-            }
-            $message[$messagekey[$i]] = $logsplit[$i];
-            $i++;
-        }
-        return $message;
+        return $this->logService->parseLogLine($logline);
     }
 
     /**
-     * Reflect user settings
+     * Apply user preferences to configuration
+     * 
+     * Processes user preferences from URL parameter 'c' and form input:
+     * - Decodes preferences from Base32/Base64 encoded string
+     * - Updates config with color and flag settings
+     * - Applies form-based overrides
+     * - Re-encodes preferences for URL persistence
+     * 
+     * @param string $colorString Optional Base64 color string to append
+     * @return string Encoded preference string for URL parameter
      */
-    public function refcustom()
+    public function applyUserPreferences(string $colorString = ''): string
     {
-
-        $this->config['LINKOFF'] = 0;
-        $this->config['HIDEFORM'] = 0;
-        $this->config['RELTYPE'] = 0;
-        if (!isset($this->config['SHOWIMG'])) {
-            $this->config['SHOWIMG'] = 0;
+        $this->preferenceService->initializeDefaults($this->config);
+        
+        $colorChanged = false;
+        if (!empty($this->form['c'])) {
+            $colorChanged = $this->preferenceService->applyPreferences($this->config, $this->form['c']);
         }
-        $flgcolorchanged = false;
-
-        $colors = [
-            'C_BACKGROUND',
-            'C_TEXT',
-            'C_A_COLOR',
-            'C_A_VISITED',
-            'C_SUBJ',
-            'C_QMSG',
-            'C_A_ACTIVE',
-            'C_A_HOVER',
-        ];
-        $flags = [
-            'GZIPU',
-            'RELTYPE',
-            'AUTOLINK',
-            'FOLLOWWIN',
-            'COOKIE',
-            'LINKOFF',
-            'HIDEFORM',
-            'SHOWIMG',
-        ];
-        # Update from settings string
-        if (isset($this->form['c']) && $this->form['c']) {
-            $strflag = '';
-            $formc = $this->form['c'];
-            if (strlen((string) $formc) > 5) {
-                $formclen = strlen((string) $formc);
-                $strflag = substr((string) $formc, 0, 2);
-                $currentpos = 2;
-                foreach ($colors as $confname) {
-                    $colorval = StringHelper::base64ToThreeByteHex(substr((string) $formc, $currentpos, 4));
-                    if (strlen($colorval) == 6 and strcasecmp((string) $this->config[$confname], $colorval) != 0) {
-                        $flgcolorchanged = true;
-                        $this->config[$confname] = $colorval;
-                    }
-                    $currentpos += 4;
-                    if ($currentpos > $formclen) {
-                        break;
-                    }
-                }
-            } elseif (strlen((string) $formc) == 2) {
-                $strflag = $formc;
-            }
-            if ($strflag) {
-                $flagbin = str_pad(base_convert((string) $strflag, 32, 2), count($flags), '0', STR_PAD_LEFT);
-                $currentpos = 0;
-                foreach ($flags as $confname) {
-                    $this->config[$confname] = substr($flagbin, $currentpos, 1);
-                    $currentpos++;
-                }
-            }
+        
+        $this->preferenceService->updateFromForm($this->config, $this->form);
+        $this->preferenceService->applySpecialConditions($this->config, $this->form);
+        
+        $encoded = $this->preferenceService->encodePreferences(
+            $this->config,
+            $this->form['c'] ?? '',
+            $colorChanged || !empty($colorString)
+        );
+        
+        if ($colorString) {
+            $encoded = substr($encoded, 0, 2) . $colorString;
         }
-        # Update settings information
-        if (isset($this->form['m']) && ($this->form['m'] == 'p' or $this->form['m'] == 'c' or $this->form['m'] == 'g')) {
-            $this->config['AUTOLINK'] = !empty($this->form['a']) ? 1 : 0;
-            $this->config['GZIPU'] = !empty($this->form['g']) ? 1 : 0;
-            $this->config['LINKOFF'] = !empty($this->form['loff']) ? 1 : 0;
-            $this->config['HIDEFORM'] = !empty($this->form['hide']) ? 1 : 0;
-            $this->form['sim'] ? $this->config['SHOWIMG'] = 1 : $this->config['SHOWIMG'] = 0;
-            if ($this->form['m'] == 'c') {
-                $this->form['fw'] ? $this->config['FOLLOWWIN'] = 1 : $this->config['FOLLOWWIN'] = 0;
-                $this->form['rt'] ? $this->config['RELTYPE'] = 1 : $this->config['RELTYPE'] = 0;
-                $this->form['cookie'] ? $this->config['COOKIE'] = 1 : $this->config['COOKIE'] = 0;
-            }
-        }
-        # Special conditions
-        if ($this->config['BBSMODE_ADMINONLY'] != 0) {
-            ($this->form['m'] == 'f' or ($this->form['m'] == 'p' and $this->form['write'])) ? $this->config['HIDEFORM'] = 0 : $this->config['HIDEFORM'] = 1;
-        }
-        # Update the settings string
-        {
-            $flagbin = '';
-            foreach ($flags as $confname) {
-                $this->config[$confname] ? $flagbin .= '1' : $flagbin .= '0';
-            }
-            $flagvalue = str_pad(base_convert($flagbin, 2, 32), 2, '0', STR_PAD_LEFT);
-
-            if ($flgcolorchanged) {
-                $this->form['c'] = $flagvalue . substr((string) $this->form['c'], 2);
-            } else {
-                $this->form['c'] = $flagvalue;
-            }
-        }
+        
+        $this->form['c'] = $encoded;
+        return $encoded;
     }
 
     /**

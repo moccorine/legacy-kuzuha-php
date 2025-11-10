@@ -49,11 +49,11 @@ class Bbsadmin extends Webapp
             PerformanceTimer::start();
 
             # Form acquisition preprocessing
-            $this->procForm();
+            $this->loadAndSanitizeInput();
 
             # Reflect user settings
-            $this->refcustom();
-            $this->setusersession();
+            $this->applyUserPreferences();
+            $this->initializeSession();
 
             # gzip compressed transfer
             if ($this->config['GZIPU'] && ob_get_level() === 0) {
@@ -143,7 +143,7 @@ class Bbsadmin extends Webapp
 
         $messages = [];
         foreach ($logdata as $logline) {
-            $message = $this->getmessage($logline);
+            $message = $this->parseLogLine($logline);
             $message['MSG'] = HtmlHelper::removeReferenceLink((string) $message['MSG']);
             $message['MSG'] = RegexPatterns::stripHtmlTags(ltrim($message['MSG']));
             $msgsplit = explode("\r", (string) $message['MSG']);

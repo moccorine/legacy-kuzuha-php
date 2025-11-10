@@ -8,6 +8,11 @@ use App\Utils\StringHelper;
 
 class BbsPostValidator
 {
+    // Validation result codes
+    public const VALID = 0;
+    public const INVALID_RETRY = 2;
+    public const ADMIN_MODE = 3;
+
     private array $config;
     private array $form;
     private array $session;
@@ -23,18 +28,21 @@ class BbsPostValidator
      * Validate post message
      *
      * @param bool $limithost Whether or not to check for same host
-     * @return int Error code (0: success, 2: retry, 3: admin mode)
+     * @return int Validation result code:
+     *             - VALID (0): Validation passed
+     *             - INVALID_RETRY (2): Validation failed, allow retry
+     *             - ADMIN_MODE (3): Admin mode activation
      */
     public function validate(bool $limithost = true): int
     {
         // Admin mode check
         if ($this->form['v'] == $this->config['ADMINPOST']) {
-            return 3; // Admin mode
+            return self::ADMIN_MODE;
         }
 
         // Required field validation
         if (!trim((string) $this->form['v'])) {
-            return 2; // Retry
+            return self::INVALID_RETRY;
         }
 
         // Host limit check
@@ -42,12 +50,12 @@ class BbsPostValidator
             $limitHosts = explode(',', $this->config['HOSTLIMIT']);
             foreach ($limitHosts as $limitHost) {
                 if (trim($limitHost) && strpos($this->session['HOST'], trim($limitHost)) !== false) {
-                    return 2; // Retry
+                    return self::INVALID_RETRY;
                 }
             }
         }
 
-        return 0; // Success
+        return self::VALID;
     }
 
     /**

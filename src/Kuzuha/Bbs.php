@@ -68,10 +68,11 @@ class Bbs extends Webapp
         // Start execution time measurement
         PerformanceTimer::start();
         // Form acquisition preprocessing
-        $this->procForm();
+        $this->loadAndSanitizeInput();
         // Reflect user settings
-        $this->refcustom();
-        $this->setusersession();
+        $this->applyUserPreferences();
+
+        $this->initializeSession();
 
         // If ADMINPOST is empty and not setting password, show password setup page
         if (empty($this->config['ADMINPOST']) && $this->form['m'] != 'ad') {
@@ -86,6 +87,13 @@ class Bbs extends Webapp
         }
 
         // Route to appropriate handler based on mode
+        // Priority: setup button > mode parameter
+        if ($this->form['setup']) {
+            // Display user settings page
+            $this->prtcustom();
+            return;
+        }
+        
         $mode = $this->form['m'] ?? '';
         
         switch ($mode) {
@@ -95,7 +103,7 @@ class Bbs extends Webapp
             
             case 'c':
                 // User settings process
-                $this->setcustom();
+                $this->saveUserPreferences();
                 break;
             
             case 'u':
@@ -104,13 +112,8 @@ class Bbs extends Webapp
                 break;
             
             default:
-                if ($this->form['setup']) {
-                    // Display user settings page
-                    $this->prtcustom();
-                } else {
-                    // Default: bulletin board display
-                    $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
-                }
+                // Default: bulletin board display
+                $this->prtmain(false, $this->accessCounterRepo, $this->participantCounterRepo);
                 break;
         }
 
@@ -144,10 +147,10 @@ class Bbs extends Webapp
         $posterr = $validator->validate();
         
         // Post operation
-        if (!$posterr) {
+        if ($posterr === BbsPostValidator::VALID) {
             $message = $validator->buildMessage();
             
-            // Resolve thread ID from archive if replying from archive file
+            // Resolve thread ID from archive if replying from archive file (ff parameter)
             if ($this->form['ff'] && $message['REFID']) {
                 $message['THREAD'] = $this->resolveThreadFromArchive($message['REFID'], $this->form['ff']);
             } else {
@@ -176,8 +179,8 @@ class Bbs extends Webapp
                 }
                 break;
             
-            case 3:
-                // Entering admin mode
+            case BbsPostValidator::ADMIN_MODE:
+                // Admin mode activation (special code from validator)
                 define('BBS_ACTIVATED', true);
                 $bbsadmin = new Bbsadmin($this);
                 $bbsadmin->main();
@@ -258,7 +261,7 @@ class Bbs extends Webapp
 
         # Display message
         foreach ($logdatadisp as $msgdata) {
-            print $this->renderMessage($this->getmessage($msgdata), 0, 0);
+            print $this->renderMessage($this->parseLogLine($msgdata), 0, 0);
         }
         # Message information
         if ($this->session['MSGDISP'] < 0) {
@@ -323,7 +326,7 @@ class Bbs extends Webapp
     public function getdispmessage()
     {
 
-        $logdata = $this->loadmessage();
+        $logdata = $this->getLogLines();
         # Unread pointer (latest POSTID)
         $items = @explode(',', (string) $logdata[0], 3);
         $toppostid = $items[1];
@@ -627,7 +630,7 @@ class Bbs extends Webapp
             $this->prterror(Translator::trans('error.message_not_found'));
         }
         # Get message
-        $message = $this->getmessage($result[0]);
+        $message = $this->parseLogLine($result[0]);
 
         if (!$retry) {
             $formmsg = QuoteRegex::formatAsQuote(
@@ -762,7 +765,7 @@ class Bbs extends Webapp
                 if ($linecount > $this->config['LOGSAVE']) {
                     break;
                 }
-                $message = $this->getmessage($logline);
+                $message = $this->parseLogLine($logline);
                 # Search by user
                 if ($mode == 's' and RegexPatterns::stripHtmlTags((string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
@@ -777,9 +780,9 @@ class Bbs extends Webapp
                 }
             }
         } else {
-            $logdata = $this->loadmessage();
+            $logdata = $this->getLogLines();
             foreach ($logdata as $logline) {
-                $message = $this->getmessage($logline);
+                $message = $this->parseLogLine($logline);
                 # Search by user
                 if ($mode == 's' and RegexPatterns::stripHtmlTags((string) $message['USER']) == $this->form['s']) {
                     $result[] = $message;
@@ -862,69 +865,96 @@ class Bbs extends Webapp
     }
 
     /**
-     * User settings process
+     * Save user preferences and redirect
+     * 
+     * Processes user settings form submission (m=c):
+     * - Validates and encodes color preferences
+     * - Updates display flags (GZIP, autolink, etc.)
+     * - Clears cookies if requested
+     * - Redirects to main page with encoded preferences in URL
+     * 
+     * @return void
      */
-    public function setcustom()
+    public function saveUserPreferences()
     {
-
-        $redirecturl = $this->config['CGIURL'];
-
-        # Cookie消去
+        // Clear cookies if requested
         if ($this->form['cr']) {
-            $this->form['c'] = '';
-            if (!isset($this->pendingCookies['delete'])) {
-                $this->pendingCookies['delete'] = [];
-            }
-            $this->pendingCookies['delete'][] = 'c';
-            $this->pendingCookies['delete'][] = 'undo';
-            $this->session['UNDO_P'] = '';
-            $this->session['UNDO_K'] = '';
+            $this->clearPreferenceCookies();
+            $redirectUrl = $this->config['CGIURL'];
         } else {
-            $colors = [
-                'C_BACKGROUND',
-                'C_TEXT',
-                'C_A_COLOR',
-                'C_A_VISITED',
-                'C_SUBJ',
-                'C_QMSG',
-                'C_A_ACTIVE',
-                'C_A_HOVER',
-            ];
-
-            $flgchgindex = -1;
-            $cindex = 0;
-            foreach ($colors as $confname) {
-                if (ValidationRegex::isValidHexColor((string) $this->form[$confname])
-                    and $this->form[$confname] != $this->config[$confname]) {
-                    $this->config[$confname] = $this->form[$confname];
-                    $flgchgindex = $cindex;
-                }
-                $cindex++;
-            }
-
-            $cbase64str = '';
-            for ($i = 0; $i <= $flgchgindex; $i++) {
-                $cbase64str .= StringHelper::threeByteHexToBase64($this->config[$colors[$i]]);
-            }
-            $this->refcustom();
-
-            $this->form['c'] = substr((string) $this->form['c'], 0, 2) . $cbase64str;
-
-            $redirecturl .= '?c='.$this->form['c'];
-            foreach (['w', 'd',] as $key) {
-                if ($this->form[$key] != '') {
-                    $redirecturl .= "&{$key}=".$this->form[$key];
-                }
-            }
-            if ($this->form['nm']) {
-                $redirecturl .= '&m='.$this->form['nm'];
-            }
+            $colorString = $this->processColorChanges();
+            $this->applyUserPreferences($colorString);
+            $redirectUrl = $this->buildPreferenceRedirectUrl();
+            
             if ($this->config['COOKIE']) {
                 $this->setBbsCookie();
             }
         }
-        # Redirect
-        header("Location: {$redirecturl}");
+        
+        header("Location: {$redirectUrl}");
+        exit();
+    }
+
+    /**
+     * Clear preference cookies
+     */
+    private function clearPreferenceCookies(): void
+    {
+        $this->form['c'] = '';
+        if (!isset($this->pendingCookies['delete'])) {
+            $this->pendingCookies['delete'] = [];
+        }
+        $this->pendingCookies['delete'][] = 'c';
+        $this->pendingCookies['delete'][] = 'undo';
+        $this->session['UNDO_P'] = '';
+        $this->session['UNDO_K'] = '';
+    }
+
+    /**
+     * Process color changes and return Base64 encoded string
+     */
+    private function processColorChanges(): string
+    {
+        $colors = [
+            'C_BACKGROUND', 'C_TEXT', 'C_A_COLOR', 'C_A_VISITED',
+            'C_SUBJ', 'C_QMSG', 'C_A_ACTIVE', 'C_A_HOVER',
+        ];
+
+        $lastChangedIndex = -1;
+        foreach ($colors as $index => $colorKey) {
+            if (ValidationRegex::isValidHexColor((string) $this->form[$colorKey])
+                && $this->form[$colorKey] != $this->config[$colorKey]) {
+                $this->config[$colorKey] = $this->form[$colorKey];
+                $lastChangedIndex = $index;
+            }
+        }
+
+        $encoded = '';
+        for ($i = 0; $i <= $lastChangedIndex; $i++) {
+            $encoded .= StringHelper::threeByteHexToBase64($this->config[$colors[$i]]);
+        }
+        
+        return $encoded;
+    }
+
+    /**
+     * Build redirect URL with preferences
+     */
+    private function buildPreferenceRedirectUrl(): string
+    {
+        $url = $this->config['CGIURL'] . '?c=' . $this->form['c'];
+        
+        foreach (['w', 'd'] as $key) {
+            if (!empty($this->form[$key])) {
+                $url .= "&{$key}=" . $this->form[$key];
+            }
+        }
+        
+        if (!empty($this->form['nm'])) {
+            $url .= '&m=' . $this->form['nm'];
+        }
+        
+        return $url;
     }
 
     /**
@@ -940,7 +970,7 @@ class Bbs extends Webapp
             if (count($loglines) < 1) {
                 $this->prterror(Translator::trans('error.post_not_found'));
             }
-            $message = $this->getmessage($loglines[0]);
+            $message = $this->parseLogLine($loglines[0]);
             $undokey = substr(StringHelper::removeNonAlphanumeric(crypt((string) $message['PROTECT'], (string) $this->config['ADMINPOST'])), -8);
             if ($undokey != $this->session['UNDO_K']) {
                 $this->prterror(Translator::trans('error.deletion_not_permitted'));
@@ -979,9 +1009,9 @@ class Bbs extends Webapp
     public function searchmessage($varname, $searchvalue, $ismultiple = false, $filename = '')
     {
         $result = [];
-        $logdata = $this->loadmessage($filename);
+        $logdata = $this->getLogLines($filename);
         foreach ($logdata as $logline) {
-            $message = $this->getmessage($logline);
+            $message = $this->parseLogLine($logline);
             if (isset($message[$varname]) and $message[$varname] == $searchvalue) {
                 $result[] = $logline;
                 if (!$ismultiple) {
@@ -1343,7 +1373,7 @@ class Bbs extends Webapp
             $this->prterror(Translator::trans('error.reference_not_found'));
         }
         
-        $refmessage = $this->getmessage($refdata[0]);
+        $refmessage = $this->parseLogLine($refdata[0]);
         $refmessage['WDATE'] = DateHelper::getDateString($refmessage['NDATE'], $this->config['DATEFORMAT']);
         $refLabel = Translator::trans('message.reference');
         
@@ -1370,7 +1400,7 @@ class Bbs extends Webapp
     {
         $refdata = $this->searchmessage('THREAD', $refId, false, $archiveFile);
         if (isset($refdata[0])) {
-            $refmessage = $this->getmessage($refdata[0]);
+            $refmessage = $this->parseLogLine($refdata[0]);
             return $refmessage ? $refmessage['thread'] : null;
         }
         return null;

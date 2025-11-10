@@ -90,14 +90,14 @@ class Treeview extends Bbs
         PerformanceTimer::start();
 
         # Form acquisiation preprocessing
-        $this->procForm();
+        $this->loadAndSanitizeInput();
 
         # Reflect personal settings
         if (@$this->form['treem'] == 'p') {
             $this->form['m'] = 'p';
         }
-        $this->refcustom();
-        $this->setusersession();
+        $this->applyUserPreferences();
+        $this->initializeSession();
 
         # gzip compressed transfer
         if ($this->config['GZIPU'] && ob_get_level() === 0) {
@@ -225,7 +225,7 @@ class Treeview extends Bbs
         # Process in order of threads with the latest post time
         while (count($logdata) > 0) {
 
-            $msgcurrent = $this->getmessage(array_shift($logdata));
+            $msgcurrent = $this->parseLogLine(array_shift($logdata));
             if (!$msgcurrent['THREAD']) {
                 $msgcurrent['THREAD'] = $msgcurrent['POSTID'];
             }
@@ -234,7 +234,7 @@ class Treeview extends Bbs
             $thread = [$msgcurrent];
             $i = 0;
             while ($i < count($logdata)) {
-                $message = $this->getmessage($logdata[$i]);
+                $message = $this->parseLogLine($logdata[$i]);
                 if ($message['THREAD'] == $msgcurrent['THREAD']
                     or $message['POSTID'] == $msgcurrent['THREAD']) {
                     array_splice($logdata, $i, 1);
@@ -511,7 +511,7 @@ class Treeview extends Bbs
     public function getdispmessage()
     {
 
-        $logdata = $this->loadmessage();
+        $logdata = $this->getLogLines();
 
         # Unread pointer (latest POSTID)
         $items = @explode(',', (string) $logdata[0], 3);

@@ -85,11 +85,11 @@ class Getlog extends Webapp
         PerformanceTimer::start();
 
         # Form acquisition preprocessing
-        $this->procForm();
+        $this->loadAndSanitizeInput();
 
         # Reflect personal settings
-        $this->refcustom();
-        $this->setusersession();
+        $this->applyUserPreferences();
+        $this->initializeSession();
 
         # gzip compressed transfer
         if ($this->config['GZIPU'] && ob_get_level() === 0) {
@@ -530,7 +530,7 @@ class Getlog extends Webapp
             if (!@$conditions['showall']) {
                 $result = 0;
                 foreach ($logdata as $logline) {
-                    $message = $this->getmessage($logline);
+                    $message = $this->parseLogLine($logline);
                     $result = $this->msgsearch($message, $conditions);
                     # Search hit
                     if ($result == 1) {
@@ -566,7 +566,7 @@ class Getlog extends Webapp
             else {
                 foreach ($logdata as $index => $logline) {
                     error_log("Line {$index}: " . var_export($logline, true));
-                    $message = $this->getmessage($logline);
+                    $message = $this->parseLogLine($logline);
                     error_log("Message {$index}: " . var_export($message, true));
                     if ($message) {
                         $messagestr = $this->renderMessage($message, $msgmode, $filename);
@@ -823,7 +823,7 @@ class Getlog extends Webapp
         $ttime = [];
         $tindex = 0;
         foreach ($logdata as $logline) {
-            $message = $this->getmessage($logline);
+            $message = $this->parseLogLine($logline);
             if (!$message['THREAD'] or $message['THREAD'] == $message['POSTID'] or !@$ttitle[$message['THREAD']]) {
                 $tid[$tindex] = $message['POSTID'];
                 $tcount[$message['POSTID']] = 0;
